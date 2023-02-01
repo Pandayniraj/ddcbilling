@@ -62,7 +62,7 @@ class IrdDetailController extends Controller
          LEFT JOIN users p_user ON p_user.id = bill_print_invoice.printed_by
         
          WHERE 1 GROUP  BY invoice.id');
-         Flash::success('Generate Successfully.');
+         Flash::success('Generated Successfully.');
          return back();
     }
 }

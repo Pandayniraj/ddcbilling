@@ -8,12 +8,12 @@ use Illuminate\Http\Request;
 
 class NepalIRDSync extends Model
 {
-    public function postbill($data)
+    public function postbill($data, $ird)
     {
         $curl = curl_init();
 
         curl_setopt_array($curl, [
-              CURLOPT_URL => "http://43.245.85.152:9050/api/bill",
+              CURLOPT_URL => $ird,
               CURLOPT_RETURNTRANSFER => true,
               CURLOPT_ENCODING => '',
               CURLOPT_MAXREDIRS => 10,
@@ -39,12 +39,12 @@ class NepalIRDSync extends Model
         }
     }
 
-    public function returnbill($data)
+    public function returnbill($data, $ird)
     {
         $curl = curl_init();
 
         curl_setopt_array($curl, [
-              CURLOPT_URL => "http://43.245.85.152:9050/api/billreturn",
+              CURLOPT_URL => $ird,
               CURLOPT_RETURNTRANSFER => true,
               CURLOPT_ENCODING => '',
               CURLOPT_MAXREDIRS => 10,
