@@ -20,9 +20,11 @@
             <div class="box-header with-border">
                 <h3 class="box-title">{{ trans('admin/courses/general.page.index.table-title') }}</h3>
                 &nbsp;
+                @if(\Auth::user()->hasRole('admins'))
                 <a class="btn btn-default btn-sm" href="{!! route('admin.products.create') !!}" title="{{ trans('admin/courses/general.button.create') }}">
                     <i class="fa fa-plus-square"></i>
                 </a>
+                @endif
                 &nbsp;
                 <a class="btn btn-default btn-sm" href="#" onclick="document.forms['frmCourseList'].action = '{!! route('admin.products.enable-selected') !!}';  document.forms['frmCourseList'].submit(); return false;" title="{{ trans('general.button.enable') }}">
                     <i class="fa fa-check-circle"></i>
@@ -128,7 +130,9 @@
                                 {{-- <td>{!! $course->warranty==0?'NO': $course->warranty.' months'!!}</td> --}}
                                 <td>
                                     @if ( $course->isEditable() || $course->canChangePermissions() )
-                                    <a href="{!! route('admin.products.edit', $course->id) !!}" title="{{ trans('general.button.edit') }}"><i class="fa fa-edit"></i></a>
+                                        @if(\Auth::user()->hasRole('admins'))
+                                        <a href="{!! route('admin.products.edit', $course->id) !!}" title="{{ trans('general.button.edit') }}"><i class="fa fa-edit"></i></a>
+                                        @endif
                                     @else
                                     <i class="fa fa-edit text-muted" title="{{ trans('admin/courses/general.error.cant-edit-this-course') }}"></i>
                                     @endif

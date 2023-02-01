@@ -25,7 +25,7 @@
                         <img src="{{asset($client->image)}}" class="p-image" id="blah" src="#" alt="your image" />
                         <br/>
                     @else
-                        <img src="/images/profiles/default.png" class="p-image" id="blah" src="#" alt="your image" />
+                        <img src="/images/profiles/default.png" class="p-image" id="blah" src="#" alt="your image" width="100px" height="100px;" />
                         <br/>
                     @endif
 

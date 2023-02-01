@@ -985,7 +985,11 @@ Route::group(['middleware' =>  ['iptracker' , 'authorize']], function () {
         Route::get('getContacts', ['as' => 'admin.getcontacts', 'uses' => 'ContactsController@get_contact']);
         // For autocomplete of Clients
         Route::get('getClients', ['as' => 'admin.getclients', 'uses' => 'ClientsController@get_client']);
-
+        //niraj-irddetail route
+        Route::get('irddetail', ['as' => 'admin.irddetail', 'uses' => 'IrdDetailController@index']);
+        Route::get('irddetail/edit/{Id}', ['as' => 'admin.irddetail.edit', 'uses' => 'IrdDetailController@edit']);
+        Route::post('irddetail/update/{Id}', ['as' => 'admin.irddetail.update', 'uses' => 'IrdDetailController@update']);
+        Route::get('ird/materializeview', ['as' => 'admin.irddetail.materializeview', 'uses' => 'IrdDetailController@generatematerializeview']);
         // Send mail from Lead Detail
         Route::get('mail/{taskId}/show-mailmodal', ['as' => 'admin.mail.show-mailmodal',   'uses' => 'MailController@getModalMail']);
         Route::post('mail/{taskId}/send-mail-modal', ['as' => 'admin.mail.send-mail-modal',           'uses' => 'MailController@postModalMail']);
@@ -2051,9 +2055,6 @@ Route::group(['middleware' =>  ['iptracker' , 'authorize']], function () {
         Route::post('customergroup/edit/{id}', ['as' => 'admin.customergroup.update', 'uses' => 'CustomerGroupController@update']);
         Route::get('customergroup/confirm-delete{id}', ['as' => 'admin.customergroup.confirm-delete', 'uses' => 'CustomerGroupController@getModalDelete']);
         Route::get('customergroup/delete/{id}', ['as' => 'admin.customergroup.delete', 'uses' => 'CustomerGroupController@destroy']);
-
-
-
         //customer
          //deliveryroutes
          Route::get('deliveryroute', ['as' => 'admin.deliveryroute', 'uses' => 'DeliveryRouteController@index']);

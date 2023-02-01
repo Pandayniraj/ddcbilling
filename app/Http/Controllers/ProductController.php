@@ -566,7 +566,6 @@ class ProductController extends Controller
     }
     public function stocks_by_location()
     {
-
         $page_title = 'Stock Report';
         $page_description = 'counts';
         $outletuser = \App\Models\OutletUser::where('user_id', \Auth::user()->id)->select('outlet_id')->get()->toArray();
@@ -579,12 +578,10 @@ class ProductController extends Controller
     $products = \App\Models\Product::pluck('name', 'id')->all();
         // dd($store);
         return view('admin.products.stocksbylocation', compact('page_title', 'page_description','stores','products'));
-
     }
 
     public function stocks_by_location_post(Request $request)
     {
-
         $page_title = 'Outlets Balance Report';
         $page_description = 'counts';
         $current_store = $request->store_id;
@@ -613,13 +610,9 @@ class ProductController extends Controller
     }
     public function delete_stockmoves_product($id){
         $item=StockMove::where('id',$id)->delete();
-
-
         Flash::success('Stock Entry Delete Successfully');
 
         return redirect('/admin/product/stocks_count');
-
-
     }
     public function stocks_count(Request $request)
     {

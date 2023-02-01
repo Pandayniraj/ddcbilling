@@ -136,12 +136,9 @@
                 foreach ($orgs as $key => $value) {
                     echo $value->organization_name. ' | ' ;
                 }
-
           ?>
-
-
                 <nav class="login-card-footer-nav">
-                  v {{ App::version()}}
+                  v {{ env(APP_VERSION )}}
                   <a href="#!">Terms of use.</a>
                   <a href="#!">Privacy policy</a>
                 </nav>

@@ -73,7 +73,12 @@ th{
   }
 
   @media print {
-    .pagebreak { page-break-before: always; } /* page-break-after works, as well */
+    .pagebreak { page-break-before: always; }
+    .footer{
+      position: fixed;
+      bottom: 0;
+      margin-bottom: 10px;
+    } /* page-break-after works, as well */
 }
 .page-header {
     border-bottom: none;
@@ -355,13 +360,6 @@ label {
             <div class="row">
                 <!-- accepted payments column -->
                 <div class="col-xs-6" style="font-size: 11px !important; margin-top: -17px;">
-                    {{-- <p class="text-muted well well-sm no-shadow" style="margin-top: 7px;text-transform: capitalize;">
-                      Remarks
-                      <br/>
-                      <br/>
-                      <br/>
-                      <br/>
-                    </p> --}}
                   <div class="tabl-border" style="border: 1px dotted #999 !important; margin-top: 6px;">
                     <table style="width:100%;margin-top: -4px;">
                         <tr style="height: 73px;" >
@@ -372,15 +370,14 @@ label {
                   </div>
                     <table style="margin-top: 2px; width:100%;">
                         <tr style="height: 42px">
-                            <th style="padding-left: 6px;">In Words: <?php
+                            <th style="padding-left: 6px;">In Words: 
+                            <?php
                                 echo numberFomatter($ord->total_amount);
-                                ?></th>
+                              ?>
+                              </th>
                         </tr>
                     </table>
-                    {{--  --}}
-                    <br/><br/><br/><br/>
-                    <br/> <br/><br/><br/><br/><br/>
-                 
+                    <br/>
                 </div>
                 <!-- /.col -->
                 <div class="col-xs-6" style="margin-top: -10px !important">
@@ -426,27 +423,30 @@ label {
             <br>
             <div class="row">
             <div class="col-xs-12">
-            <p><b>Bank Account Detail For Electronic Payment</b></p>    
+            <p style="margin-bottom:-2px;"><b>Bank Account Detail For Electronic Payment</b></p>
+            <li>{{ $ord->outlet->bank_ac_name_one??'' }},{{ $ord->outlet->bank_account_one??'' }},{{ $ord->outlet->bank_name_one??'' }} </li>
+                <li>{{ $ord->outlet->bank_ac_name_two??'' }},{{ $ord->outlet->bank_account_two??'' }},{{ $ord->outlet->bank_name_two??'' }}</li>    
             </div>    
-            </div><br> <br><br> <br><br> <br><br>
-            <div class="row" style="margin-top: 160px;">
+            </div><br>
+            <div class="row footer" style="margin-top: 160px;">
                 <div class="col-xs-4">
-                    <br>_______________________<br><span style="text-indent: 10px;">
+                    _______________________<span style="text-indent: 10px;">
                         &nbsp;&nbsp;Customer Seal & Signature</span>
                 </div>
                 <div class="col-xs-4">
-                    <br>_______________________<br><span style="text-indent: 10px;">
+                    _______________________<span style="text-indent: 10px;">
                         &nbsp;&nbsp;Prepared By</span>
                 </div>
                 <div class="col-xs-4">
-                    <br>_______________________<br><span style="text-indent: 10px;"><b>For, Dairy Development Corp.</b><br>
+                    _______________________<br><span style="text-indent: 10px;"><b>For, Dairy Development Corp.</b><br>
                         &nbsp;&nbsp;Authorised Signatory</span>
                 </div> 
             </div>
+            
+
         </section>
 
         @endforeach
 
     </div><!-- /.col -->
-
 </body>

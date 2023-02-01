@@ -120,14 +120,10 @@ class PosOutletsController extends Controller
      */
     public function update(Request $request, $id)
     {
-
         $attributes = $request->all();
-        // dd($attributes);
         $pos_outlets =  \App\Models\PosOutlets::find($id);
         $pos_outlets->update($attributes);
-
         Flash::success('POS Outlets updated');
-
         return redirect()->back();
     }
 

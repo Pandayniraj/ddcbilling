@@ -17,7 +17,6 @@
         .hide_on_tablet{
             display: none;
         }
-
     }
     .nep-date-toggle{
         width: 120px !important;
@@ -60,8 +59,6 @@
                     <i class="fa fa-plus"></i>&nbsp;<strong> Create new tax invoice</strong>
                 </a>
 <!-- maitidevi -->
-
-
             </div>
 
               <div class="wrap hide_on_tablet" style="margin-top:15px;margin-left:11px;">
@@ -72,17 +69,27 @@
                         {!! Form::text('end_date', \Request::get('end_date'), ['style' => 'width:120px; display:inline-block;', 'class' => 'form-control input-sm input-sm date-toggle-nep-eng1', 'id'=>'end_date', 'placeholder'=>'Bill end date..','autocomplete' =>'off']) !!}&nbsp;&nbsp;
 
                          {!! Form::text('bill_no', \Request::get('bill_no'), ['style' => 'width:100px; display:inline-block;', 'class' => 'form-control input-sm input-sm', 'id'=>'bill_no', 'placeholder'=>'Enter bill number...','autocomplete' =>'off']) !!}&nbsp;&nbsp;
+                         
                          <select class="form-control input-sm searchable" style="width: 150px;" name="outlet_id">
                             <option value="">Select Outlet</option>
                             @if(isset($outlets))
+                            @if(\Auth::user()->hasRole('admins'))
                             @foreach($outlets as $key=>$out)
-                                <option value="{{ $out->id }}" @if(Request::get('outlet_id') == $out->id) selected="" @endif>
-                                    {{$out->outlet_code}} ({{$out->name}})
+                                <option value="{{ $key }}" @if(Request::get('outlet_id') == $key) selected="" @endif>
+                                    {{$out}}
                                 </option>
                             @endforeach
+                            @else
+                            {
+                                @foreach($outlets as $key=>$out)
+                                <option value="{{ $out->id }}" @if(Request::get('outlet_id') == $out->id) selected="" @endif>
+                                    {{$out->name}}
+                                </option>
+                            @endforeach
+                            }
+                            @endif
                             @endif
                          </select>
-
                         {!! Form::select('client_id', ['' => 'Select Customer'] + ($clients ?? []), \Request::get('client_id'), ['id'=>'filter-customer', 'class'=>'form-control input-sm searchable', 'style'=>'width:150px; display:inline-block;']) !!}&nbsp;&nbsp;
 
 
@@ -120,6 +127,7 @@
                                 <th>Customer name</th>
                                 <th>Due date</th>
                                 <th>Total</th>
+                                <th>Tax Amount</th>
                                 <th>Outlet</th>
                                 <th>Pay Status</th>
                                 <th>Tools</th>
@@ -159,9 +167,10 @@
                                     <img src="/images/profiles/default.png" class="p-image" id="blah" src="#" alt="your image" />
                                     @endif
 
-                                    <span style="font-size: 16.5px"> <a href="/admin/invoice1/{{$o->id}}" style="color: #1a2226c9;"> {{ $o->client->name }}</a> <small>{{ $o->name }}</small> </span></td>
+                                    <span style="font-size: 16.5px"> <a href="/admin/invoice1/{{$o->id}}" style="color: #1a2226c9;"> {{ $o->client->name??$o->customer_name }}</a> <small>{{ $o->name }}</small> </span></td>
                                 <td>{{ date('dS M y',strtotime($o->due_date))}}</td>
                                 <td>{!! number_format($o->total_amount,2) !!}</td>
+                                <td>{{ number_format($o->tax_amount, 2) }}</td>
                                 <td> {{ $o->outlet->outlet_code  }} </td>
 
 

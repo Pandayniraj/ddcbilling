@@ -76,8 +76,7 @@
                 <div class="col-sm-4 invoice-col">
                     <address>
                         @php
-                        $outlet_id=\App\Models\OutletUser::where('user_id',Auth::user()->id)->first()->outlet_id;
-                            $outlet_code=\App\Models\PosOutlets::where('id',outlet_id)->first()->outlet_code??"KMSS";
+                            $outlet_code=\App\Models\PosOutlets::where('id',$ord->outlet_id)->first()->outlet_code??"KMSS";
                         @endphp
                         <span style="font-size: 15px; font-weight: bold" > {{$outlet_code}} </span><br>
                         Bill type:{{$ord->bill_type}}<br>
@@ -129,6 +128,7 @@
                                 <th>Price</th>
                                 <th>Qty</th>
                                 <th>Unit</th>
+                                <th>Vat(%)</th>
                                 <th>Total</th>
                             </tr>
                         </thead>
@@ -143,6 +143,7 @@
                                 <td>{{ $odv->price }}</td>
                                 <td>{{ $odv->quantity }}</td>
                                 <td>{{ $odv->units->name }}</td>
+                                <td>{{ $odv->tax_amount>0?'13':'0' }}</td>
                                 <td>{{ env('APP_CURRENCY').' '.$odv->total }}</td>
                             </tr>
                             @endforeach

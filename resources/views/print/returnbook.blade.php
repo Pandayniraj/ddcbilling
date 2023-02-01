@@ -17,7 +17,6 @@
     <link href="{{ asset("/bower_components/admin-lte/dist/css/AdminLTE.min.css") }}" rel="stylesheet" type="text/css" />
 
     <!-- Application CSS-->
-    <link href="{{ asset(elixir('css/all.css')) }}" rel="stylesheet" type="text/css" />
 
     <style>
         table {

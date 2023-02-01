@@ -2805,7 +2805,12 @@ public static function getUserOutlets(){
         $outlets  = \App\Models\PosOutlets::orderBy('id', 'asc')->pluck('name', 'id')->all();
             // dd($outlets);
     } else {
-        $outlets = \App\Models\OutletUser::with('outlet')->where('user_id', \Auth::user()->id)->get();
+        $outletuser = \App\Models\OutletUser::with('outlet')->where('user_id', \Auth::user()->id)->get();
+        $outlets=[];
+        foreach($outletuser as $user)
+        {
+            $outlets[]= \App\Models\PosOutlets::where('id', $user->outlet_id)->select( 'name', 'id')->first(); 
+        }
     }
     return $outlets;
 }

@@ -12,6 +12,7 @@ use App\Models\PosOutlets;
 use App\Models\Product;
 use App\Models\Role as Permission;
 use App\User;
+use App\Models\IrdDetail;
 use Flash;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -135,11 +136,7 @@ class InvoiceController extends Controller
         $page_title = 'Invoice';
         $page_description = 'View Invoice';
         $orderDetails = InvoiceDetail::where('invoice_id', $id)->get();
-
-
-
         $imagepath = \Auth::user()->organization->logo;
-
 
         return view('admin.invoice.show', compact('ord', 'imagepath', 'page_title', 'page_description', 'orderDetails'));
     }
@@ -160,7 +157,6 @@ class InvoiceController extends Controller
         $productlocation = \App\Models\PosOutlets::pluck('name', 'id')->all();
 
         $prod_unit = \App\Models\ProductsUnit::orderBy('id', 'desc')->get();
-
         //$clients = Client::select('id', 'name', 'location')->orderBy('id', DESC)->get();
         $clients = \App\Models\Client::select('id', 'name','location')->where('org_id', \Auth::user()->org_id)->where('enabled',1)->orderBy('id', 'DESC')->get();
 
@@ -176,9 +172,9 @@ public function forrandomcustomer_outlet(Request $request)
     public function store(Request $request)
     {
         \DB::beginTransaction();
-        $this->validate($request, [
-            'customer_id' => 'required',
-        ]);
+        // $this->validate($request, [
+        //     'customer_id' => 'required',
+        // ]);
         $org_id = \Auth::user()->org_id;
         $ckfiscalyear = \App\Models\Fiscalyear::where('current_year', '1')
                         ->where('org_id', $org_id)
@@ -324,9 +320,8 @@ public function forrandomcustomer_outlet(Request $request)
 
         $this->updateentries($invoice->id, $request);
         Flash::success('Invoices created Successfully.');
-
-        $is_ird=env('IS_IRD');
-        if($is_ird){
+        $isird= IrdDetail::select('is_ird')->first();
+        if($isird==1){
             $this->postInvoicetoIRD($invoice->id);
         }else{
             Flash::warning('Bill not synced with ird');
@@ -950,7 +945,7 @@ public function forrandomcustomer_outlet(Request $request)
             $entry_item = \App\Models\Entryitem::create([
                 'entry_id' => $entry->id,
                 'dc' => 'D',
-                'ledger_id' => $clients->ledger_id,
+                'ledger_id' => $clients->ledger_id??465,
                 'amount' =>  $request->final_total,
                 'narration' => 'Sales being made',
             ]);
@@ -997,7 +992,7 @@ public function forrandomcustomer_outlet(Request $request)
             $entry_item = \App\Models\Entryitem::create([
                 'entry_id' => $entry->id,
                 'dc' => 'D',
-                'ledger_id' => $clients->ledger_id,
+                'ledger_id' => $clients->ledger_id??465,
                 'amount' => $request->final_total,
                 'narration' => 'Sales being made',
             ]);
@@ -1064,13 +1059,10 @@ public function forrandomcustomer_outlet(Request $request)
             $bill_date_nepali = $this->convertdate($invoice->bill_date);
             $bill_today_date_nep = $this->convertdate(date('Y-m-d'));
 
-
+            $irddetail= IrdDetail::first();
             // dd(\config('irdsyc'));
 
-            $data = json_encode(['username' => env('IRD_USERNAME'), 'password' => env('IRD_PASSWORD'), 'seller_pan' => env('SELLER_PAN'), 'buyer_pan' => $buyer_pan, 'fiscal_year' => $invoice->fiscal_year, 'buyer_name' => $guest_name, 'invoice_number' => $invoice->outlet->short_name.'/'.$invoice->fiscal_year.'/'.'00'.$invoice->bill_no, 'invoice_date' => $bill_date_nepali, 'total_sales' => $invoice->total_amount, 'taxable_sales_vat' => $invoice->taxable_amount, 'vat' => $invoice->tax_amount, 'excisable_amount' => 0, 'excise' => 0, 'taxable_sales_hst' => 0, 'hst' => 0, 'amount_for_esf' => 0, 'esf' => 0, 'export_sales' => 0, 'tax_exempted_sales' => 0, 'isrealtime' => true, 'datetimeClient' => $bill_today_date_nep]);
-
-
-
+            $data = json_encode(['username' => $irddetail->ird_username, 'password' => $irddetail->ird_password, 'seller_pan' => $irddetail->seller_pan, 'buyer_pan' => $buyer_pan, 'fiscal_year' => $invoice->fiscal_year, 'buyer_name' => $guest_name, 'invoice_number' => $invoice->outlet->short_name.'/'.$invoice->fiscal_year.'/'.'00'.$invoice->bill_no, 'invoice_date' => $bill_date_nepali, 'total_sales' => $invoice->total_amount, 'taxable_sales_vat' => $invoice->taxable_amount, 'vat' => $invoice->tax_amount, 'excisable_amount' => 0, 'excise' => 0, 'taxable_sales_hst' => 0, 'hst' => 0, 'amount_for_esf' => 0, 'esf' => 0, 'export_sales' => 0, 'tax_exempted_sales' => 0, 'isrealtime' => true, 'datetimeClient' => $bill_today_date_nep]);
             $irdsync = new \App\Models\NepalIRDSync();
             $response = $irdsync->postbill($data);
 
@@ -1493,23 +1485,15 @@ public function forrandomcustomer_outlet(Request $request)
             ->leftJoin('invoice_detail', 'invoice.id', '=', 'invoice_detail.invoice_id')
             ->where('invoice.bill_date','>=',$startdate)
             ->where('invoice.bill_date','<=',$enddate)
+            ->where('outlet_id', $outlet)
             ->get();
-            // dd($data);
             $data=$data->groupby(['product_id','client_type']);
-
             $products=\App\Models\Product::where('org_id',\Auth::user()->org_id)->pluck('name','id');
             $organization=\Auth::user()->organization;
             if($op=="excel"){
 
             }elseif($op=="pdf"){
-                // dd($teststock_entires=  $stock_entries=\App\Models\StockMove::select('stock_id',DB::raw('SUM(qty) as quantity'))
-                // ->where('org_id', $organization->id)
-                // ->where('tran_date','>=',$startdate)
-                // ->where('tran_date','<=',$enddate)
-                // ->where('order_reference', null)
-                // ->where('store_id', $outlet)
-                // ->groupby('stock_id')
-                // ->get());
+               
                 $stock_entries=\App\Models\StockMove::select('stock_id',DB::raw('SUM(qty) as quantity'))
                 ->where('org_id',$organization->id)
                 ->where('tran_date','>=',$startdate)
@@ -1607,6 +1591,7 @@ public function forrandomcustomer_outlet(Request $request)
             ->where('org_id',\Auth::user()->org_id)
             ->where('bill_date','>=',$startdate)
             ->where('bill_date','<=',$enddate)
+            ->where('outlet_id', $outlet)
             ->get();
             $detail_transaction=$detail_transaction->groupby(['bill_type','client_id']);
             // dd($detail_transaction);

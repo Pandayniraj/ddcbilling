@@ -86,9 +86,14 @@
                     </div>
 
                     <div class="row">
-                        <div class="col-md-12">
+                        <div class="col-md-2">
                             <div class="form-group">
                                 <button type="submit" class="btn btn-success">Load</button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <a href="/admin/ird/materializeview" class="btn btn-success">Generate</a>
                             </div>
                         </div>
                     </div>
