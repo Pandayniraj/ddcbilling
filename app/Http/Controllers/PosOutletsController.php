@@ -21,7 +21,6 @@ class PosOutletsController extends Controller
 
     public function index()
     {
-
         $costcenters = \App\Models\PosOutlets::orderBy('id', 'desc')->get();
 
         $page_title = 'Admin | Hotel | POS Outlets';
@@ -31,7 +30,6 @@ class PosOutletsController extends Controller
 
     public function posDashboard(Request $request)
     {
-
         $page_title = 'Admin | POS | Transaction Dashboard';
         $description = 'Select options';
 
@@ -190,7 +188,7 @@ class PosOutletsController extends Controller
 
         $page_title = 'Admin | POS | Open Resturamt | Outlets';
         $description = 'Open Resturant  Outlets';
-        
+
         $outlets = \App\Models\PosOutlets::pluck('short_name', 'id')->all();
 
         if (\Auth::user()->hasRole('admins')) {
@@ -209,9 +207,9 @@ class PosOutletsController extends Controller
             $outletsFirst = $outlets->first();
 
             return redirect("/admin/showtablelists?type=invoice&outlet_id={$outletsFirst->id}");
-            
+
         }
-    
+
         $sessions = \App\Models\PosSession::pluck('name', 'id')->all();
 
         return view('admin.posoutlets.resturantoutletsorder', compact('page_title', 'description', 'outlets', 'users', 'sessions'));
@@ -241,7 +239,7 @@ class PosOutletsController extends Controller
             $outletsFirst = $outlets->first();
 
             return redirect("admin/orders/outlet/{$outletsFirst->id}");
-            
+
         }
 
 
@@ -325,7 +323,7 @@ class PosOutletsController extends Controller
         $page_description = "pluck of Tables";
         $type = \Request::get('type');
         $outlet_id = \Request::get('outlet_id');
-        
+
         $table_area = \App\Models\TableArea::select('table_area.*')
             ->leftjoin('pos_floors', 'pos_floors.id', '=', 'table_area.floor_id')
             ->leftjoin('pos_outlets', 'pos_outlets.id', '=', 'pos_floors.outlet_id')

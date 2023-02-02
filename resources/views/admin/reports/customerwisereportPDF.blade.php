@@ -11,31 +11,32 @@
             border: 1px solid black;
             border-collapse: collapse;
         }
+
         .row .col {
-    margin: 0px !important;
-    padding: 0px !important;
-}
+            margin: 0px !important;
+            padding: 0px !important;
+        }
     </style>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
 </head>
 
 <body>
-    <p>{{ $organization->organization_name }}</p>
-    <p>{{ $outletname->name}}</p>
-    <h3>Transaction Report From {{ $nepalistartdate }} to {{ $nepalienddate }}</h3>
-    <div class="row">
-      <table>
+<p>{{ $organization->organization_name }}</p>
+<p>{{ $outletname->name}}</p>
+<h3>Transaction Report From {{ $nepalistartdate }} to {{ $nepalienddate }}</h3>
+<div class="row">
+    <table>
         <thead>
-            <tr>
-                <th >S.N</th>
-                <th >Customer</th>
-                <th >DR Amount</th>
-                <th >DR Vat</th>
-                <th >DR Total</th>
-                <th >CR Amount</th>
-                <th >Period Balance</th>
-                <th >Overall Balance</th>
-            </tr>
+        <tr>
+            <th>S.N</th>
+            <th>Customer</th>
+            <th>DR Amount</th>
+            <th>DR Vat</th>
+            <th>DR Total</th>
+            <th>CR Amount</th>
+            <th>Period Balance</th>
+            <th>Overall Balance</th>
+        </tr>
 
         </thead>
         <tbody>
@@ -77,23 +78,23 @@
 
         </tbody>
     </table>
-    </div>
+</div>
 
 
-    <div class="row">
+<div class="row">
 
-      <div class="col-xs-3" style="padding-top:20px">Submitted By</div>
-      <div class="col-xs-3" style="padding-top:20px">Marketing Officer</div>
-      <div class="col-xs-3" style="padding-top:20px">Project Manager</div>
+    <div class="col-xs-3" style="padding-top:20px">Submitted By</div>
+    <div class="col-xs-3" style="padding-top:20px">Marketing Officer</div>
+    <div class="col-xs-3" style="padding-top:20px">Project Manager</div>
 
-  </div>
-  <div class="row">
+</div>
+<div class="row">
 
-      <div class="col-xs-3" style="padding-top:40px">_______________</div>
-      <div class="col-xs-3" style="padding-top:40px">_______________</div>
-      <div class="col-xs-3" style="padding-top:40px">_______________</div>
+    <div class="col-xs-3" style="padding-top:40px">_______________</div>
+    <div class="col-xs-3" style="padding-top:40px">_______________</div>
+    <div class="col-xs-3" style="padding-top:40px">_______________</div>
 
-  </div>
+</div>
 </body>
 
 </html>

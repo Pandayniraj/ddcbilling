@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Invoice extends Model
 {
@@ -26,9 +27,9 @@ class Invoice extends Model
         return $this->belongsTo(\App\User::class);
     }
 
-    public function client()
+    public function client() : BelongsTo
     {
-        return $this->belongsTo(\App\Models\Client::class);
+        return $this->belongsTo(\App\Models\Client::class, 'client_id');
     }
 
     public function entry()

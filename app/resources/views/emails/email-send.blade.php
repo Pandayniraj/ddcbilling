@@ -1,1 +1,0 @@
-<?php if(Request::get('message')) echo Request::get('message'); else echo $msg; ?>

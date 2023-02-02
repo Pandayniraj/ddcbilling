@@ -13,7 +13,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-
         if (!defined('PURCHORDER')) define('PURCHORDER', '101');
         if (!defined('PURCHINVOICE')) define('PURCHINVOICE', '102');
         if (!defined('SALESORDER')) define('SALESORDER', '201');
@@ -24,16 +23,14 @@ class AppServiceProvider extends ServiceProvider
         if (!defined('STOCKMOVEOUT')) define('STOCKMOVEOUT', '402');
 
 
-            error_reporting(E_ALL ^ E_NOTICE ^ E_WARNING);
-
-       
+        error_reporting(E_ALL ^ E_NOTICE ^ E_WARNING);
 
         \Illuminate\Pagination\Paginator::useBootstrap();
 
         view()->composer('*', function ($view) {
             if (\Auth::check()) {
                 $org_id = \Auth::user()->org_id;
-                $app_theme = \Auth::user()->settings()->get('theme.'.$org_id, null);
+                $app_theme = \Auth::user()->settings()->get('theme.' . $org_id, null);
 
                 //...with this variable
                 $view->with('app_theme', $app_theme);

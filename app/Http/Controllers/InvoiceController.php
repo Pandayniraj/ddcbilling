@@ -13,6 +13,8 @@ use App\Models\Product;
 use App\Models\Role as Permission;
 use App\User;
 use App\Models\IrdDetail;
+use Carbon\Carbon;
+use DateTime;
 use Flash;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -49,69 +51,65 @@ class InvoiceController extends Controller
         $this->invoice = $invoice;
     }
 
-
-
-
-
     /**
      * @return \Illuminate\View\View
      */
     public function index()
     {
-        $outletuser=\App\Models\OutletUser::where('user_id', \Auth::user()->id)->select('outlet_id')->get()->toArray();
-        $orders = Invoice::where(function($query){
-                    $start_date = \Request::get('start_date');
-                    $end_date = \Request::get('end_date');
-                    if($start_date && $end_date){
-                        return $query->where('bill_date','>=',$start_date)
-                            ->where('bill_date','<=',$end_date);
-                    }
+        $outletuser = \App\Models\OutletUser::where('user_id', \auth()->id())->select('outlet_id')->get()->toArray();
+        $orders = Invoice::where(function ($query) {
+            $start_date = \Request::get('start_date');
+            $end_date = \Request::get('end_date');
+            if ($start_date && $end_date) {
+                return $query->where('bill_date', '>=', $start_date)
+                    ->where('bill_date', '<=', $end_date);
+            }
 
-                })
-                ->where(function ($q) use ($outletuser){
-                    if(!\Auth::user()->hasRole('admins')){
-                        //    dd( $userwiseoutlet->outlet_id);
-                       $q->whereIn('outlet_id', $outletuser);
-                    }
-                })
-                ->where(function($query){
-                    $bill_no = \Request::get('bill_no');
-                    if($bill_no){
-                        return $query->where('bill_no',$bill_no);
-                    }
-                })
-                ->where(function($query){
-                    $client_id = \Request::get('client_id');
-                    if($client_id){
-                        return $query->where('client_id',$client_id);
-                    }
-                })
-                ->where(function($query){
-                    $fiscal_year = \Request::get('fiscal_year');
-                    if($fiscal_year){
-                        return $query->where('fiscal_year',$fiscal_year);
-                    }
+        })
+            ->where(function ($q) use ($outletuser) {
+                if (!\Auth::user()->hasRole('admins')) {
+                    //    dd( $userwiseoutlet->outlet_id);
+                    $q->whereIn('outlet_id', $outletuser);
+                }
+            })
+            ->where(function ($query) {
+                $bill_no = \Request::get('bill_no');
+                if ($bill_no) {
+                    return $query->where('bill_no', $bill_no);
+                }
+            })
+            ->where(function ($query) {
+                $client_id = \Request::get('client_id');
+                if ($client_id) {
+                    return $query->where('client_id', $client_id);
+                }
+            })
+            ->where(function ($query) {
+                $fiscal_year = \Request::get('fiscal_year');
+                if ($fiscal_year) {
+                    return $query->where('fiscal_year', $fiscal_year);
+                }
 
-                })->where(function($query){
+            })->where(function ($query) {
 
-                    $outlet_id = \Request::get('outlet_id');
+                $outlet_id = \Request::get('outlet_id');
 
-                    if($outlet_id){
+                if ($outlet_id) {
 
-                        return $query->where('outlet_id',$outlet_id);
-                    }
+                    return $query->where('outlet_id', $outlet_id);
+                }
 
-                })
-                ->where('org_id', \Auth::user()->org_id)
-                ->orderBy('id', 'desc')
-                ->paginate(30);
+            })
+            ->where('org_id', \Auth::user()->org_id)
+            ->orderBy('id', 'desc')
+            ->paginate(30);
         $page_title = 'Invoice';
         $page_description = 'Manage Invoice';
-        $clients = \App\Models\Client::select('id', 'name')->where('org_id', \Auth::user()->org_id)->orderBy('id', 'DESC')->pluck('name','id')->all();
+        $clients = \App\Models\Client::select('id', 'name')->where('org_id', \Auth::user()->org_id)->orderBy('id', 'DESC')->pluck('name', 'id')->all();
         $fiscal_years = \App\Models\Fiscalyear::pluck('fiscal_year as name', 'fiscal_year as id')->all();
 
         $outlets = \TaskHelper::getUserOutlets();
-        return view('admin.invoice.index', compact('orders', 'page_title', 'page_description','clients','fiscal_years','outlets'));
+        return view('admin.invoice.index', compact('orders', 'page_title', 'page_description', 'clients', 'fiscal_years', 'outlets'));
     }
 
     //renewals
@@ -123,7 +121,7 @@ class InvoiceController extends Controller
         $fiscal_years = \App\Models\Fiscalyear::pluck('fiscal_year as name', 'fiscal_year as id')->all();
 
         $outlets = \TaskHelper::getUserOutlets();
-        return view('admin.invoice.index', compact('orders', 'page_title', 'page_description','outlets','fiscal_years'));
+        return view('admin.invoice.index', compact('orders', 'page_title', 'page_description', 'outlets', 'fiscal_years'));
     }
 
     /**
@@ -151,24 +149,26 @@ class InvoiceController extends Controller
         $page_description = 'Add invoice';
         $order = null;
         $orderDetail = null;
-        $products = Product::select('id', 'name')->where('org_id',\Auth::user()->org_id)->get();
+        $products = Product::select('id', 'name')->where('org_id', \Auth::user()->org_id)->get();
         $users = \App\User::where('enabled', '1')->where('org_id', \Auth::user()->org_id)->pluck('first_name', 'id');
 
         $productlocation = \App\Models\PosOutlets::pluck('name', 'id')->all();
 
         $prod_unit = \App\Models\ProductsUnit::orderBy('id', 'desc')->get();
         //$clients = Client::select('id', 'name', 'location')->orderBy('id', DESC)->get();
-        $clients = \App\Models\Client::select('id', 'name','location')->where('org_id', \Auth::user()->org_id)->where('enabled',1)->orderBy('id', 'DESC')->get();
+        $clients = \App\Models\Client::select('id', 'name', 'location')->where('org_id', \Auth::user()->org_id)->where('enabled', 1)->orderBy('id', 'DESC')->get();
 
         $outlets = \App\Helpers\TaskHelper::getUserOutlets();
 
-        return view('admin.invoice.create', compact('page_title', 'users', 'page_description', 'order', 'prod_unit', 'orderDetail', 'products', 'clients', 'productlocation','outlets'));
+        return view('admin.invoice.create', compact('page_title', 'users', 'page_description', 'order', 'prod_unit', 'orderDetail', 'products', 'clients', 'productlocation', 'outlets'));
     }
-public function forrandomcustomer_outlet(Request $request)
-{
-        $randomcustomer_outlet= \App\Models\PosOutlets::where('id', $request->id)->first();
+
+    public function forrandomcustomer_outlet(Request $request)
+    {
+        $randomcustomer_outlet = \App\Models\PosOutlets::where('id', $request->id)->first();
         return ['data' => $randomcustomer_outlet];
-}
+    }
+
     public function store(Request $request)
     {
         \DB::beginTransaction();
@@ -177,9 +177,9 @@ public function forrandomcustomer_outlet(Request $request)
         // ]);
         $org_id = \Auth::user()->org_id;
         $ckfiscalyear = \App\Models\Fiscalyear::where('current_year', '1')
-                        ->where('org_id', $org_id)
-                        ->first();
-        if(!$ckfiscalyear){
+            ->where('org_id', $org_id)
+            ->first();
+        if (!$ckfiscalyear) {
             Flash::error("Please Set Fiscal Year First");
             return redirect()->back();
         }
@@ -188,16 +188,13 @@ public function forrandomcustomer_outlet(Request $request)
         $bill_no = $bill_no[0]->last_bill + 1;
 
         $order_attributes = $request->all();
-        //  $order_attributes['user_id'] = \Auth::user()->id;
+        //  $order_attributes['user_id'] = \auth()->id();
         $order_attributes['org_id'] = \Auth::user()->org_id;
-        if($request->bill_type && $request->bill_type!=''){
-        $order_attributes['bill_type'] = $request->bill_type;
-        }
-        elseif($request->bill_type_one && $request->bill_type_one!='')
-        {
-        $order_attributes['bill_type'] = $request->bill_type_one;
-        }
-        else{
+        if ($request->bill_type && $request->bill_type != '') {
+            $order_attributes['bill_type'] = $request->bill_type;
+        } elseif ($request->bill_type_one && $request->bill_type_one != '') {
+            $order_attributes['bill_type'] = $request->bill_type_one;
+        } else {
             $order_attributes['bill_type'] = $request->bill_type_two;
         }
         $order_attributes['bank_deposit'] = $request->bank_deposit;
@@ -205,10 +202,9 @@ public function forrandomcustomer_outlet(Request $request)
         $order_attributes['deposit_amount'] = $request->deposit_amount;
         $order_attributes['customer_name'] = $request->customer_name;
         $order_attributes['remaining_amount'] = $request->remaining_amount;
-        if($request->client_type && $request->client_type!='')
-        {
+        if ($request->client_type && $request->client_type != '') {
             $order_attributes['client_type'] = $request->client_type;
-        }else{
+        } else {
             $order_attributes['client_type'] = $request->client_type_one;
         }
         $order_attributes['client_type'] = $request->client_type;
@@ -222,15 +218,15 @@ public function forrandomcustomer_outlet(Request $request)
         $order_attributes['outlet_id'] = $request->outlet_id;
         $order_attributes['ledger_id'] = (\App\Models\Client::find($request->customer_id))->ledger_id;
         $invoice = $this->invoice->create($order_attributes);
-        
-         $deposit_deduct['user_id'] = \Auth::user()->id;
+
+        $deposit_deduct['user_id'] = \auth()->id();
         $deposit_deduct['date'] = $request->bill_date;
         $deposit_deduct['reference_no'] = $bill_no;
-        $deposit_deduct['remarks'] ="Dedeucted From Invoice";
+        $deposit_deduct['remarks'] = "Dedeucted From Invoice";
         $deposit_deduct['type'] = "Deduct";
         $deposit_deduct['client_id'] = $request->customer_id;
-        $deposit_deduct['amount'] =$request->final_total;
-        $deposit_deduct['closing'] =(float)(\App\Models\CustomerDeposit::where('client_id',$request->customer_id)->latest()->first()->closing??0) - (float)$request->final_total;
+        $deposit_deduct['amount'] = $request->final_total;
+        $deposit_deduct['closing'] = (float)(\App\Models\CustomerDeposit::where('client_id', $request->customer_id)->latest()->first()->closing ?? 0) - (float)$request->final_total;
 
         \App\Models\CustomerDeposit::create($deposit_deduct);
 
@@ -239,7 +235,7 @@ public function forrandomcustomer_outlet(Request $request)
         $price = $request->price;
         $quantity = $request->quantity;
         $tax = $request->tax;
-        $tax_type=$request->tax_type;
+        $tax_type = $request->tax_type;
 
         $unit = $request->units;
         $tax_amount = $request->tax_amount;
@@ -270,10 +266,10 @@ public function forrandomcustomer_outlet(Request $request)
 
                 $stockMove->stock_id = $product_id[$key];
                 $stockMove->tran_date = \Carbon\Carbon::now();
-                $stockMove->user_id = \Auth::user()->id;
-                $stockMove->reference = 'store_out_'.$bill_no;
+                $stockMove->user_id = \auth()->id();
+                $stockMove->reference = 'store_out_' . $bill_no;
                 $stockMove->transaction_reference_id = $bill_no;
-                $stockMove->qty = '-'.$quantity[$key];
+                $stockMove->qty = '-' . $quantity[$key];
                 $stockMove->trans_type = OTHERSALESINVOICE;
                 $stockMove->order_no = $bill_no;
                 $stockMove->store_id = $request->outlet_id;
@@ -293,7 +289,7 @@ public function forrandomcustomer_outlet(Request $request)
         $custom_tax_amount = $request->custom_tax_amount;
         $custom_total = $request->custom_total;
 
-        foreach ($custom_items_name ??[] as $key => $value) {
+        foreach ($custom_items_name ?? [] as $key => $value) {
             if ($value != '') {
                 $detail = new InvoiceDetail();
                 $detail->client_id = $request->customer_id;
@@ -320,10 +316,10 @@ public function forrandomcustomer_outlet(Request $request)
 
         $this->updateentries($invoice->id, $request);
         Flash::success('Invoices created Successfully.');
-        $isird= IrdDetail::select('is_ird')->first();
-        if($isird==1){
-            $this->postInvoicetoIRD($invoice->id);
-        }else{
+        $isird = IrdDetail::select('is_ird')->first();
+        if ($isird->is_ird == 1) {
+            $this->postInvoicetoIRD($invoice);
+        } else {
             Flash::warning('Bill not synced with ird');
         }
         \DB::commit();
@@ -340,7 +336,7 @@ public function forrandomcustomer_outlet(Request $request)
         $page_description = 'Edit invoice';
         $order = null;
         $orderDetail = null;
-        $products = Product::select('id', 'name')->where('org_id',\Auth::user()->org_id)->get();
+        $products = Product::select('id', 'name')->where('org_id', \Auth::user()->org_id)->get();
         $users = \App\User::where('enabled', '1')->where('org_id', \Auth::user()->org_id)->pluck('first_name', 'id');
 
         $productlocation = \App\Models\ProductLocation::pluck('location_name', 'id')->all();
@@ -354,7 +350,7 @@ public function forrandomcustomer_outlet(Request $request)
         $prod_unit = \App\Models\ProductsUnit::orderBy('id', 'desc')->get();
         //return $invoice_details;
         $outlets = \App\Helpers\TaskHelper::getUserOutlets();
-        return view('admin.invoice.edit', compact('page_title', 'users', 'prod_unit', 'page_description', 'order', 'orderDetail', 'products', 'clients', 'productlocation', 'invoice', 'invoice_details','outlets'));
+        return view('admin.invoice.edit', compact('page_title', 'users', 'prod_unit', 'page_description', 'order', 'orderDetail', 'products', 'clients', 'productlocation', 'invoice', 'invoice_details', 'outlets'));
     }
 
     /**
@@ -376,7 +372,7 @@ public function forrandomcustomer_outlet(Request $request)
 
         $quantity = $request->quantity;
         $tax = $request->tax;
-        $tax_type=$request->tax_type;
+        $tax_type = $request->tax_type;
         $unit = $request->units;
         $tax_amount = $request->tax_amount;
         $total = $request->total;
@@ -405,10 +401,10 @@ public function forrandomcustomer_outlet(Request $request)
 
                 $stockMove->stock_id = $product_id[$key];
                 $stockMove->tran_date = \Carbon\Carbon::now();
-                $stockMove->user_id = \Auth::user()->id;
-                $stockMove->reference = 'store_out_'.$invoice->bill_no;
+                $stockMove->user_id = \auth()->id();
+                $stockMove->reference = 'store_out_' . $invoice->bill_no;
                 $stockMove->transaction_reference_id = $invoice->bill_no;
-                $stockMove->qty = '-'.$quantity[$key];
+                $stockMove->qty = '-' . $quantity[$key];
                 $stockMove->trans_type = OTHERSALESINVOICE;
                 $stockMove->order_no = $invoice->bill_no;
                 $stockMove->location = $request->outlet_id;
@@ -424,7 +420,7 @@ public function forrandomcustomer_outlet(Request $request)
         $custom_items_qty = $request->custom_items_qty;
         $custom_items_price = $request->custom_items_price;
         $custom_unit = $request->custom_unit;
-        $custom_tax_type=$request->custom_tax_type;
+        $custom_tax_type = $request->custom_tax_type;
 
         $custom_tax_amount = $request->custom_tax_amount;
         $custom_total = $request->custom_total;
@@ -471,7 +467,7 @@ public function forrandomcustomer_outlet(Request $request)
     {
         $orders = $this->orders->find($id);
         \TaskHelper::authorizeOrg($orders);
-        if (! $orders->isdeletable()) {
+        if (!$orders->isdeletable()) {
             abort(403);
         }
 
@@ -483,7 +479,7 @@ public function forrandomcustomer_outlet(Request $request)
         Flash::success('Order successfully deleted.');
 
         if (\Request::get('type')) {
-            return redirect('/admin/orders?type='.\Request::get('type'));
+            return redirect('/admin/orders?type=' . \Request::get('type'));
         }
 
         return redirect('/admin/orders?type=quotation');
@@ -499,7 +495,7 @@ public function forrandomcustomer_outlet(Request $request)
     /**
      * Delete Confirm.
      *
-     * @param   int   $id
+     * @param int $id
      * @return  View
      */
     public function getModalDelete($id)
@@ -508,7 +504,7 @@ public function forrandomcustomer_outlet(Request $request)
 
         $orders = $this->orders->find($id);
 
-        if (! $orders->isdeletable()) {
+        if (!$orders->isdeletable()) {
             abort(403);
         }
 
@@ -516,7 +512,7 @@ public function forrandomcustomer_outlet(Request $request)
 
         $orders = $this->orders->find($id);
         if (\Request::get('type')) {
-            $modal_route = route('admin.orders.delete', ['id' => $orders->id]).'?type='.\Request::get('type');
+            $modal_route = route('admin.orders.delete', ['id' => $orders->id]) . '?type=' . \Request::get('type');
         } else {
             $modal_route = route('admin.orders.delete', ['id' => $orders->id]);
         }
@@ -529,7 +525,7 @@ public function forrandomcustomer_outlet(Request $request)
     public function printInvoice($id)
     {
         $ord = $this->invoice->find($id);
-         \TaskHelper::authorizeOrg($ord);
+        \TaskHelper::authorizeOrg($ord);
         $orderDetails = InvoiceDetail::where('invoice_id', $id)->get();
 
         $imagepath = \Auth::user()->organization->logo;
@@ -537,16 +533,17 @@ public function forrandomcustomer_outlet(Request $request)
         $attributes = new \App\Models\Invoiceprint();
         $attributes->invoice_id = $id;
         $attributes->printed_date = \Carbon\Carbon::now();
-        $attributes->printed_by = \Auth::user()->id;
+        $attributes->printed_by = \auth()->id();
         $attributes->save();
         $ord->update(['is_bill_printed' => 1]);
 
         return view('admin.invoice.print', compact('ord', 'imagepath', 'orderDetails', 'print_no'));
     }
+
     public function thermalprintInvoice($id)
     {
         $ord = $this->invoice->find($id);
-         \TaskHelper::authorizeOrg($ord);
+        \TaskHelper::authorizeOrg($ord);
         $orderDetails = InvoiceDetail::where('invoice_id', $id)->get();
 
         $imagepath = \Auth::user()->organization->logo;
@@ -554,11 +551,12 @@ public function forrandomcustomer_outlet(Request $request)
         $attributes = new \App\Models\Invoiceprint();
         $attributes->invoice_id = $id;
         $attributes->printed_date = \Carbon\Carbon::now();
-        $attributes->printed_by = \Auth::user()->id;
+        $attributes->printed_by = \auth()->id();
         $attributes->save();
         $ord->update(['is_bill_printed' => 1]);
         return view('admin.invoice.thermalprint', compact('ord', 'imagepath', 'orderDetails', 'print_no'));
     }
+
     public function generatePDF($id)
     {
         $ord = $this->invoice->find($id);
@@ -567,10 +565,10 @@ public function forrandomcustomer_outlet(Request $request)
         $imagepath = \Auth::user()->organization->logo;
 
         $pdf = \PDF::loadView('admin.invoice.generateInvoicePDF', compact('ord', 'imagepath', 'orderDetails'));
-        $file = $id.'_'.$ord->name.'_'.str_replace(' ', '_', $ord->client->name).'.pdf';
+        $file = $id . '_' . $ord->name . '_' . str_replace(' ', '_', $ord->client->name) . '.pdf';
 
-        if (\File::exists('reports/'.$file)) {
-            \File::Delete('reports/'.$file);
+        if (\File::exists('reports/' . $file)) {
+            \File::Delete('reports/' . $file);
         }
 
         return $pdf->download($file);
@@ -615,7 +613,7 @@ public function forrandomcustomer_outlet(Request $request)
     public function get_client()
     {
         $term = strtolower(\Request::get('term'));
-        $contacts = ClientModel::select('id', 'name')->where('name', 'LIKE', '%'.$term.'%')->groupBy('name')->take(5)->get();
+        $contacts = ClientModel::select('id', 'name')->where('name', 'LIKE', '%' . $term . '%')->groupBy('name')->take(5)->get();
         $return_array = [];
 
         foreach ($contacts as $v) {
@@ -639,7 +637,7 @@ public function forrandomcustomer_outlet(Request $request)
             ->where('start_date', '<=', date('Y-m-d'))
             ->where('end_date', '>=', date('Y-m-d'))
             ->first();
-        if (! $ckfiscalyear) {
+        if (!$ckfiscalyear) {
             return \Redirect::back()->withErrors(['Please update fiscal year <a href="/admin/fiscalyear/create">Click Here</a>!']);
         }
         $bill_no = \App\Models\Invoice::select('bill_no')
@@ -651,7 +649,7 @@ public function forrandomcustomer_outlet(Request $request)
         $invoice = new Invoice();
 
         $invoice->bill_no = $bill_no;
-        $invoice->user_id = \Auth::user()->id;
+        $invoice->user_id = \auth()->id();
         $invoice->client_id = $order->client_id;
         $invoice->org_id = $order->org_id;
         $invoice->name = $order->name;
@@ -694,7 +692,7 @@ public function forrandomcustomer_outlet(Request $request)
             $invoicedetail->save();
         }
         $order->update([
-            'status'  => 'Invoiced',
+            'status' => 'Invoiced',
         ]);
 
         // $entry = \App\Models\Entry::create([
@@ -702,7 +700,7 @@ public function forrandomcustomer_outlet(Request $request)
         //     'entrytype_id' => \FinanceHelper::get_entry_type_id('journal'),
         //     'number' => $invoice->id,
         //     'org_id' => \Auth::user()->org_id,
-        //     'user_id' => \Auth::user()->id,
+        //     'user_id' => \auth()->id(),
         //     'date' => date('Y-m-d'),
         //     'fiscal_year_id' => \FinanceHelper::cur_fisc_yr()->id,
         //     'dr_total' => $invoice->total_amount,
@@ -732,7 +730,7 @@ public function forrandomcustomer_outlet(Request $request)
     /**
      * Delete Confirm.
      *
-     * @param   int   $id
+     * @param int $id
      * @return  View
      */
     public function getModalConverttoInvoice($id)
@@ -755,12 +753,12 @@ public function forrandomcustomer_outlet(Request $request)
         $error = null;
 
         $invoice = $this->invoice->find($id);
-         \TaskHelper::authorizeOrg($invoice);
+        \TaskHelper::authorizeOrg($invoice);
         $modal_title = 'Void invoice';
 
         $modal_route = route('admin.salesaccount.void', ['id' => $invoice->id]);
 
-        $modal_body = 'Are you you want to mark invoice with ID: '.$id.'as void';
+        $modal_body = 'Are you you want to mark invoice with ID: ' . $id . 'as void';
 
         return view('modal_void_reason', compact('error', 'modal_route', 'modal_title', 'modal_body'));
     }
@@ -788,7 +786,7 @@ public function forrandomcustomer_outlet(Request $request)
 
         $page_title = 'Invoice Payment List';
 
-        $page_description = 'Receipt List Of '.$lead_name.' Invoice # '.$id.'';
+        $page_description = 'Receipt List Of ' . $lead_name . ' Invoice # ' . $id . '';
 
         return view('admin.invoice.invoicepayment', compact('page_title', 'page_description', 'purchase_id', 'invoice_id', 'payment_list'));
     }
@@ -813,17 +811,17 @@ public function forrandomcustomer_outlet(Request $request)
     {
         // dd("check");
         $attributes = $request->all();
-        $attributes['created_by'] = \Auth::user()->id;
+        $attributes['created_by'] = \auth()->id();
         $invoice = \App\Models\Invoice::find($id);
         if ($request->file('attachment')) {
             $stamp = time();
             $file = $request->file('attachment');
 
-            $destinationPath = public_path().'/attachment/';
+            $destinationPath = public_path() . '/attachment/';
             $filename = $file->getClientOriginalName();
-            $request->file('attachment')->move($destinationPath, $stamp.'_'.$filename);
+            $request->file('attachment')->move($destinationPath, $stamp . '_' . $filename);
 
-            $attributes['attachment'] = $stamp.'_'.$filename;
+            $attributes['attachment'] = $stamp . '_' . $filename;
         }
 
         \App\Models\InvoicePayment::create($attributes);
@@ -844,7 +842,7 @@ public function forrandomcustomer_outlet(Request $request)
         }
 
         $customer_ledger = $invoice->client->ledger_id;
-        if(!$customer_ledger){
+        if (!$customer_ledger) {
 
             Flash::error("Create custome Ledger first !!");
 
@@ -857,9 +855,9 @@ public function forrandomcustomer_outlet(Request $request)
         //ENTRY FOR Total AMOUNT
         $attributes['entrytype_id'] = \FinanceHelper::get_entry_type_id('receipt'); //receipt
         $attributes['tag_id'] = '19'; //Invoice Payment
-        $attributes['user_id'] = \Auth::user()->id;
+        $attributes['user_id'] = \auth()->id();
         $attributes['org_id'] = \Auth::user()->org_id;
-        $attributes['number'] =  \FinanceHelper::get_last_entry_number($attributes['entrytype_id']);
+        $attributes['number'] = \FinanceHelper::get_last_entry_number($attributes['entrytype_id']);
         $attributes['date'] = \Carbon\Carbon::today();
         $attributes['dr_total'] = $request->amount;
         $attributes['cr_total'] = $request->amount;
@@ -870,7 +868,7 @@ public function forrandomcustomer_outlet(Request $request)
         //Sales account
         $sub_amount = new \App\Models\Entryitem();
         $sub_amount->entry_id = $entry->id;
-        $sub_amount->user_id = \Auth::user()->id;
+        $sub_amount->user_id = \auth()->id();
         $sub_amount->org_id = \Auth::user()->org_id;
         $sub_amount->dc = 'C';
         $sub_amount->ledger_id = $customer_ledger;
@@ -881,7 +879,7 @@ public function forrandomcustomer_outlet(Request $request)
         // cash account
         $cash_amount = new \App\Models\Entryitem();
         $cash_amount->entry_id = $entry->id;
-        $cash_amount->user_id = \Auth::user()->id;
+        $cash_amount->user_id = \auth()->id();
         $cash_amount->org_id = \Auth::user()->org_id;
         $cash_amount->dc = 'D';
         $cash_amount->ledger_id = $request->payment_method; //
@@ -890,25 +888,25 @@ public function forrandomcustomer_outlet(Request $request)
         $cash_amount->save();
 
 
-        $customerdeposit['user_id'] = \Auth::user()->id;
+        $customerdeposit['user_id'] = \auth()->id();
         $customerdeposit['date'] = \Carbon\Carbon::today();
-        $customerdeposit['remarks'] ="Payment Made from Invoice payement";
+        $customerdeposit['remarks'] = "Payment Made from Invoice payement";
         $customerdeposit['type'] = "Deposit";
         $customerdeposit['client_id'] = $invoice->client->id;
-        $customerdeposit['amount'] =$request->amount;
-        $customerdeposit['closing'] =(float)(\App\Models\CustomerDeposit::where('client_id',$invoice->client->id)->latest()->first()->closing??0) + (float)$request->amount;
+        $customerdeposit['amount'] = $request->amount;
+        $customerdeposit['closing'] = (float)(\App\Models\CustomerDeposit::where('client_id', $invoice->client->id)->latest()->first()->closing ?? 0) + (float)$request->amount;
 
         \App\Models\CustomerDeposit::create($customerdeposit);
 
         Flash::success('Receipt Created');
 
-        return redirect('/admin/invoice/payment/'.$id.'');
+        return redirect('/admin/invoice/payment/' . $id . '');
     }
 
     public function invoicePaymentshow($id)
     {
-        $page_title = 'Invoice Receipt #'.$id;
-        $page_description = 'showing receipt of receipt #'.$id;
+        $page_title = 'Invoice Receipt #' . $id;
+        $page_description = 'showing receipt of receipt #' . $id;
         $invoice_id = $id;
 
         $payment_method = \App\Models\Paymentmethod::orderby('id')->pluck('name', 'id');
@@ -930,7 +928,7 @@ public function forrandomcustomer_outlet(Request $request)
                 'number' => \FinanceHelper::get_last_entry_number(11),
                 'ref_id' => $invoice->id,
                 'org_id' => \Auth::user()->org_id,
-                'user_id' => \Auth::user()->id,
+                'user_id' => \auth()->id(),
                 'date' => date('Y-m-d'),
                 'dr_total' => $request->final_total,
                 'cr_total' => $request->final_total,
@@ -941,19 +939,19 @@ public function forrandomcustomer_outlet(Request $request)
             $clients = \App\Models\Client::find($invoice->client_id);
             \App\Models\Entryitem::where('entry_id', $entry->id)->delete();
 
-                        //send amount before tax to customer ledger
+            //send amount before tax to customer ledger
             $entry_item = \App\Models\Entryitem::create([
                 'entry_id' => $entry->id,
                 'dc' => 'D',
-                'ledger_id' => $clients->ledger_id??465,
-                'amount' =>  $request->final_total,
+                'ledger_id' => $clients->ledger_id ?? 465,
+                'amount' => $request->final_total,
                 'narration' => 'Sales being made',
             ]);
 
             $entry_item = \App\Models\Entryitem::create([
                 'entry_id' => $entry->id,
                 'dc' => 'C',
-                'ledger_id' =>  \FinanceHelper::get_ledger_id('SALES_LEDGER_ID'), //Sales Ledger 39
+                'ledger_id' => \FinanceHelper::get_ledger_id('SALES_LEDGER_ID'), //Sales Ledger 39
                 'amount' => $request->taxable_amount,
                 'narration' => 'Sales being made',
             ]);
@@ -970,14 +968,14 @@ public function forrandomcustomer_outlet(Request $request)
             return 0;
         } else {
 
-            $entrytype_id =  \FinanceHelper::get_entry_type_id('sales');
+            $entrytype_id = \FinanceHelper::get_entry_type_id('sales');
             $entry = \App\Models\Entry::create([
                 'tag_id' => '6',
                 'entrytype_id' => \FinanceHelper::get_entry_type_id('sales'),
                 'number' => \FinanceHelper::get_last_entry_number($entrytype_id),
                 'ref_id' => $invoice->id,
                 'org_id' => \Auth::user()->org_id,
-                'user_id' => \Auth::user()->id,
+                'user_id' => \auth()->id(),
                 'date' => date('Y-m-d'),
                 'dr_total' => $request->final_total,
                 'cr_total' => $request->final_total,
@@ -988,11 +986,11 @@ public function forrandomcustomer_outlet(Request $request)
 
             $clients = \App\Models\Client::find($invoice->client_id);
 
-                        //send amount before tax to customer ledger
+            //send amount before tax to customer ledger
             $entry_item = \App\Models\Entryitem::create([
                 'entry_id' => $entry->id,
                 'dc' => 'D',
-                'ledger_id' => $clients->ledger_id??465,
+                'ledger_id' => $clients->ledger_id ?? 465,
                 'amount' => $request->final_total,
                 'narration' => 'Sales being made',
             ]);
@@ -1001,7 +999,7 @@ public function forrandomcustomer_outlet(Request $request)
             $entry_item = \App\Models\Entryitem::create([
                 'entry_id' => $entry->id,
                 'dc' => 'C',
-                'ledger_id' =>  \FinanceHelper::get_ledger_id('SALES_LEDGER_ID'), //Sales Ledger 39
+                'ledger_id' => \FinanceHelper::get_ledger_id('SALES_LEDGER_ID'), //Sales Ledger 39
                 'amount' => $request->taxable_amount,
                 'narration' => 'Sales being made',
             ]);
@@ -1011,7 +1009,7 @@ public function forrandomcustomer_outlet(Request $request)
             $entry_item = \App\Models\Entryitem::create([
                 'entry_id' => $entry->id,
                 'dc' => 'C',
-                'ledger_id' =>  \FinanceHelper::get_ledger_id('SALES_TAX_LEDGER'), //Sales Tax Ledger
+                'ledger_id' => \FinanceHelper::get_ledger_id('SALES_TAX_LEDGER'), //Sales Tax Ledger
                 'amount' => $request->taxable_tax,
                 'narration' => 'Tax to pay',
             ]);
@@ -1025,53 +1023,60 @@ public function forrandomcustomer_outlet(Request $request)
         $date = explode('-', $date);
         $cal = new \App\Helpers\NepaliCalendar();
         $converted = $cal->eng_to_nep($date[0], $date[1], $date[2]);
-        $nepdate = $converted['year'].'.'.$converted['nmonth'].'.'.$converted['date'];
+        $nepdate = $converted['year'] . '.' . $converted['nmonth'] . '.' . $converted['date'];
 
         return $nepdate;
     }
 
-    public function postInvoicetoIRD($id)
+    private function convertdateTime($date)
     {
-        $invoice = \App\Models\Invoice::find($id);
-        $invoicemeta = \App\Models\InvoiceMeta::orderBy('id', 'desc')->where('invoice_id', $invoice->id)->first();
+        $date = explode('-', $date);
+        $cal = new \App\Helpers\NepaliCalendar();
+        $converted = $cal->eng_to_nep($date[0], $date[1], $date[2]);
+        $nepdate = $converted['year'] . '-' . $converted['nmonth'] . '-' . $converted['date'];
+        $nepdate = $converted['date']. '/'.$converted['nmonth'] . '/' . $converted['year'];
 
-        if ($invoicemeta === null && $invoice) {
-            $invoicemeta = new \App\Models\InvoiceMeta();
-            $invoicemeta->invoice_id = $invoice->id;
-            $invoicemeta->sync_with_ird = 0;
-            $invoicemeta->is_bill_active = 1;
-            $invoicemeta->save();
-        }
+        return $nepdate;
+    }
 
-        Audit::log(Auth::user()->id, ' Invoice', 'Final Bill Is Created: ID-'.$invoice->id.'');
+    public function postInvoicetoIRD($invoice)
+    {
+        Audit::log(\auth()->id(), ' Invoice', 'Final Bill Is Created: ID-' . $invoice->id);
 
         if ($invoice) {
             if ($invoice->client) {
-                $guest_name = $invoice->client->name;
-                $buyer_pan = $invoice->client->vat;
+                $guest_name = @$invoice->client->name??'';
+                $buyer_pan = @$invoice->client->vat??'';
             } else {
                 $guest_name = $invoice->name;
                 $buyer_pan = $invoice->customer_pan;
             }
 
-
-
             $bill_date_nepali = $this->convertdate($invoice->bill_date);
-            $bill_today_date_nep = $this->convertdate(date('Y-m-d'));
+            $bill_date_nepali = $invoice->bill_date;
+            // $bill_date_nepali = new DateTime($bill_date_nepal.' '.date('H:i:s'));
 
-            $irddetail= IrdDetail::first();
-            // dd(\config('irdsyc'));
+            $bill_today_date_nep = date('Y-m-d H:i:s');
+            // $bill_today_date_nep = new DateTime($bill_today_date_n.' '.date('H:i:s A'));
+            $irddetail = IrdDetail::first();
 
-            $data = json_encode(['username' => $irddetail->ird_username, 'password' => $irddetail->ird_password, 'seller_pan' => $irddetail->seller_pan, 'buyer_pan' => $buyer_pan, 'fiscal_year' => $invoice->fiscal_year, 'buyer_name' => $guest_name, 'invoice_number' => $invoice->outlet->short_name.'/'.$invoice->fiscal_year.'/'.'00'.$invoice->bill_no, 'invoice_date' => $bill_date_nepali, 'total_sales' => $invoice->total_amount, 'taxable_sales_vat' => $invoice->taxable_amount, 'vat' => $invoice->tax_amount, 'excisable_amount' => 0, 'excise' => 0, 'taxable_sales_hst' => 0, 'hst' => 0, 'amount_for_esf' => 0, 'esf' => 0, 'export_sales' => 0, 'tax_exempted_sales' => 0, 'isrealtime' => true, 'datetimeClient' => $bill_today_date_nep]);
+            $data = json_encode(['username' => @$irddetail->ird_username??'', 'password' => @$irddetail->ird_password??'', 'seller_pan' => @$irddetail->seller_pan??'',
+                'buyer_pan' => $buyer_pan, 'fiscal_year' => $invoice->fiscal_year, 'buyer_name' => $guest_name,
+                'invoice_number' => $invoice->outlet->short_name . '/' . $invoice->fiscal_year . '/' . '00' . $invoice->bill_no,
+                'invoice_date' => $bill_date_nepali, 'total_sales' => $invoice->total_amount, 'taxable_sales_vat' => $invoice->taxable_amount,
+                'vat' => $invoice->tax_amount, 'excisable_amount' => 0, 'excise' => 0, 'taxable_sales_hst' => 0, 'hst' => 0,
+                'amount_for_esf' => 0, 'esf' => 0, 'export_sales' => 0, 'tax_exempted_sales' => 0, 'isrealtime' => true,
+                'datetimeClient' => $bill_today_date_nep]);
+
             $irdsync = new \App\Models\NepalIRDSync();
-            $response = $irdsync->postbill($data, $irddetail->api_link);
+            $response = $irdsync->postbill($data, @$irddetail->api_link??'');
 
             if ($response == 200) {
                 \App\Models\InvoiceMeta::where('invoice_id', $invoice->id)->first()->update(['sync_with_ird' => 1, 'is_realtime' => 1]);
 
-                Audit::log(Auth::user()->id, 'Hotel Invoice', 'Successfully Posted to IRD, ID-'.env('HOTEL_BILL_PREFIX').$invoice->bill_no.' Response:'.$response.'');
+                Audit::log(Auth::user()->id, 'Hotel Invoice', 'Successfully Posted to IRD, ID-' . env('HOTEL_BILL_PREFIX') . $invoice->bill_no . ' Response:' . $response . '');
 
-                Flash::success(' Successfully Posted to IRD. Code: '.$response.'');
+                Flash::success(' Successfully Posted to IRD. Code: ' . $response . '');
 
                 return redirect()->back();
             } else {
@@ -1080,8 +1085,8 @@ public function forrandomcustomer_outlet(Request $request)
                 } else {
                     \App\Models\InvoiceMeta::where('invoice_id', $invoice->id)->first()->update(['is_realtime' => 1]);
                 }
-                Audit::log(Auth::user()->id, 'Invoice', 'Failed To post in IRD, ID-'.env('HOTEL_BILL_PREFIX').$invoice->bill_no.', Response:'.$response.'');
-                Flash::error(' Post Cannot Due to Response Code: '.$response.'');
+                Audit::log(Auth::user()->id, 'Invoice', 'Failed To post in IRD, ID-' . env('HOTEL_BILL_PREFIX') . $invoice->bill_no . ', Response:' . $response . '');
+                Flash::error(' Post Cannot Due to Response Code: ' . $response . '');
 
                 return redirect()->back();
             }
@@ -1098,21 +1103,21 @@ public function forrandomcustomer_outlet(Request $request)
         $fiscalyear = \App\Models\Fiscalyear::orderBy('id', 'desc')->where('org_id', \Auth::user()->org_id)->get();
         $description = 'Sales Return Book';
         if (\Auth::user()->hasRole('admins')) {
-			$outlets = \App\Models\PosOutlets::orderBy('id', 'DESC')
-			->where('enabled', 1)
-			->get();
-		} else {
-			$outletusers = \App\Models\OutletUser::where('user_id', \Auth::user()->id)->get()->pluck('outlet_id');
-			$outlets = \App\Models\PosOutlets::whereIn('id', $outletusers)
-			->orderBy('id', 'DESC')
-			->where('enabled', 1)
-			->get();
-		}
-        $creditnum = \App\Models\InvoiceMeta::orderBy('credit_note_no', 'desc')->where('credit_note_no', '!=', 'null')->first()->credit_note_no; 
-        $credit_note_no=isset($creditnum)?(int)$creditnum+1:0+1;
+            $outlets = \App\Models\PosOutlets::orderBy('id', 'DESC')
+                ->where('enabled', 1)
+                ->get();
+        } else {
+            $outletusers = \App\Models\OutletUser::where('user_id', \auth()->id())->get()->pluck('outlet_id');
+            $outlets = \App\Models\PosOutlets::whereIn('id', $outletusers)
+                ->orderBy('id', 'DESC')
+                ->where('enabled', 1)
+                ->get();
+        }
+        $creditnum = \App\Models\InvoiceMeta::orderBy('credit_note_no', 'desc')->where('credit_note_no', '!=', 'null')->first()->credit_note_no;
+        $credit_note_no = isset($creditnum) ? (int)$creditnum + 1 : 0 + 1;
         // $credit_note_no = \App\Models\InvoiceMeta::orderBy('id', 'desc')->where('credit_note_no', '!=', 'null')->first()->credit_note_no ?? 0 + 1;
 
-        return view('admin.invoice.invoicereturn', compact('credit_note_no', 'page_title', 'fiscalyear','description','outlets'));
+        return view('admin.invoice.invoicereturn', compact('credit_note_no', 'page_title', 'fiscalyear', 'description', 'outlets'));
     }
 
     public function getbillinfo()
@@ -1123,19 +1128,18 @@ public function forrandomcustomer_outlet(Request $request)
 
     public function returnfromirdpost(Request $request)
     {
-        
+
         $invoice = \App\Models\Invoice::where('org_id', \Auth::user()->org_id)->where('fiscal_year_id', $request->fiscal_year)->where('bill_no', $request->bill_no)->first();
         $invoicemeta = \App\Models\InvoiceMeta::orderBy('id', 'desc')->where('invoice_id', $invoice->id)->first();
 
         if ($invoicemeta === null && $invoice) {
-           
             $invoicemeta = new \App\Models\InvoiceMeta();
             $invoicemeta->invoice_id = $invoice->id;
             $invoicemeta->sync_with_ird = 0;
             $invoicemeta->is_bill_active = 1;
             $invoicemeta->save();
         }
-        
+
         if (count($invoice) == 1) {
             if ($invoice->client) {
                 $guest_name = $invoice->client->name;
@@ -1149,10 +1153,10 @@ public function forrandomcustomer_outlet(Request $request)
             $cancel_date = $this->convertdate($request->cancel_date);
 
             $bill_today_date_nep = $this->convertdate(date('Y-m-d'));
-            $irddetail= IrdDetail::first();
+            $irddetail = IrdDetail::first();
 
             //POSTING DATA TO IRD
-            $data = json_encode(['username' => $irddetail->ird_username, 'password' => $irddetail->ird_password, 'seller_pan' => $irddetail->seller_pan, 'buyer_pan' => $guest_pan, 'fiscal_year' => $invoice->fiscal_year, 'buyer_name' => $guest_name, 'ref_invoice_number' => $invoice->outlet->short_name.'/'.$invoice->fiscal_year.'/'.'00'.$invoice->bill_no, 'credit_note_date' => $cancel_date, 'credit_note_number' => $request->credit_note_no, 'reason_for_return' => $request->void_reason, 'total_sales' => $invoice->total_amount, 'taxable_sales_vat' => $invoice->taxable_amount, 'vat' => $invoice->tax_amount, 'excisable_amount' => 0, 'excise' => 0, 'taxable_sales_hst' => 0, 'hst' => 0, 'amount_for_esf' => 0, 'esf' => 0, 'export_sales' => 0, 'tax_exempted_sales' => 0, 'isrealtime' => true, 'datetimeClient' => $bill_today_date_nep]);
+            $data = json_encode(['username' => $irddetail->ird_username, 'password' => $irddetail->ird_password, 'seller_pan' => $irddetail->seller_pan, 'buyer_pan' => $guest_pan, 'fiscal_year' => $invoice->fiscal_year, 'buyer_name' => $guest_name, 'ref_invoice_number' => $invoice->outlet->short_name . '/' . $invoice->fiscal_year . '/' . '00' . $invoice->bill_no, 'credit_note_date' => $cancel_date, 'credit_note_number' => $request->credit_note_no, 'reason_for_return' => $request->void_reason, 'total_sales' => $invoice->total_amount, 'taxable_sales_vat' => $invoice->taxable_amount, 'vat' => $invoice->tax_amount, 'excisable_amount' => 0, 'excise' => 0, 'taxable_sales_hst' => 0, 'hst' => 0, 'amount_for_esf' => 0, 'esf' => 0, 'export_sales' => 0, 'tax_exempted_sales' => 0, 'isrealtime' => true, 'datetimeClient' => $bill_today_date_nep]);
             $irdsync = new \App\Models\NepalIRDSync();
             $response = $irdsync->returnbill($data, $irddetail->api_link);
             if ($response == 200) {
@@ -1161,13 +1165,13 @@ public function forrandomcustomer_outlet(Request $request)
                 if ($clients->ledger_id) {
                     $attributes_order['entrytype_id'] = 7; //crdeitnotes
                     $attributes_order['tag_id'] = 3; //crdeitnotes
-                    $attributes_order['user_id'] = \Auth::user()->id;
+                    $attributes_order['user_id'] = \auth()->id();
                     $attributes_order['org_id'] = \Auth::user()->org_id;
                     $attributes_order['number'] = \FinanceHelper::get_last_entry_number(7);
                     // $attributes_order['resv_id'] = $invoice->reservation_id;
                     $attributes_order['source'] = 'Sales_Return';
                     $attributes_order['date'] = \Carbon\Carbon::today();
-                    $attributes_order['notes'] = 'Credit Return: '.$invoice->id.'';
+                    $attributes_order['notes'] = 'Credit Return: ' . $invoice->id . '';
 
                     $attributes_order['dr_total'] = $invoice->total_amount;
                     $attributes_order['cr_total'] = $invoice->total_amount;
@@ -1192,12 +1196,11 @@ public function forrandomcustomer_outlet(Request $request)
                 }
 
                 //UPDATING THE ORDERS TABLE
-                $invoicemeta->update(['is_bill_active' => 0, 'void_reason' => $request->void_reason, 'cancel_date' => $request->cancel_date, 'credit_note_no' => $request->credit_note_no, 'is_realtime' => 1, 'credit_user_id' => \Auth::user()->id]);
-                // dd($invoicemeta);
+                $invoicemeta->update(['is_bill_active' => 0, 'void_reason' => $request->void_reason, 'cancel_date' => $request->cancel_date, 'credit_note_no' => $request->credit_note_no, 'is_realtime' => 1, 'credit_user_id' => \auth()->id()]);
 
                 //UPDATE AUDIT LOG
-                Audit::log(Auth::user()->id, 'Invoice', 'Bill Is Returned To IRD: ID-'.$invoice->id.' Response :'.$response.'');
-                Flash::success('Successfully Returned from IRD. Code: '.$response.'');
+                Audit::log(Auth::user()->id, 'Invoice', 'Bill Is Returned To IRD: ID-' . $invoice->id . ' Response :' . $response . '');
+                Flash::success('Successfully Returned from IRD. Code: ' . $response . '');
 
                 return redirect()->back();
             } else {
@@ -1207,12 +1210,12 @@ public function forrandomcustomer_outlet(Request $request)
                     $invoicemeta->update(['is_realtime' => 1]);
                 }
 
-                Audit::log(Auth::user()->id, 'Invoice', 'Bill Is Returned To IRD: ID-'.$invoice->bill_no.' Response :'.$response.'');
-                Flash::error('Return Cannot Due to Response Code: '.$response.'');
+                Audit::log(Auth::user()->id, 'Invoice', 'Bill Is Returned To IRD: ID-' . $invoice->bill_no . ' Response :' . $response . '');
+                Flash::error('Return Cannot Due to Response Code: ' . $response . '');
                 return redirect()->back();
             }
         } else {
-            Audit::log(Auth::user()->id, 'Invoice', 'Bill Is Not Found: ID-'.$invoice->id.'');
+            Audit::log(Auth::user()->id, 'Invoice', 'Bill Is Not Found: ID-' . $invoice->id . '');
             \Flash::warning('No Bill Found Of this Number');
 
             return redirect()->back();
@@ -1228,7 +1231,7 @@ public function forrandomcustomer_outlet(Request $request)
         $users = \App\User::where('enabled', '1')->pluck('username', 'id')->all();
         $posoutlet = PosOutlets::select('id', 'name')->get();
         $description = 'Return Sales List';
-        return view('admin.invoice.returnsaleslist', compact( 'page_description', 'page_title', 'users','posoutlet','description'));
+        return view('admin.invoice.returnsaleslist', compact('page_description', 'page_title', 'users', 'posoutlet', 'description'));
     }
 
     public function returnsaleslist(Request $request)
@@ -1241,12 +1244,11 @@ public function forrandomcustomer_outlet(Request $request)
 
         $startdate = $request->start_date;
         $enddate = $request->end_date;
-        $invoice = \App\Models\Invoice::select( 'invoice_meta.*','invoice.*')
+        $invoice = \App\Models\Invoice::select('invoice_meta.*', 'invoice.*')
             ->leftjoin('invoice_meta', 'invoice.id', '=', 'invoice_meta.invoice_id')
             ->where('invoice.bill_date', '>=', $request->start_date)
             ->where('invoice.bill_date', '<=', $request->end_date)
             ->where('invoice.org_id', \Auth::user()->org_id)
-            
             ->where('invoice_meta.is_bill_active', 0)
             ->where(function ($query) use ($request) {
                 if ($request->user_id) {
@@ -1260,7 +1262,7 @@ public function forrandomcustomer_outlet(Request $request)
             })
             ->paginate(50);
         if ($op == 'print') {
-            $invoice_print = \App\Models\Invoice::select('invoice_meta.*','invoice.*')
+            $invoice_print = \App\Models\Invoice::select('invoice_meta.*', 'invoice.*')
                 ->leftjoin('invoice_meta', 'invoice.id', '=', 'invoice_meta.invoice_id')
                 ->where('invoice.bill_date', '>=', $request->start_date)
                 ->where('invoice.bill_date', '<=', $request->end_date)
@@ -1280,7 +1282,7 @@ public function forrandomcustomer_outlet(Request $request)
 
             return view('print.returnbook', compact('invoice_print', 'startdate', 'enddate'));
         } elseif ($op == 'pdf') {
-            $invoice_pdf = \App\Models\Invoice::select('invoice_meta.*','invoice.*')
+            $invoice_pdf = \App\Models\Invoice::select('invoice_meta.*', 'invoice.*')
                 ->leftjoin('invoice_meta', 'invoice.id', '=', 'invoice_meta.invoice_id')
                 ->where('invoice.bill_date', '>=', $request->start_date)
                 ->where('invoice.bill_date', '<=', $request->end_date)
@@ -1299,15 +1301,14 @@ public function forrandomcustomer_outlet(Request $request)
 
 
             $pdf = \PDF::loadView('pdf.returnbook', compact('invoice_pdf', 'fiscal_year', 'startdate', 'enddate'))->setPaper('a4', 'landscape');
-            $file = 'Report_returnbook_filtered'.date('_Y_m_d').'.pdf';
-            if (File::exists('reports/'.$file)) {
-                File::Delete('reports/'.$file);
+            $file = 'Report_returnbook_filtered' . date('_Y_m_d') . '.pdf';
+            if (File::exists('reports/' . $file)) {
+                File::Delete('reports/' . $file);
             }
 
             return $pdf->download($file);
-        }
-        elseif ($op == 'excel') {
-            $invoice = \App\Models\Invoice::select('invoice_meta.*','invoice.*')
+        } elseif ($op == 'excel') {
+            $invoice = \App\Models\Invoice::select('invoice_meta.*', 'invoice.*')
                 ->leftjoin('invoice_meta', 'invoice.id', '=', 'invoice_meta.invoice_id')
                 ->where('invoice.bill_date', '>=', $request->start_date)
                 ->where('invoice.bill_date', '<=', $request->end_date)
@@ -1325,13 +1326,13 @@ public function forrandomcustomer_outlet(Request $request)
                 })
                 ->get();
 
-                return \Excel::download(new \App\Exports\CreditNoteList($invoice, 'credit Note'), 'CreditNote.xls');
+            return \Excel::download(new \App\Exports\CreditNoteList($invoice, 'credit Note'), 'CreditNote.xls');
         }
         $request = $request->all();
-        $page_description= 'Sales Return List';
+        $page_description = 'Sales Return List';
         $description = $page_description;
 
-        return view('admin.invoice.returnsaleslist', compact('page_description', 'page_title', 'users', 'request', 'invoice','description','posoutlet'));
+        return view('admin.invoice.returnsaleslist', compact('page_description', 'page_title', 'users', 'request', 'invoice', 'description', 'posoutlet'));
     }
 
     public function materializeview()
@@ -1340,7 +1341,9 @@ public function forrandomcustomer_outlet(Request $request)
 
         $users = \App\User::where('enabled', '1')->pluck('username', 'username as id')->all();
         $description = 'Invoice Materialize View';
-        return view('admin.invoice.sales_materalize', compact('page_title',  'users','description'));
+        $posoutlet = \App\Models\PosOutlets::where('enabled', '1')->orderBy('id', 'desc')->get();
+
+        return view('admin.invoice.sales_materalize', compact('page_title', 'users', 'description', 'posoutlet'));
     }
 
     public function materializeviewresult(Request $request)
@@ -1348,9 +1351,8 @@ public function forrandomcustomer_outlet(Request $request)
         $page_title = 'Admin | Invoice | Sales | Materialize | Results';
 
 
-
         $users = \App\User::where('enabled', '1')->pluck('username', 'username as id')->all();
-        $posoutlet= PosOutlets::select('id', 'name')->get();
+        $posoutlet = PosOutlets::select('id', 'name')->get();
         $op = \Request::get('op');
 
         $startdate = $request->start_date;
@@ -1362,13 +1364,13 @@ public function forrandomcustomer_outlet(Request $request)
                 if ($request->user_id) {
                     return $query->where('entered_by', $request->user_id);
                 }
-                
+
             })
             ->where(function ($query) use ($request) {
                 if ($request->outlet) {
                     return $query->where('outlet_id', $request->outlet);
                 }
-                
+
             })
             ->paginate(50);
         if ($op == 'print') {
@@ -1383,7 +1385,7 @@ public function forrandomcustomer_outlet(Request $request)
                     if ($request->outlet) {
                         return $query->where('outlet_id', $request->outlet);
                     }
-            })
+                })
                 ->get();
 
             return view('print.materializebook', compact('sales_print', 'startdate', 'enddate'));
@@ -1399,18 +1401,17 @@ public function forrandomcustomer_outlet(Request $request)
                     if ($request->outlet) {
                         return $query->where('outlet_id', $request->outlet);
                     }
-            })->get();
+                })->get();
 
 
             $pdf = \PDF::loadView('pdf.materializebook', compact('sales_pdf', 'fiscal_year', 'startdate', 'enddate'))->setPaper('a4', 'landscape');
-            $file = 'Report_materializebook_filtered'.date('_Y_m_d').'.pdf';
-            if (File::exists('reports/'.$file)) {
-                File::Delete('reports/'.$file);
+            $file = 'Report_materializebook_filtered' . date('_Y_m_d') . '.pdf';
+            if (File::exists('reports/' . $file)) {
+                File::Delete('reports/' . $file);
             }
 
             return $pdf->download($file);
-        }
-        elseif ($op == 'excel') {
+        } elseif ($op == 'excel') {
             $invoice = DB::table('invoice_materialize_view')->where('bill_date', '>=', $request->start_date)
                 ->where('bill_date', '<=', $request->end_date)
                 ->where(function ($query) use ($request) {
@@ -1422,40 +1423,40 @@ public function forrandomcustomer_outlet(Request $request)
                     if ($request->outlet) {
                         return $query->where('outlet_id', $request->outlet);
                     }
-            })->get();
+                })->get();
             return \Excel::download(new \App\Exports\MaterializeviewList($invoice, 'MaterializeList'), 'MaterializeList.xls');
         }
 
         $request = $request->all();
         $description = 'Invoice Materialize View';
-        return view('admin.invoice.sales_materalize', compact('page_title', 'posoutlet',  'users', 'sales', 'request','description'));
+        return view('admin.invoice.sales_materalize', compact('page_title', 'posoutlet', 'users', 'sales', 'request', 'description'));
     }
 
-     public function showcreditnote($id)
+    public function showcreditnote($id)
     {
         $ord = $this->invoice->find($id);
-        $creditnote_no=\App\Models\InvoiceMeta::where('invoice_id', $id)->first()->credit_note_no;
+        $creditnote_no = \App\Models\InvoiceMeta::where('invoice_id', $id)->first()->credit_note_no;
         $page_title = 'Credit Note';
         $page_description = 'View Order';
         $orderDetails = InvoiceDetail::where('invoice_id', $ord->id)->get();
 
         $imagepath = \Auth::user()->organization->logo;
 
-        return view('admin.orders.credit_note_show', compact('ord','creditnote_no', 'imagepath', 'page_title', 'page_description', 'orderDetails'));
+        return view('admin.orders.credit_note_show', compact('ord', 'creditnote_no', 'imagepath', 'page_title', 'page_description', 'orderDetails'));
     }
 
     public function printcreditnote($id, $type)
     {
         $ord = $this->invoice->find($id);
-        $creditnote_no=\App\Models\InvoiceMeta::where('invoice_id', $id)->first()->credit_note_no;
+        $creditnote_no = \App\Models\InvoiceMeta::where('invoice_id', $id)->first()->credit_note_no;
         $orderDetails = InvoiceDetail::where('invoice_id', $ord->id)->get();
         $imagepath = \Auth::user()->organization->logo;
-        if($type == 'print'){
-           // $pdf =  \PDF::loadView('admin.orders.credit_note_print', compact('ord', 'imagepath', 'orderDetails'));
-           // return  $pdf->download($file);
-            return view('admin.orders.credit_note_print', compact('ord', 'imagepath', 'page_title', 'page_description', 'orderDetails','creditnote_no'));
+        if ($type == 'print') {
+            // $pdf =  \PDF::loadView('admin.orders.credit_note_print', compact('ord', 'imagepath', 'orderDetails'));
+            // return  $pdf->download($file);
+            return view('admin.orders.credit_note_print', compact('ord', 'imagepath', 'page_title', 'page_description', 'orderDetails', 'creditnote_no'));
         };
-        return view('admin.orders.generatecreditnotePDF', compact('ord', 'imagepath', 'orderDetails','creditnote_no'));
+        return view('admin.orders.generatecreditnotePDF', compact('ord', 'imagepath', 'orderDetails', 'creditnote_no'));
         $file = $id . '_' . $ord->name . '_' . str_replace(' ', '_', $ord->client->name) . '.pdf';
         if (\File::exists('reports/' . $file)) {
             \File::Delete('reports/' . $file);
@@ -1463,220 +1464,223 @@ public function forrandomcustomer_outlet(Request $request)
         return $pdf->download($file);
     }
 
-    public function productwisereport(Request $request){
-        $page_title="Daily Sales Report";
-        $page_title="Productwise Report";
-        $outlets= \App\Models\PosOutlets::select('name', 'id')->get();
-        $op="pdf";
-        $data=[];
-        if($request->startdate && $request->startdate !=""){
-            $startdate=$request->startdate;
-            $endddate=$request->startdate;
+    public function productwisereport(Request $request)
+    {
+        $page_title = "Daily Sales Report";
+        $page_title = "Productwise Report";
+        $outlets = \App\Models\PosOutlets::select('name', 'id')->get();
+        $op = "pdf";
+        $data = [];
+        if ($request->startdate && $request->startdate != "") {
+            $startdate = $request->startdate;
+            $endddate = $request->startdate;
 
-            if($request->enddate && $request->enddate !=""){
-                $enddate=$request->enddate;
+            if ($request->enddate && $request->enddate != "") {
+                $enddate = $request->enddate;
             }
             // dd($startdate, $enddate);
-            if($request->outlet && $request->outlet !=''){
-                $outlet= $request->outlet;
+            if ($request->outlet && $request->outlet != '') {
+                $outlet = $request->outlet;
             }
-            $nepalistartdate= \App\Helpers\TaskHelper::getNepaliDate($startdate);
-            $nepalienddate= \App\Helpers\TaskHelper::getNepaliDate($enddate);
-            $data=\App\Models\Invoice::
-            where('org_id',\Auth::user()->org_id)
-            ->leftJoin('invoice_detail', 'invoice.id', '=', 'invoice_detail.invoice_id')
-            ->where('invoice.bill_date','>=',$startdate)
-            ->where('invoice.bill_date','<=',$enddate)
-            ->where('outlet_id', $outlet)
-            ->get();
-            $data=$data->groupby(['product_id','client_type']);
-            $products=\App\Models\Product::where('org_id',\Auth::user()->org_id)->pluck('name','id');
-            $organization=\Auth::user()->organization;
-            if($op=="excel"){
-
-            }elseif($op=="pdf"){
-               
-                $stock_entries=\App\Models\StockMove::select('stock_id',DB::raw('SUM(qty) as quantity'))
-                ->where('org_id',$organization->id)
-                ->where('tran_date','>=',$startdate)
-                ->where('tran_date','<=',$enddate)
-                ->where('order_reference',null)
-                ->where('store_id', $outlet)
-                ->groupby('stock_id')
+            $nepalistartdate = \App\Helpers\TaskHelper::getNepaliDate($startdate);
+            $nepalienddate = \App\Helpers\TaskHelper::getNepaliDate($enddate);
+            $data = \App\Models\Invoice::
+            where('org_id', \Auth::user()->org_id)
+                ->leftJoin('invoice_detail', 'invoice.id', '=', 'invoice_detail.invoice_id')
+                ->where('invoice.bill_date', '>=', $startdate)
+                ->where('invoice.bill_date', '<=', $enddate)
+                ->where('outlet_id', $outlet)
                 ->get();
-                $stock=$stock_entries->groupby('stock_id');
-                $outletname= \App\Models\PosOutlets::where('id', $outlet)->select('name')->first();
+            $data = $data->groupby(['product_id', 'client_type']);
+            $products = \App\Models\Product::where('org_id', \Auth::user()->org_id)->pluck('name', 'id');
+            $organization = \Auth::user()->organization;
+            if ($op == "excel") {
+
+            } elseif ($op == "pdf") {
+
+                $stock_entries = \App\Models\StockMove::select('stock_id', DB::raw('SUM(qty) as quantity'))
+                    ->where('org_id', $organization->id)
+                    ->where('tran_date', '>=', $startdate)
+                    ->where('tran_date', '<=', $enddate)
+                    ->where('order_reference', null)
+                    ->where('store_id', $outlet)
+                    ->groupby('stock_id')
+                    ->get();
+                $stock = $stock_entries->groupby('stock_id');
+                $outletname = \App\Models\PosOutlets::where('id', $outlet)->select('name')->first();
 
                 // return view('admin.reports.productwisereportPDF', compact('stock','data', 'products', 'startdate','enddate','organization'));
-                $pdf = \PDF::loadView('admin.reports.productwisereportPDF',compact('stock','data', 'products', 'nepalistartdate','outletname','nepalienddate','organization'))->setPaper('a3', 'landscape');
+                $pdf = \PDF::loadView('admin.reports.productwisereportPDF', compact('stock', 'data', 'products', 'nepalistartdate', 'outletname', 'nepalienddate', 'organization'))->setPaper('a3', 'landscape');
                 $file = $startdate . '_' . $enddate . '_' . str_replace(' ', '_', $organization->organization_name) . '.pdf';
                 if (\File::exists('reports/' . $file)) {
                     \File::Delete('reports/' . $file);
                 }
                 return $pdf->download($file);
             }
-            return view('admin.reports.dailysalesreport',compact('page_title','page_description','data'));
+            return view('admin.reports.dailysalesreport', compact('page_title', 'page_description', 'data'));
         }
-        return view('admin.reports.dailysalesreport',compact('page_title','page_description','outlets'));
+        return view('admin.reports.dailysalesreport', compact('page_title', 'page_description', 'outlets'));
     }
-    public function transactionreports(Request $request){
-        $page_title="Transaction Report";
-        $page_title="Customer Wise Report";
-        $outlets= \App\Models\PosOutlets::select('name', 'id')->get();
-        $op="pdf";
-        $data=[];
 
-        if($request->startdate && $request->startdate !=""){
-            $startdate=$request->startdate;
-            $endddate=$request->startdate;
-            if($request->enddate && $request->enddate !=""){
-                $enddate=$request->enddate;
+    public function transactionreports(Request $request)
+    {
+        $outlets = \App\Models\PosOutlets::select('name', 'id')->get();
+        $op = "pdf";
+        $data = [];
+        // dd($request->all(), ($request->startdate != ""));
+
+        if ($request->startdate && ($request->startdate != "")) {
+            $startdate = $request->startdate;
+            $enddate = $request->startdate;
+            if ($request->enddate && $request->enddate != "") $enddate = $request->enddate;
+
+            if ($request->outletid && $request->outletid != '') {
+                $outlet = $request->outletid;
             }
-            if($request->outletid && $request->outletid!=''){
-                $outlet= $request->outletid;
-            }
-            $nepalistartdate= \App\Helpers\TaskHelper::getNepaliDate($startdate);
-            $nepalienddate= \App\Helpers\TaskHelper::getNepaliDate($enddate);
-            $clients=\App\Models\Client::where('org_id',\Auth::user()->org_id)->select('name','id','relation_type')->get();
+            $nepalistartdate = \App\Helpers\TaskHelper::getNepaliDate($startdate);
+            $nepalienddate = \App\Helpers\TaskHelper::getNepaliDate($enddate);
+            $clients = \App\Models\Client::where('org_id', \Auth::user()->org_id)->select('name', 'id', 'relation_type')->get();
 
-            $detail_transaction=\App\Models\Invoice::
-            select('client_id',DB::raw('SUM(total_amount) as dr_total'),DB::raw('SUM(tax_amount) as dr_vat'))
-            ->where('outlet_id', $outlet)
-            ->where('org_id',\Auth::user()->org_id)
-            ->where('bill_date','>=',$startdate)
-            ->where('bill_date','<=',$enddate)
-            ->groupby('client_id')
-            ->get();
+            $detail_transaction = \App\Models\Invoice::select('client_id', DB::raw('SUM(total_amount) as dr_total'), DB::raw('SUM(tax_amount) as dr_vat'))
+                ->where([['outlet_id', $outlet], ['org_id', \Auth::user()->org_id]])
+                ->when($startdate, function ($q) use($startdate) {
+                    $q->where('bill_date', '>=', $startdate);
+                })->when($enddate, function ($q) use($enddate) {
+                    $q->where('bill_date', '<=', $enddate);
+                })->groupby('client_id')->get();
 
-            $detail_transaction=$detail_transaction->groupby('client_id');
+            $detail_transaction = $detail_transaction->groupby('client_id');
 
-            $organization=\Auth::user()->organization;
-            $outletname= \App\Models\PosOutlets::where('id', $outlet)->select('name')->first();
-            if($op=="excel"){
+            $organization = \Auth::user()->organization;
+            $outletname = \App\Models\PosOutlets::where('id', $outlet)->select('name')->first();
+            if ($op == "excel") {
 
-            }elseif($op=="pdf"){
-                // return view('admin.reports.customerwisereportPDF', compact( 'detail_transaction','clients', 'startdate','enddate','organization'));
-                $pdf = \PDF::loadView('admin.reports.customerwisereportPDF',compact( 'detail_transaction','clients','outletname','startdate', 'enddate', 'nepalistartdate','nepalienddate','organization'))->setPaper('a4', 'landscape');
+            } elseif ($op == "pdf") {
+                return view('admin.reports.customerwisereportPDF', compact( 'detail_transaction','clients', 'startdate','enddate','organization'));
+                $pdf = \PDF::loadView('admin.reports.customerwisereportPDF', compact('detail_transaction', 'clients', 'outletname', 'startdate', 'enddate', 'nepalistartdate', 'nepalienddate', 'organization'))->setPaper('a4', 'landscape');
                 $file = $startdate . '_' . $enddate . '_' . str_replace(' ', '_', $organization->organization_name) . '.pdf';
                 if (\File::exists('reports/' . $file)) {
                     \File::Delete('reports/' . $file);
                 }
                 return $pdf->download($file);
             }
-            return view('admin.reports.transactionreports',compact('page_title','page_description','data'));
+            return view('admin.reports.transactionreports', compact('data'));
         }
-        return view('admin.reports.transactionreports',compact('page_title','page_description', 'outlets'));
+        return view('admin.reports.transactionreports', compact('outlets'));
     }
-    public function customerwisedetailreports(Request $request){
+
+    public function customerwisedetailreports(Request $request)
+    {
         // dd("hello");
-        $page_title="Customer-Wise-Detail Report";
-        $page_description="Detail Report";
-        $outlets= \App\Models\PosOutlets::select('name', 'id')->get();
-        $op="pdf";
-        $data=[];
+        $page_title = "Customer-Wise-Detail Report";
+        $page_description = "Detail Report";
+        $outlets = \App\Models\PosOutlets::select('name', 'id')->get();
+        $op = "pdf";
+        $data = [];
 
-        if($request->startdate && $request->startdate !=""){
-            $startdate=$request->startdate;
-            $endddate=$request->startdate;
-            if($request->enddate && $request->enddate !=""){
-                $enddate=$request->enddate;
+        if ($request->startdate && $request->startdate != "") {
+            $startdate = $request->startdate;
+            $endddate = $request->startdate;
+            if ($request->enddate && $request->enddate != "") {
+                $enddate = $request->enddate;
             }
-            if($request->outletid && $request->outletid!=''){
-                $outlet= $request->outletid;
+            if ($request->outletid && $request->outletid != '') {
+                $outlet = $request->outletid;
             }
-            $nepalistartdate= \App\Helpers\TaskHelper::getNepaliDate($startdate);
-            $nepalienddate= \App\Helpers\TaskHelper::getNepaliDate($enddate);
-            $clients=\App\Models\Client::where('org_id',\Auth::user()->org_id)->select('name','id','relation_type')->get();
+            $nepalistartdate = \App\Helpers\TaskHelper::getNepaliDate($startdate);
+            $nepalienddate = \App\Helpers\TaskHelper::getNepaliDate($enddate);
+            $clients = \App\Models\Client::where('org_id', \Auth::user()->org_id)->select('name', 'id', 'relation_type')->get();
 // dd($clients);
-            $detail_transaction=\App\Models\Invoice::
+            $detail_transaction = \App\Models\Invoice::
             where('outlet_id', $outlet)
-            ->where('org_id',\Auth::user()->org_id)
-            ->where('bill_date','>=',$startdate)
-            ->where('bill_date','<=',$enddate)
-            ->where('outlet_id', $outlet)
-            ->get();
-            $detail_transaction=$detail_transaction->groupby(['bill_type','client_id']);
+                ->where('org_id', \Auth::user()->org_id)
+                ->where('bill_date', '>=', $startdate)
+                ->where('bill_date', '<=', $enddate)
+                ->where('outlet_id', $outlet)
+                ->get();
+            $detail_transaction = $detail_transaction->groupby(['bill_type', 'client_id']);
             // dd($detail_transaction);
-            $created_by=\Auth::user()->first_name.' '.\Auth::user()->last_name;
-            $organization=\Auth::user()->organization;
-            $outletname= \App\Models\PosOutlets::where('id', $outlet)->select('name')->first();
-            if($op=="excel"){
+            $created_by = \Auth::user()->first_name . ' ' . \Auth::user()->last_name;
+            $organization = \Auth::user()->organization;
+            $outletname = \App\Models\PosOutlets::where('id', $outlet)->select('name')->first();
+            if ($op == "excel") {
 
-            }elseif($op=="pdf"){
+            } elseif ($op == "pdf") {
                 // return view('admin.reports.customerwisedetailreportPDF', compact( 'detail_transaction','clients', 'startdate','enddate','organization','created_by','nepalistartdate','nepalienddate','outletname'));
-                $pdf = \PDF::loadView('admin.reports.customerwisedetailreportPDF',compact( 'detail_transaction','clients','outletname','startdate', 'enddate', 'nepalistartdate','nepalienddate','organization','created_by'))->setPaper('a4', 'portrait');
+                $pdf = \PDF::loadView('admin.reports.customerwisedetailreportPDF', compact('detail_transaction', 'clients', 'outletname', 'startdate', 'enddate', 'nepalistartdate', 'nepalienddate', 'organization', 'created_by'))->setPaper('a4', 'portrait');
                 $file = $startdate . '_' . $enddate . '_' . str_replace(' ', '_', $organization->organization_name) . '.pdf';
                 if (\File::exists('reports/' . $file)) {
                     \File::Delete('reports/' . $file);
                 }
                 return $pdf->download($file);
             }
-            return view('admin.reports.customerwisedetailreport',compact('page_title','page_description','data'));
+            return view('admin.reports.customerwisedetailreport', compact('page_title', 'page_description', 'data'));
         }
-        return view('admin.reports.customerwisedetailreport',compact('page_title','page_description', 'outlets'));
+        return view('admin.reports.customerwisedetailreport', compact('page_title', 'page_description', 'outlets'));
     }
 
-    public function productledgerreport(Request $request){
-        $page_title="Product Ledger Report";
-        $page_title="Each product Report";
-        $outlets= \App\Models\PosOutlets::select('name', 'id')->get();
-        $products=\App\Models\Product::where('org_id',\Auth::user()->org_id)->pluck('name','id');
-        $op="pdf";
-        $data=[];
-        if($request->startdate && $request->startdate !=""){
-            $startdate=$request->startdate;
-            $endddate=$request->startdate;
+    public function productledgerreport(Request $request)
+    {
+        $page_title = "Product Ledger Report";
+        $page_title = "Each product Report";
+        $outlets = \App\Models\PosOutlets::select('name', 'id')->get();
+        $products = \App\Models\Product::where('org_id', \Auth::user()->org_id)->pluck('name', 'id');
+        $op = "pdf";
+        $data = [];
+        if ($request->startdate && $request->startdate != "") {
+            $startdate = $request->startdate;
+            $endddate = $request->startdate;
 
-            if($request->enddate && $request->enddate !=""){
-                $enddate=$request->enddate;
+            if ($request->enddate && $request->enddate != "") {
+                $enddate = $request->enddate;
             }
             // dd($startdate, $enddate);
-            if($request->outlet && $request->outlet !=''){
-                $outlet= $request->outlet;
+            if ($request->outlet && $request->outlet != '') {
+                $outlet = $request->outlet;
             }
-            $opening_stock= \App\Models\StockMove::where('tran_date', '<', $request->startdate)->where('stock_id', $request->product)->where('store_id',$request->outlet)->select('stock_id',DB::raw('SUM(qty) as openingstock'))->first();
-            $productid=$request->product;
-            $productname=\App\Models\Product::where('id', $request->product)->select('name')->first();
-            $nepalistartdate= \App\Helpers\TaskHelper::getNepaliDate($startdate);
-            $nepalienddate= \App\Helpers\TaskHelper::getNepaliDate($enddate);
-            $daterange= $period = \carbon\CarbonPeriod::create($request->startdate, $request->enddate);
-            $data=\App\Models\Invoice::
-            where('org_id',\Auth::user()->org_id)
-            ->leftJoin('invoice_detail', 'invoice.id', '=', 'invoice_detail.invoice_id')
-            ->where('invoice.bill_date','>=',$startdate)
-            ->where('invoice.bill_date','<=',$enddate)
-            ->where('invoice_detail.product_id', $request->product)
-            ->select('invoice.*', 'invoice_detail.product_id','invoice_detail.quantity', 'invoice_detail.price','invoice_detail.total')
-            ->get();
-            //dd($data);
-            $data=$data->groupby(['bill_date','client_type']);
-            //dd($data);
-            $products=\App\Models\Product::where('org_id',\Auth::user()->org_id)->pluck('name','id');
-            $organization=\Auth::user()->organization;
-            if($op=="excel"){
-
-            }elseif($op=="pdf"){
-                // ->where('order_reference',null)
-                $stock_entries=\App\Models\StockMove::select('stock_id','qty','tran_date')
-                ->where('org_id',$organization->id)
-                ->where('tran_date','>=',$startdate)
-                ->where('tran_date','<=',$enddate)
-                ->where('stock_id', $request->product)
-                ->where('store_id', $outlet)
-                ->groupby('tran_Date')
+            $opening_stock = \App\Models\StockMove::where('tran_date', '<', $request->startdate)->where('stock_id', $request->product)->where('store_id', $request->outlet)->select('stock_id', DB::raw('SUM(qty) as openingstock'))->first();
+            $productid = $request->product;
+            $productname = \App\Models\Product::where('id', $request->product)->select('name')->first();
+            $nepalistartdate = \App\Helpers\TaskHelper::getNepaliDate($startdate);
+            $nepalienddate = \App\Helpers\TaskHelper::getNepaliDate($enddate);
+            $daterange = $period = \carbon\CarbonPeriod::create($request->startdate, $request->enddate);
+            $data = \App\Models\Invoice::
+            where('org_id', \Auth::user()->org_id)
+                ->leftJoin('invoice_detail', 'invoice.id', '=', 'invoice_detail.invoice_id')
+                ->where('invoice.bill_date', '>=', $startdate)
+                ->where('invoice.bill_date', '<=', $enddate)
+                ->where('invoice_detail.product_id', $request->product)
+                ->select('invoice.*', 'invoice_detail.product_id', 'invoice_detail.quantity', 'invoice_detail.price', 'invoice_detail.total')
                 ->get();
-                $stock=$stock_entries->groupby('tran_date');
-                $outletname= \App\Models\PosOutlets::where('id', $outlet)->select('name')->first();
+            //dd($data);
+            $data = $data->groupby(['bill_date', 'client_type']);
+            //dd($data);
+            $products = \App\Models\Product::where('org_id', \Auth::user()->org_id)->pluck('name', 'id');
+            $organization = \Auth::user()->organization;
+            if ($op == "excel") {
 
-                $pdf = \PDF::loadView('admin.reports.productledgerPDF',compact('stock','data', 'products', 'productid','productname', 'nepalistartdate','outletname','nepalienddate','organization', 'opening_stock','daterange'))->setPaper('a3', 'landscape');
+            } elseif ($op == "pdf") {
+                // ->where('order_reference',null)
+                $stock_entries = \App\Models\StockMove::select('stock_id', 'qty', 'tran_date')
+                    ->where('org_id', $organization->id)
+                    ->where('tran_date', '>=', $startdate)
+                    ->where('tran_date', '<=', $enddate)
+                    ->where('stock_id', $request->product)
+                    ->where('store_id', $outlet)
+                    ->groupby('tran_Date')
+                    ->get();
+                $stock = $stock_entries->groupby('tran_date');
+                $outletname = \App\Models\PosOutlets::where('id', $outlet)->select('name')->first();
+
+                $pdf = \PDF::loadView('admin.reports.productledgerPDF', compact('stock', 'data', 'products', 'productid', 'productname', 'nepalistartdate', 'outletname', 'nepalienddate', 'organization', 'opening_stock', 'daterange'))->setPaper('a3', 'landscape');
                 $file = $startdate . '_' . $enddate . '_' . str_replace(' ', '_', $organization->organization_name) . '.pdf';
                 if (\File::exists('reports/' . $file)) {
                     \File::Delete('reports/' . $file);
                 }
                 return $pdf->download($file);
             }
-            return view('admin.reports.productledger_report',compact('page_title','page_description','data'));
+            return view('admin.reports.productledger_report', compact('page_title', 'page_description', 'data'));
         }
-        return view('admin.reports.productledger_report',compact('page_title','page_description','outlets','products'));
-}
+        return view('admin.reports.productledger_report', compact('page_title', 'page_description', 'outlets', 'products'));
+    }
 }
