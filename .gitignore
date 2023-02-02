@@ -1,7 +1,6 @@
 # Laravel 5 #
 #############
 .env
-storage/
 
 # Package development #
 #######################
