@@ -1,0 +1,52 @@
+{
+  "name": "sudiptpa/guid",
+  "type": "library",
+  "description": "A Simple GUID generator Package for PHP.",
+  "homepage": "https://github.com/sudiptpa/guid",
+  "keywords": [
+    "guid"
+  ],
+  "license": "MIT",
+  "authors": [
+    {
+      "email": "sudiptpa@gmail.com",
+      "homepage": "https://sujipthapa.co",
+      "name": "Sujip Thapa",
+      "role": "Web Developer"
+    }
+  ],
+  "autoload": {
+    "files": [
+      "src/helpers.php"
+    ],
+    "psr-4": {
+      "Sujip\\Guid\\": "src/"
+    }
+  },
+  "extra": {
+    "branch-alias": {
+      "dev-master": "1.0.x-dev"
+    },
+    "laravel": {
+      "aliases": {
+        "Guid": "Sujip\\Guid\\Facades\\Guid"
+      },
+      "providers": [
+        "Sujip\\Guid\\GuidServiceProvider"
+      ]
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "require": {
+    "php": ">=5.4.0"
+  },
+  "require-dev": {
+    "friendsofphp/php-cs-fixer": "~1.0"
+  },
+  "support": {
+    "issues": "https://github.com/sudiptpa/guid/issues",
+    "rss": "https://github.com/sudiptpa/guid/releases.atom",
+    "source": "https://github.com/sudiptpa/guid"
+  }
+}

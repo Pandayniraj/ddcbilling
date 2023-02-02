@@ -1,15 +1,12 @@
 # Laravel 5 #
 #############
-/vendor/
 .env
 storage/
 
 # Package development #
 #######################
-/app/Modules/
 /public/vendor/
 /public/uploads/
-/app/Modules/
 /public/vendor/
 /public/products/
 /public/images/
@@ -36,7 +33,6 @@ public/phpinfo.php
 node_modules/
 .phpintel/
 phantomjsdriver.log
-config.js
 dump.rdb
 npm-debug.log
 

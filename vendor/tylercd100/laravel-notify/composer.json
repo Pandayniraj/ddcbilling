@@ -1,0 +1,58 @@
+{
+    "name": "tylercd100/laravel-notify",
+    "description": "",
+    "keywords": [
+        "laravel",
+        "notifications",
+        "monolog",
+        "tylercd100"
+    ],
+    "homepage": "https://github.com/tylercd100/laravel-notify",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Tyler Arbon",
+            "email": "tylercd100@gmail.com"
+        }
+    ],
+    "autoload":{
+        "psr-4":{
+            "Tylercd100\\Notify\\":"src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tylercd100\\Notify\\Tests\\": "tests/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require": {
+        "illuminate/support": "^6.0|^7.0|^8.0",
+        "monolog/monolog": "^2.0",
+        "php": "^7.2|^8.0",
+        "psr/log": "^1.0",
+        "tylercd100/monolog-mailgun": "^3.0",
+        "tylercd100/monolog-sms":"^2.0"
+    },
+    "require-dev": {
+        "sentry/sentry": "dev-php8-support",
+        "symfony/options-resolver": "^5.1",
+        "http-interop/http-factory-guzzle": "^1.0.0",
+        "php-http/guzzle7-adapter": "^0.2.0",
+        "phpunit/phpunit": "^8.4|^9.3.3",
+        "mockery/mockery": "~1.3.3|^1.4.2",
+        "orchestra/testbench": "^4.0|^5.0|^6.0"
+    },
+    "suggest": {
+        "sentry/sentry": "Required to use the Sentry driver (~3.0)."
+    },
+    "extra": {
+        "providers": [
+            "Tylercd100\\Notify\\Providers\\NotifyServiceProvider"
+        ],
+        "aliases": {
+            "Notify": "Tylercd100\\Notify\\Facades\\Notify"
+        }
+    }
+}
