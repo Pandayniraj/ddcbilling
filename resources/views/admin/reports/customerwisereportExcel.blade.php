@@ -21,12 +21,22 @@
 </head>
 
 <body>
-<p>{{ $organization->organization_name }}</p>
-<p>{{ $outletname->name}}</p>
-<h3>Transaction Report From {{ $nepalistartdate }} to {{ $nepalienddate }}</h3>
 <div class="row">
     <table>
         <thead>
+        <tr>
+            <th colspan="5">{{ $organization->organization_name }}</th>
+            <td colspan="3"></td>
+        </tr>
+        <tr>
+            <th colspan="5">{{ $outletname->name}}</th>
+            <td colspan="3"></td>
+        </tr>
+        <tr>
+            <th colspan="5">Transaction Report From {{ $nepalistartdate }} to {{ $nepalienddate }}</th>
+            <td colspan="3"></td>
+        </tr>
+        <tr><td colspan="8"></td></tr>
         <tr>
             <th>S.N</th>
             <th>Customer</th>

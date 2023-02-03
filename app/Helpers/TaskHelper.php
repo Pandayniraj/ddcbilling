@@ -2809,7 +2809,8 @@ public static function getUserOutlets(){
         $outlets=[];
         foreach($outletuser as $user)
         {
-            $outlets[]= \App\Models\PosOutlets::where('id', $user->outlet_id)->select( 'name', 'id')->first(); 
+            $check = \App\Models\PosOutlets::where('id', $user->outlet_id)->select( 'name', 'id')->first();
+            if($check) $outlets[]= \App\Models\PosOutlets::where('id', $user->outlet_id)->select( 'name', 'id')->first(); 
         }
     }
     return $outlets;

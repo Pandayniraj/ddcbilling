@@ -53,28 +53,27 @@ class ProfilesController extends Controller
         $tasks = \App\Models\Task::orderBy('id', 'desc')->where('task_assign_to', $user_id)->get();
 
 
-        $project_taskUser =  \App\Models\ProjectTaskUser::where('user_id',$user_id)->pluck('project_task_id')->toArray();
+        $project_taskUser = \App\Models\ProjectTaskUser::where('user_id', $user_id)->pluck('project_task_id')->toArray();
 
-        $projects_tasks = \App\Models\ProjectTask::orderBy('id', 'desc')->whereIn('id',$project_taskUser)->orWhere('user_id', $user_id)->get();
-         if($user->isAuthsupervisor()){
-                 $users = \App\User::where('first_line_manager',$user->id)->get();
-                 $userViewAble = $users->pluck('id')->toArray();
-                 if(!empty(count($users))){
-                     if($users->first()->isAuthsupervisor()){
-                         $userViewAble[] = $user->id; 
-                         $sub_ordinates = \App\User::whereIn('first_line_manager',$userViewAble)->get();
-                         }else{
-                          $sub_ordinates = \App\User::whereIn('first_line_manager',$userViewAble)->get();
-                        }
-                 }else{
-                   $sub_ordinates = \App\User::where('first_line_manager',$user->id)->get();
-                 }
-              }  
-         else{
-                $sub_ordinates = \App\User::where('first_line_manager',$user->id)->get();
-         }
-        $stock_assigns = StockAssign::where('user_id',$user_id)->orderBy('assign_date', 'desc')->get();
-        return view('admin.profiles.profile', compact('user', 'page_title', 'page_description', 'user_detail', 'leads', 'tasks', 'projects_tasks','sub_ordinates','stock_assigns'));
+        $projects_tasks = \App\Models\ProjectTask::orderBy('id', 'desc')->whereIn('id', $project_taskUser)->orWhere('user_id', $user_id)->get();
+        if ($user->isAuthsupervisor()) {
+            $users = \App\User::where('first_line_manager', $user->id)->get();
+            $userViewAble = $users->pluck('id')->toArray();
+            if (!empty(count($users))) {
+                if ($users->first()->isAuthsupervisor()) {
+                    $userViewAble[] = $user->id;
+                    $sub_ordinates = \App\User::whereIn('first_line_manager', $userViewAble)->get();
+                } else {
+                    $sub_ordinates = \App\User::whereIn('first_line_manager', $userViewAble)->get();
+                }
+            } else {
+                $sub_ordinates = \App\User::where('first_line_manager', $user->id)->get();
+            }
+        } else {
+            $sub_ordinates = \App\User::where('first_line_manager', $user->id)->get();
+        }
+        $stock_assigns = StockAssign::where('user_id', $user_id)->orderBy('assign_date', 'desc')->get();
+        return view('admin.profiles.profile', compact('user', 'page_title', 'page_description', 'user_detail', 'leads', 'tasks', 'projects_tasks', 'sub_ordinates', 'stock_assigns'));
     }
 
     /**
@@ -85,21 +84,21 @@ class ProfilesController extends Controller
 
         $user = \Auth::user();
         $user_id = $user->id;
-        $page_title = $user->first_name .' '. $user->last_name;
+        $page_title = $user->first_name . ' ' . $user->last_name;
         $user_detail = \App\Models\UserDetail::where('user_id', $user_id)->first();
 
         $leads = \App\Models\Lead::orderBy('id', 'desc')->where('user_id', $user_id)->get();
         $tasks = \App\Models\Task::orderBy('id', 'desc')->where('task_assign_to', $user_id)->get();
 
 
-        $project_taskUser =  \App\Models\ProjectTaskUser::where('user_id',$user_id)->pluck('project_task_id')->toArray();
+        $project_taskUser = \App\Models\ProjectTaskUser::where('user_id', $user_id)->pluck('project_task_id')->toArray();
 
-        $projects_tasks = \App\Models\ProjectTask::orderBy('id', 'desc')->whereIn('id',$project_taskUser)->orWhere('user_id', $user_id)->get();
+        $projects_tasks = \App\Models\ProjectTask::orderBy('id', 'desc')->whereIn('id', $project_taskUser)->orWhere('user_id', $user_id)->get();
 
-        $sub_ordinates = \App\User::where('first_line_manager',$user->id)->get();
+        $sub_ordinates = \App\User::where('first_line_manager', $user->id)->get();
 
 
-        return view('admin.profiles.profile', compact('user', 'page_title', 'page_description', 'user_detail', 'leads', 'tasks', 'projects_tasks','sub_ordinates'));
+        return view('admin.profiles.profile', compact('user', 'page_title', 'page_description', 'user_detail', 'leads', 'tasks', 'projects_tasks', 'sub_ordinates'));
 
         // $user = $this->user->find(Auth::user()->id);
         // //$user = $this->user->find(2);
@@ -127,7 +126,7 @@ class ProfilesController extends Controller
         $page_title = trans('admin/profiles/general.page.edit.title'); // "Admin | User | Edit";
         $page_description = trans('admin/profiles/general.page.edit.description', ['full_name' => $user->full_name]); // "Editing user";
 
-        if (! $user->isEditable()) {
+        if (!$user->isEditable()) {
             abort(403);
         }
 
@@ -143,10 +142,10 @@ class ProfilesController extends Controller
     {
         $id = Auth::user()->id;
         //$id = '2';
-        $this->validate($request, ['username'          => 'required|unique:users,username,'.$id,
-                                            'email'             => 'required|unique:users,email,'.$id,
-                                            'first_name'        => 'required',
-                                            'last_name'         => 'required',
+        $this->validate($request, ['username' => 'required|unique:users,username,' . $id,
+            'email' => 'required|unique:users,email,' . $id,
+            'first_name' => 'required',
+            'last_name' => 'required',
         ]);
 
         $user = $this->user->find($id);
@@ -156,7 +155,7 @@ class ProfilesController extends Controller
 
         // Fix #17 as per @sloan58
         // Check if the password was submitted and has changed.
-        if (! Hash::check($attributes['password'], $user->password) && $attributes['password'] != '') {
+        if (!Hash::check($attributes['password'], $user->password) && $attributes['password'] != '') {
             // Password was changed, do nothing we are good.
         } else {
             // Password was not changed or was not submitted, delete attribute from array to prevent it
@@ -172,13 +171,13 @@ class ProfilesController extends Controller
         $tmp = Audit::log(Auth::user()->id, trans('admin/profiles/general.audit-log.category'), trans('admin/profiles/general.audit-log.msg-update', ['username' => $user->username]),
             $replayAtt, "App\Http\Controllers\UsersController::ParseUpdateAuditLog", 'admin.profiles.replay-edit');
 
-        if (! $user->isEditable()) {
+        if (!$user->isEditable()) {
             abort(403);
         }
 
         if (Request::file('profilephoto')) {
             if (Auth::user()->image) {
-                $old_file = public_path().'/images/profiles/'.\Auth::user()->image;
+                $old_file = public_path() . '/images/profiles/' . \Auth::user()->image;
                 File::delete($old_file);
             }
 
@@ -188,23 +187,23 @@ class ProfilesController extends Controller
                 //file_upload
                 $file = Request::file('profilephoto');
                 //base_path() is proj root in laravel
-                $destinationPath = public_path().$imageUploadPath;
+                $destinationPath = public_path() . $imageUploadPath;
                 $filename = $file->getClientOriginalName();
-                Request::file('profilephoto')->move($destinationPath, $stamp.$filename);
+                Request::file('profilephoto')->move($destinationPath, $stamp . $filename);
 
                 //create second image as big image and delete original
-                $image = \Image::make($destinationPath.$stamp.$filename)
-                    ->save($destinationPath.$stamp.$filename);
+                $image = \Image::make($destinationPath . $stamp . $filename)
+                    ->save($destinationPath . $stamp . $filename);
 
-                $attributes['image'] = $stamp.$filename;
+                $attributes['image'] = $stamp . $filename;
             } else {
                 $quality = 90;
                 $stamp = time();
                 //file_upload
                 $file = Request::file('profilephoto');
                 $filename = $file->getClientOriginalName();
-                $src = public_path().'/images/profiles/'.$stamp.$filename;
-                Request::file('profilephoto')->move(public_path().'/images/profiles/', $stamp.$filename);
+                $src = public_path() . '/images/profiles/' . $stamp . $filename;
+                Request::file('profilephoto')->move(public_path() . '/images/profiles/', $stamp . $filename);
 
                 //$src  = public_path().\Request::get('real_img');
                 $img = imagecreatefromjpeg($src);
@@ -215,10 +214,10 @@ class ProfilesController extends Controller
                     Request::get('w'), Request::get('h'));
                 imagejpeg($dest, $src, $quality);
 
-                $attributes['image'] = $stamp.$filename;
+                $attributes['image'] = $stamp . $filename;
             }
 
-            Session::forget('profileImage_'.\Auth::user()->id);
+            Session::forget('profileImage_' . \Auth::user()->id);
         }
         // else
         // {
@@ -291,8 +290,8 @@ class ProfilesController extends Controller
     {
         $id = Auth::user()->id;
         //$id = '2';
-        $this->validate($request, ['imap_password'          => 'required',
-                                            'imap_email'       		 => 'required',
+        $this->validate($request, ['imap_password' => 'required',
+            'imap_email' => 'required',
         ]);
 
         // Get all attribute from the request.

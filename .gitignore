@@ -52,7 +52,6 @@ _ide_helper*
 #     Logs      #
 #################
 *.log
-*.sql
 
 # include sqlite db resource  #
 ###############################

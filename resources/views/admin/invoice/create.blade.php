@@ -9,24 +9,20 @@
             border-left-color: #fff;
             border-right-color: #fff;
         }
-
         .panel .mce-toolbar,
         .panel .mce-statusbar {
             padding-left: 20px;
         }
-
         .panel .mce-edit-area,
         .panel .mce-edit-area iframe,
         .panel .mce-edit-area iframe html {
             padding: 0 10px;
             min-height: 350px;
         }
-
         .mce-content-body {
             color: #555;
             font-size: 14px;
         }
-
         .panel.is-fullscreen .mce-statusbar {
             position: absolute;
             bottom: 0;
@@ -328,9 +324,9 @@
                                             <option value="distributor">Distributor</option>
                                             <option value="retailer">Retailer</option>
                                             <option value="boothman">BoothMan</option>
-                                            <option value="direct_customer">Direct Customer</option>
+                                            {{-- <option value="direct_customer">Direct Customer</option>--}}
                                             <option value="staff">Staff</option>
-                                            <option value="customer">Customer</option>
+                                            {{-- <option value="customer">Customer</option>--}}
                                             <option value="random_customer">Random Customer</option>
                                         </select>
                                     </div>
@@ -548,7 +544,7 @@
                                     <i class="fa fa-store"></i><label for="user_id" >Outlets<span style="color:red">(*)</span></label>
                                     @if (\Auth::user()->hasRole('admins'))
                                         {!! Form::select('outlet_id', ['Please Select'] + $outlets, null, [
-                                            'class' => 'form-control label-success', 
+                                            'class' => 'form-control label-success',
                                             'id' => 'outlet_id',
                                             'required' => 'required',
                                         ]) !!}
@@ -556,8 +552,10 @@
                                         <select name="outlet_id" class="form-control" id="outlet_id" required>
                                             <option value="">select</option>
                                             @foreach ($outlets as $outlet)
-                                                <option value={{ $outlet->id }} selected>
-                                                    {{ $outlet->name ?? '' }}</option>
+                                                @if ($outlet)
+                                                    <option value={{ $outlet->id }} selected>
+                                                        {{ $outlet->name ?? '' }}</option>
+                                                @endif
                                             @endforeach
                                         </select>
                                     @endif
@@ -757,9 +755,6 @@
     @include('partials._body_bottom_submit_bug_edit_form_js')
     @include('partials._date-toggle')
     <script>
-        // $(document).on('focusout','.total',function(){
-        // 	$('#addMore').trigger('click');
-        // });
         $('.date-toggle-nep-eng').nepalidatetoggle();
         const dateRange = {
             <?php $currentFiscalyear = FinanceHelper::cur_fisc_yr(); ?>
@@ -773,17 +768,12 @@
         $('.customer_id').select2();
         $('.customer_type').select2();
 
-
         function adjustTotalNonTaxable() {
-
-
             var taxableAmount = 0;
 
             var nontaxableAmount = 0;
 
             var taxAmount = 0;
-
-
 
             var taxableAmount = 0;
 
@@ -997,6 +987,12 @@
                 }
             });
         });
+
+        $(document).ready(function () {
+            $("#customer_type").val('random_customer');
+            $("#forrandom").val('Cash');
+            $("#customer_type").trigger('change');
+        })
 
         $(document).on('change', '#customer_type', function() {
             let customer_type = $(this).val();
@@ -1219,7 +1215,7 @@
             var count = 0;
             $('#multipleDiv tr').each(function(index, val) {
                 count++;
-                
+
                 if (index > 0) {
                     $(this).find('.p_sn').html(index);
 
@@ -1229,8 +1225,6 @@
             });
             if (count == 16) {
                 $('#addMore').toggleClass('disabled');
-                // $('#addMore').props('disabled', true);
-                // document.getElementById("addMore").disabled= true;
             }
 
         }
@@ -1251,14 +1245,14 @@
 
                 getSn();
                 $('#addmorProducts').show(300);
-
-
             }
         });
-        $("#addMore").on("click", function() {
 
-            $(".multipleDiv").after($('#orderFields #more-tr').html());
-            $(".multipleDiv").next('tr').find('.product_id').select2({
+        $("#addMore").on("click", function() {
+            // $(".multipleDiv").after($('#orderFields #more-tr').html());
+            $("#multipleDiv tr:last").after($('#orderFields #more-tr').html());
+            // $(".multipleDiv").next('tr').find('.product_id').select2({
+            $("#multipleDiv tr:last").find('.product_id').select2({
                 width: '100%'
             });
             let pid = $(".multipleDiv").next('tr').find('.product_id');

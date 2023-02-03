@@ -110,7 +110,6 @@ class PaymentController extends Controller
     public function submitNewPayment(Request $request)
     {
         $payment = SalaryPayment::where('user_id', $request->user_id)->where('payment_month', $payment_month)->first();
-        //dd($payment);
         if (! count($types)) {
             $attributes = $request->except('_token');
             $attributes['paid_date'] = date('Y-m-d');
@@ -213,7 +212,6 @@ class PaymentController extends Controller
         } else {
             $employeeawards = EmployeeAward::whereBetween('month', [date('Y').'-01-01', date('Y').'-12-31'])->where('org_id', \Auth::user()->org_id)->orderBy('month', 'asc')->get();
         }
-        //dd($employeeawards);
 
         return view('admin.payroll.employeeaward.index', compact('page_title', 'users', 'employeeawards', 'page_description', 'page_title'));
     }
@@ -221,7 +219,6 @@ class PaymentController extends Controller
     public function employeeAwardStore(Request $request)
     {
 
-        //dd($request->all());
 
         $attributes = $request->all();
         $attributes['org_id'] = \Auth::user()->org_id;
@@ -234,7 +231,6 @@ class PaymentController extends Controller
     public function editEmployeeAward($id)
     {
         $holiday = EmployeeAward::where('award_id', $id)->first()->toArray();
-        //dd($holiday);
         return $holiday;
     }
 
@@ -306,7 +302,6 @@ class PaymentController extends Controller
         $page_description = 'Deduction of Taxable amount On Remote Regions';
         $categories =   \App\Models\RemoteTaxDeductionCategory::get();
         $lists =   \App\Models\RemoteTaxDeduction::get();
-        // dd($lists);
         return view('admin.payroll.remote_deduction.index',compact('page_title','categories','lists','page_description'));
     }
 
@@ -315,7 +310,6 @@ class PaymentController extends Controller
         $page_title = 'Remote Taxable Deductions Create';
         $page_description = 'Deduction of Taxable amount On Remote Regions';
         $categories =   \App\Models\RemoteTaxDeductionCategory::get();
-        // dd($categories);
         $lists =   \App\Models\RemoteTaxDeduction::get();
         return view('admin.payroll.remote_deduction.create',compact('page_title','page_description','categories','lists'));
     }
@@ -327,8 +321,6 @@ class PaymentController extends Controller
         // $category =   \App\Models\RemoteTaxDeductionCategory::find($id);
         $district =   \App\Models\RemoteTaxDeduction::find($id);
         $categories =   \App\Models\RemoteTaxDeductionCategory::get();
-        // dd($category);
-        // dd($categories);
         // $lists =   \App\Models\RemoteTaxDeduction::get();
         return view('admin.payroll.remote_deduction.edit',compact('categories','page_title','page_description','district'));
     }

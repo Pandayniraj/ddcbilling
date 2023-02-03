@@ -43,13 +43,13 @@ class LeadNotesController extends Controller
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
      */
     public function store(Request $request)
-    {   
+    {
 
         $this->validate($request, ['note'=> 'required',
             'lead_id' => 'required',
             'user_id' => 'required',
         ]);
-       
+
         $attributes = $request->except('_token'); //$request->all();
         Audit::log(Auth::user()->id, trans('admin/leadnotes/general.audit-log.category'), trans('admin/leadnotes/general.audit-log.msg-store', ['name' => $attributes['note']]));
 
@@ -146,7 +146,6 @@ class LeadNotesController extends Controller
                 $message->to(\TaskHelper::getUser($attributes['task_assign_to'])->email, '');
             });
             //$mailcontent = $this->task->create($task_attribute);
-            // dd(\TaskHelper::getUser($attributes['task_assign_to'])->email);
             //TIME TO SEND EMAIL
 
             //used for notification, send note details to task table and User_Task table

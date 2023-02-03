@@ -39,7 +39,6 @@ class Controller extends BaseController
         /*$this->audit = $audit;
         $this->global_audits = $this->audit->pushCriteria(new AuditByCreatedDateDescending())->paginate(10);
         View::share('global_audits', $this->global_audits);*/
-        //dd(\Carbon\Carbon::now()->addDays(30));
         $this->due_marketing_tasks = null;
         $this->not_viewed_leads = null;
         $this->not_viewed_cases = null;
@@ -89,7 +88,6 @@ class Controller extends BaseController
             $this->announce = Announcement::orderBy('announcements_id', 'DESC')->where('org_id', \Auth::user()->org_id)
                 ->where('status', 'published')
                 ->first();
-            // dd($this->announce);
 
             $this->transfer = LeadTransfer::orderBy('id', 'DESC')
                 ->where('to_user_id', \Auth::user()->id)
@@ -117,13 +115,13 @@ class Controller extends BaseController
 
             \View::share('total_unseen_message', $this->unseen_message);
             $this->org = Organization::where('id',\Auth::user()->org_id)->first();
-   
+
         }else{
             $this->org = Organization::find($id = 1);
         }
 
         // $this->all_projects = Projects::where('enabled', 1)->where('org_id', \Auth::user()->org_id)->lists('name', 'id');
-        
+
 
         \View::share('due_marketing_tasks', $this->due_marketing_tasks);
         \View::share('not_viewed_leads', $this->not_viewed_leads);

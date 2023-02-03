@@ -20,7 +20,6 @@ use App\Http\Controllers\Controller;
 /**
  * THIS CONTROLLER IS USED AS PRODUCT CONTROLLER
  */
-
 class COAController extends Controller
 {
     /**
@@ -44,168 +43,161 @@ class COAController extends Controller
 
         $page_description = 'All Chart of accounts';
 
-        $groups= COAgroups::orderBy('code', 'asc')->get();
+        $groups = COAgroups::orderBy('code', 'asc')->get();
 
-        return view('admin.coa.index', compact('page_title','page_description','groups'));
-    }
-    public function CreateGroups(){
-
-      $page_title = 'Groups Add';
-      $page_description = 'create groups';
-
-      $groups= COAgroups::orderBy('code','asc')->get();
-
-
-    return view('admin.coa.creategroups', compact('page_title','page_description','groups'));
-
+        return view('admin.coa.index', compact('page_title', 'page_description', 'groups'));
     }
 
-    public function PostGroups(Request $request){
+    public function CreateGroups()
+    {
+        $page_title = 'Groups Add';
+        $page_description = 'create groups';
 
-      $this->validate($request, array(
-          'parent_id' => 'required',
-          'name' => 'required'
+        $groups = COAgroups::orderBy('code', 'asc')->get();
+
+        return view('admin.coa.creategroups', compact('page_title', 'page_description', 'groups'));
+    }
+
+    public function PostGroups(Request $request)
+    {
+        $this->validate($request, array(
+            'parent_id' => 'required',
+            'name' => 'required'
         ));
 
-      $check = COAgroups::where('code',$request->code)->where('org_id',\Auth::user()->org_id)->exists();
-      if($check){
-          return \Redirect::back()->withErrors(['error'=>'Code Already Taken']);
-      }
-      //dd($request->all());
-      $detail = new COAgroups();
-      $detail->parent_id= $request->parent_id;
-      $detail->org_id = \Auth::user()->org_id;
-      $detail->user_id = \Auth::user()->id;
-      $detail->code = $request->code;
-      $detail->name= $request->name;
-      $detail->affects_gross= $request->affects_gross;
-      $detail->save();
+        $check = COAgroups::where('code', $request->code)->where('org_id', \Auth::user()->org_id)->exists();
+        if ($check) {
+            return \Redirect::back()->withErrors(['error' => 'Code Already Taken']);
+        }
+        $detail = new COAgroups();
+        $detail->parent_id = $request->parent_id;
+        $detail->org_id = \Auth::user()->org_id;
+        $detail->user_id = \Auth::user()->id;
+        $detail->code = $request->code;
+        $detail->name = $request->name;
+        $detail->affects_gross = $request->affects_gross;
+        $detail->save();
 
-     Flash::success("Groups Created Successfully");
+        Flash::success("Groups Created Successfully");
 
-      return redirect('/admin/chartofaccounts');
-
+        return redirect('/admin/chartofaccounts');
     }
 
-     public function CreateLedgers(){
+    public function CreateLedgers()
+    {
+        $page_title = 'Ledgers Add';
+        $page_description = 'create Ledgers';
 
-      $page_title = 'Ledgers Add';
-      $page_description = 'create Ledgers';
+        $groups = COAgroups::orderBy('code', 'asc')->where('org_id', \Auth::user()->org_id)->get();
+        if (\Request::ajax()) {
+            $expenses_type = $_GET['expenses_type']; //for detrmining which select option
+            $selectedgroup_value = $_GET['selected_value'];
+            return view('admin.coa.modals.createledgers', compact('page_title', 'page_description', 'groups', 'expenses_type', 'selectedgroup_value'));
+        }
 
-      $groups= COAgroups::orderBy('code', 'asc')->where('org_id',\Auth::user()->org_id)->get();
-      if(\Request::ajax()){
-        $expenses_type = $_GET['expenses_type']; //for detrmining which select option
-        $selectedgroup_value =$_GET['selected_value'];
-        return view('admin.coa.modals.createledgers',compact('page_title','page_description','groups','expenses_type','selectedgroup_value'));
-      }
-     return view('admin.coa.createledgers', compact('page_title','page_description','groups'));
-
+        return view('admin.coa.createledgers', compact('page_title', 'page_description', 'groups'));
     }
 
 
-     public function PostLedgers(Request $request){
-      if(\Request::ajax()){
+    public function PostLedgers(Request $request)
+    {
+        if (\Request::ajax()) {
             $validator = \Validator::make($request->all(), [
-              'code' => 'required | unique:coa_ledgers',
-              'group_id' => 'required',
-              'name' => 'required',
-              'op_balance_dc' => 'required',
-              'op_balance' => 'required'
+                'code' => 'required | unique:coa_ledgers',
+                'group_id' => 'required',
+                'name' => 'required',
+                'op_balance_dc' => 'required',
+                'op_balance' => 'required'
             ]);
             if ($validator->fails()) {
-                return ['error'=>$validator->errors()];
+                return ['error' => $validator->errors()];
             }
         }
-       $this->validate($request, array(
-          'group_id' => 'required',
-          'name' => 'required',
-          'op_balance_dc' => 'required',
-          'op_balance' => 'required'
+        $this->validate($request, array(
+            'group_id' => 'required',
+            'name' => 'required',
+            'op_balance_dc' => 'required',
+            'op_balance' => 'required'
 
-         ));
-      $check = COALedgers::where('code',$request->code)->where('org_id',\Auth::user()->org_id)->exists();
-      if($check){
-          return \Redirect::back()->withErrors(['error'=>'Code Already Taken']);
-      }
-      $detail = new COALedgers();
-      $detail->group_id= $request->group_id;
-
-      $detail->org_id = \Auth::user()->org_id;
-      $detail->user_id = \Auth::user()->id;
-
-      $detail->code= $request->code;
-      $detail->name= $request->name;
-      $detail->op_balance_dc= $request->op_balance_dc;
-      $detail->op_balance= $request->op_balance;
-      $detail->notes= $request->notes;
-
-      if($request->type == 1){
-         $detail->type= $request->type;
-      }else{
-        $detail->type=0;
-      }
-      if($request->reconciliation == 1){
-         $detail->type= $request->reconciliation;
-      }else{
-        $detail->reconciliation=0;
-      }
-
-      $detail->save();
-
-
-      if(\Request::ajax()){
-        if(isset($_GET['selectedgroup'])){
-            $selectedgroup = $_GET['selectedgroup'];
-            $type = $_GET['expenses_type'];
-          $data = view('admin.coa.modals.ajaxledgergroup-select', compact('selectedgroup','type'))->render();
-        }else{
-            $lastcreated = $detail;
-           $data = view('admin.coa.modals.ajaxledgergroup-select', compact('lastcreated'))->render();
+        ));
+        $check = COALedgers::where('code', $request->code)->where('org_id', \Auth::user()->org_id)->exists();
+        if ($check) {
+            return \Redirect::back()->withErrors(['error' => 'Code Already Taken']);
         }
-        return ['data'=>$data,'status'=>'success','lastcreated'=>$detail];
-      }
-      Flash::success("Ledgers Created Successfully");
+        $detail = new COALedgers();
+        $detail->group_id = $request->group_id;
 
-      return redirect('/admin/chartofaccounts');
+        $detail->org_id = \Auth::user()->org_id;
+        $detail->user_id = \Auth::user()->id;
 
+        $detail->code = $request->code;
+        $detail->name = $request->name;
+        $detail->op_balance_dc = $request->op_balance_dc;
+        $detail->op_balance = $request->op_balance;
+        $detail->notes = $request->notes;
+
+        if ($request->type == 1) {
+            $detail->type = $request->type;
+        } else {
+            $detail->type = 0;
+        }
+        if ($request->reconciliation == 1) {
+            $detail->type = $request->reconciliation;
+        } else {
+            $detail->reconciliation = 0;
+        }
+
+        $detail->save();
+
+
+        if (\Request::ajax()) {
+            if (isset($_GET['selectedgroup'])) {
+                $selectedgroup = $_GET['selectedgroup'];
+                $type = $_GET['expenses_type'];
+                $data = view('admin.coa.modals.ajaxledgergroup-select', compact('selectedgroup', 'type'))->render();
+            } else {
+                $lastcreated = $detail;
+                $data = view('admin.coa.modals.ajaxledgergroup-select', compact('lastcreated'))->render();
+            }
+            return ['data' => $data, 'status' => 'success', 'lastcreated' => $detail];
+        }
+        Flash::success("Ledgers Created Successfully");
+
+        return redirect('/admin/chartofaccounts');
     }
 
 
-     public function EditGroups($id){
+    public function EditGroups($id)
+    {
+        $page_title = 'Groups Edit';
+        $page_description = 'edit groups';
+        $groups = COAgroups::orderBy('code', 'asc')->get();
 
-       $page_title = 'Groups Edit';
-       $page_description = 'edit groups';
-       $groups= COAgroups::orderBy('code','asc')->get();
+        $group_data = COAgroups::find($id);
 
-       $group_data= COAgroups::find($id);
-
-
-       return view('admin.coa.editgroups', compact('page_title','page_description','groups','group_data'));
-
+        return view('admin.coa.editgroups', compact('page_title', 'page_description', 'groups', 'group_data'));
     }
 
-     public function UpdateGroups(Request $request,$id){
-
+    public function UpdateGroups(Request $request, $id)
+    {
         $coagroups = COAgroups::find($id);
-        $original_value= COAGroups::where('id',$id)->first()->code;
+        $original_value = COAGroups::where('id', $id)->first()->code;
 
-        if($request->code != $original_value){
+        if ($request->code != $original_value) {
+            $this->validate($request, array(
+                'code' => 'required | unique'
+            ));
+        }
 
-         $this->validate($request, array(
-          'code' => 'required | unique'
-         ));
-
-         }
-
-         if($id<=4){
-          Flash::error('Permission Denied To Update this Group');
-          return redirect('/admin/chartofaccounts');
-         }
+        if ($id <= 4) {
+            Flash::error('Permission Denied To Update this Group');
+            return redirect('/admin/chartofaccounts');
+        }
 
         $this->validate($request, array(
-          'name' => 'required',
-          'parent_id' => 'required'
-         ));
+            'name' => 'required',
+            'parent_id' => 'required'
+        ));
 
         $attributes = $request->all();
         $attributes['org_id'] = \Auth::user()->org_id;
@@ -214,218 +206,194 @@ class COAController extends Controller
         $coagroups->update($attributes);
         Flash::success('Group Updated Successfully');
 
-      return redirect('/admin/chartofaccounts');
-
+        return redirect('/admin/chartofaccounts');
     }
 
+    public function EditLedgers($id)
+    {
+        $page_title = 'Ledgers Edit';
+        $page_description = 'edit Ledgers';
 
+        $groups = COAgroups::orderBy('code', 'asc')->where('org_id', \Auth::user()->org_id)->get();
 
-     public function EditLedgers($id){
+        $ledgers_data = COALedgers::find($id);
 
-      $page_title = 'Ledgers Edit';
-      $page_description = 'edit Ledgers';
-
-      $groups= COAgroups::orderBy('code', 'asc')->where('org_id',\Auth::user()->org_id)->get();
-
-      $ledgers_data= COALedgers::find($id);
-
-
-     return view('admin.coa.editledgers', compact('page_title','page_description','groups','ledgers_data'));
-
-
+        return view('admin.coa.editledgers', compact('page_title', 'page_description', 'groups', 'ledgers_data'));
     }
 
-    public function UpdateLedgers(Request $request,$id){
+    public function UpdateLedgers(Request $request, $id)
+    {
+        $coaledgers = COALedgers::find($id);
 
-      $coaledgers = COALedgers::find($id);
+        $original_value = COALedgers::where('id', $id)->first()->code;
+        if ($request->code != $original_value) {
+            $this->validate($request, array('code' => 'required|unique:coa_ledgers,code'));
+        }
 
-      $original_value= COALedgers::where('id',$id)->first()->code;
+        $this->validate($request, array(
+            'name' => 'required',
+            // 'group_id' => 'required',
+            'op_balance_dc' => 'required',
+            'op_balance' => 'required'
+        ));
 
-      if($request->code != $original_value){
+        $attributes = $request->all();
 
-         $this->validate($request, array(
-          'code' => 'required | unique:coa_ledgers'
-         ));
+        $attributes['org_id'] = \Auth::user()->org_id;
+        $attributes['user_id'] = \Auth::user()->id;
 
-       }
+        $attributes['type'] = $request->type;
+        $attributes['reconciliation'] = $request->reconciliation;
 
-       $this->validate($request, array(
-          'name' => 'required',
-          'group_id' => 'required',
-          'op_balance_dc' => 'required',
-          'op_balance' => 'required'
+        $coaledgers->update($attributes);
+        Flash::success('Ledgers Updated Successfully');
 
-         ));
-
-      $attributes = $request->all();
-
-      $attributes['org_id'] = \Auth::user()->org_id;
-      $attributes['user_id'] = \Auth::user()->id;
-
-      $attributes['type']= $request->type;
-      $attributes['reconciliation']= $request->reconciliation;
-
-      $coaledgers->update($attributes);
-      Flash::success('Ledgers Updated Successfully');
-
-    return redirect('/admin/chartofaccounts');
-
+        return redirect('/admin/chartofaccounts');
     }
 
+    public function DetailLedgers($id, Request $request)
+    {
+        $page_title = 'Ledgers Detail';
+        $page_description = 'Detail Ledgers';
+        $groups = COAgroups::orderBy('code', 'asc')->where('org_id', \Auth::user()->org_id)->get();
+        $ledgers_data = COALedgers::find($id);
 
-     public function DetailLedgers($id,Request $request){
-      $page_title = 'Ledgers Detail';
-      $page_description = 'Detail Ledgers';
-      $groups= COAgroups::orderBy('code', 'asc')->where('org_id',\Auth::user()->org_id)->get();
-      $ledgers_data= COALedgers::find($id);
+        if (\Request::has('startdate') && \Request::has('enddate')) {
+            $startdate = $request->startdate;
+            $enddate = $request->enddate;
+            $entry_items = Entryitem::where('ledger_id', $id)->leftjoin('entries', 'entryitems.entry_id', '=', 'entries.id')->where('entries.date', '>=', $startdate)->where('entries.date', '<=', $enddate)->get();
+        } else {
+            $entry_items = Entryitem::where('ledger_id', $id)->get();
+        }
+        return view('admin.coa.detailledgers', compact('page_title', 'page_description', 'groups', 'ledgers_data', 'entry_items', 'id'));
+    }
 
-      if(\Request::has('startdate') && \Request::has('enddate')){
+    public function DownloadPdf(Request $request, $id)
+    {
+        $page_title = 'Ledgers Detail';
+        $page_description = 'Detail Ledgers';
         $startdate = $request->startdate;
         $enddate = $request->enddate;
-        $entry_items = Entryitem::where('ledger_id',$id)->leftjoin('entries','entryitems.entry_id','=','entries.id')->where('entries.date','>=',$startdate)->where('entries.date','<=',$enddate)->get();
-      }
-      else{
-        $entry_items= Entryitem::where('ledger_id',$id)->get();
-      }
-     return view('admin.coa.detailledgers', compact('page_title','page_description','groups','ledgers_data','entry_items','id'));
-    }
-
-
-  public function DownloadPdf(Request $request,$id){
-
-      $page_title = 'Ledgers Detail';
-      $page_description = 'Detail Ledgers';
-      $startdate = $request->startdate;
-      $enddate = $request->enddate;
-      $selected_currency = $request->currency;
-      $groups = COAgroups::orderBy('code', 'asc')->get();
-      $ledgers_data = COALedgers::find($request->ledger_id);
-        //dd($id);
+        $selected_currency = $request->currency;
+        $groups = COAgroups::orderBy('code', 'asc')->get();
+        $ledgers_data = COALedgers::find($request->ledger_id);
         $currency = \App\Models\Country::select('*')->whereEnabled('1')->orderByDesc('id')->get();
 
-        if(\Request::get('startdate') && \Request::get('enddate')){
+        if (\Request::get('startdate') && \Request::get('enddate')) {
             $startdate = $request->startdate;
 
             $enddate = $request->enddate;
-            $entry_items = Entryitem::select('entryitems.*')->where('ledger_id',$id)
-                    ->where('entries.date','>=',$startdate)->where('entries.date','<=',$enddate)
-                    ->leftjoin('entries','entryitems.entry_id','=','entries.id')
-                    ->groupBy('entryitems.id')
-                    ->orderBy('id','desc')
-                    ->paginate(30);
+            $entry_items = Entryitem::select('entryitems.*')->where('ledger_id', $id)
+                ->where('entries.date', '>=', $startdate)->where('entries.date', '<=', $enddate)
+                ->leftjoin('entries', 'entryitems.entry_id', '=', 'entries.id')
+                ->groupBy('entryitems.id')
+                ->orderBy('id', 'desc')
+                ->paginate(30);
+        } else $entry_items = Entryitem::where('ledger_id', $id)->orderBy('id', 'desc')->get();
 
-          }
-          else{
+        $imagepath = \Auth::user()->organization->logo;
 
-            $entry_items= Entryitem::where('ledger_id',$id)->orderBy('id','desc')->get();
-        }
+        $pdf = \PDF::loadView('admin.coa.pdf', compact('entries', 'entriesitem', 'groups', 'ledgers_data', 'entry_items', 'id', 'imagepath'));
 
+        $file = $id . '_' . $entries->number . '.pdf';
 
-
-        $imagepath=\Auth::user()->organization->logo;
-
-        $pdf = \PDF::loadView('admin.coa.pdf', compact('entries','entriesitem','groups','ledgers_data','entry_items','id','imagepath'));
-
-        $file = $id.'_'.$entries->number.'.pdf';
-
-        if (\File::exists('reports/'.$file))
-        {
-            \File::Delete('reports/'.$file);
+        if (\File::exists('reports/' . $file)) {
+            \File::Delete('reports/' . $file);
         }
         return $pdf->download($file);
 
     }
 
-     public function PrintLedgers(Request $request,$id){
+    public function PrintLedgers(Request $request, $id)
+    {
 
 
+        $page_title = 'Entry Show';
+        $page_description = 'show entries';
+        $imagepath = \Auth::user()->organization->logo;
 
-         $page_title = 'Entry Show';
-         $page_description = 'show entries';
-         $imagepath=\Auth::user()->organization->logo;
 
+        $groups = COAgroups::orderBy('code', 'asc')->where('org_id', \Auth::user()->org_id)->get();
+        $ledgers_data = COALedgers::find($id);
+        if (\Request::has('startdate') && \Request::has('enddate')) {
+            $startdate = $request->startdate;
+            $enddate = $request->enddate;
+            $entry_items = Entryitem::where('ledger_id', $id)->leftjoin('entries', 'entryitems.entry_id', '=', 'entries.id')->where('entries.date', '>=', $startdate)->where('entries.date', '<=', $enddate)->get();
+        } else {
+            $entry_items = Entryitem::where('ledger_id', $id)->get();
+        }
 
-         $groups= COAgroups::orderBy('code', 'asc')->where('org_id',\Auth::user()->org_id)->get();
-         $ledgers_data= COALedgers::find($id);
-      if(\Request::has('startdate') && \Request::has('enddate')){
-        $startdate = $request->startdate;
-        $enddate = $request->enddate;
-        $entry_items = Entryitem::where('ledger_id',$id)->leftjoin('entries','entryitems.entry_id','=','entries.id')->where('entries.date','>=',$startdate)->where('entries.date','<=',$enddate)->get();
-      }
-      else{
-        $entry_items= Entryitem::where('ledger_id',$id)->get();
-      }
-
-         return view('admin.coa.print', compact('entries','entriesitem','$groups','ledgers_data','entry_items','id','imagepath'));
+        return view('admin.coa.print', compact('entries', 'entriesitem', '$groups', 'ledgers_data', 'entry_items', 'id', 'imagepath'));
 
     }
-    public function downloadExcel($id){
-      $groups= COAgroups::orderBy('code', 'asc')->where('org_id',\Auth::user()->org_id)->get();
-      $ledgers_data= COALedgers::find($id);
-      $entry_items= Entryitem::where('ledger_id',$id)->get();
-      $mytime = \Carbon\Carbon::now();
-      $startOfYear = $mytime->copy()->startOfYear();
-      $endOfYear   = $mytime->copy()->endOfYear();
-      $type = ($ledgers_data->op_balance_dc == 'D')?'Dr':'Cr';
-      $closing_balance =\TaskHelper::getLedgerBalance($id);
-      $heading = [
-        [
-          'Bank or cash account',($ledger_data->type == 1) ? 'Yes' : 'No',
-        ],
-        [
-          'Notes',$ledgers_data->notes,
-        ],
-        [
-          'Opening balance as on',date('d-M-Y', strtotime($startOfYear)),$type.' '.$ledgers_data->op_balance
-        ],
-        [
-          'Closing balance as on ',date('d-M-Y', strtotime($endOfYear)),$closing_balance
-        ]
 
-      ];
-      $total=0;
-      foreach($entry_items as $ei){
-        $entry_balance = \TaskHelper::calculate_withdc($entry_balance['amount'], $entry_balance['dc'],
-          $ei['amount'], $ei['dc']);
-        $getledger= \TaskHelper::getLedger($ei->entry_id);
-        $type = $ei->dc=='D'?'Dr':'Cr';
-        $entry[] = [
-          'entry_date'=>$ei->entry->date,
-          'entry_number'=>$ei->entry->number,
-          'ledger'=>$getledger,
-          'entry_type'=>$ei->entry->entrytype->name,
-          'tagname'=>$ei->entry->tagname->title,
-          'balance'=> $type.' '.$ei->amount,
+    public function downloadExcel($id)
+    {
+        $groups = COAgroups::orderBy('code', 'asc')->where('org_id', \Auth::user()->org_id)->get();
+        $ledgers_data = COALedgers::find($id);
+        $entry_items = Entryitem::where('ledger_id', $id)->get();
+        $mytime = \Carbon\Carbon::now();
+        $startOfYear = $mytime->copy()->startOfYear();
+        $endOfYear = $mytime->copy()->endOfYear();
+        $type = ($ledgers_data->op_balance_dc == 'D') ? 'Dr' : 'Cr';
+        $closing_balance = \TaskHelper::getLedgerBalance($id);
+        $heading = [
+            [
+                'Bank or cash account', ($ledger_data->type == 1) ? 'Yes' : 'No',
+            ],
+            [
+                'Notes', $ledgers_data->notes,
+            ],
+            [
+                'Opening balance as on', date('d-M-Y', strtotime($startOfYear)), $type . ' ' . $ledgers_data->op_balance
+            ],
+            [
+                'Closing balance as on ', date('d-M-Y', strtotime($endOfYear)), $closing_balance
+            ]
+
         ];
-        $total = $total + $ei->amount;
-     }
-     $entry[] = ['','','','','Total',$total];
-    return \Excel::create('leadger_report('.$id.')', function($excel) use ($entry,$heading) {
-          $excel->sheet('mySheet', function($sheet) use ($entry,$heading)
-            {
-              $sheet->fromArray($entry);
-              $sheet->prependRow($heading[3]);
-              $sheet->prependRow($heading[2]);
-              $sheet->prependRow($heading[1]);
-              $sheet->prependRow($heading[0]);
-              $sheet->cell('A5:F5', function($cell){
-                  $cell->setFontWeight('bold');
-                  $cell->setBackground('#ffff00');
-              });
-              $sheet->cell('A1', function($cell){
+        $total = 0;
+        foreach ($entry_items as $ei) {
+            $entry_balance = \TaskHelper::calculate_withdc($entry_balance['amount'], $entry_balance['dc'],
+                $ei['amount'], $ei['dc']);
+            $getledger = \TaskHelper::getLedger($ei->entry_id);
+            $type = $ei->dc == 'D' ? 'Dr' : 'Cr';
+            $entry[] = [
+                'entry_date' => $ei->entry->date,
+                'entry_number' => $ei->entry->number,
+                'ledger' => $getledger,
+                'entry_type' => $ei->entry->entrytype->name,
+                'tagname' => $ei->entry->tagname->title,
+                'balance' => $type . ' ' . $ei->amount,
+            ];
+            $total = $total + $ei->amount;
+        }
+        $entry[] = ['', '', '', '', 'Total', $total];
+        return \Excel::create('leadger_report(' . $id . ')', function ($excel) use ($entry, $heading) {
+            $excel->sheet('mySheet', function ($sheet) use ($entry, $heading) {
+                $sheet->fromArray($entry);
+                $sheet->prependRow($heading[3]);
+                $sheet->prependRow($heading[2]);
+                $sheet->prependRow($heading[1]);
+                $sheet->prependRow($heading[0]);
+                $sheet->cell('A5:F5', function ($cell) {
                     $cell->setFontWeight('bold');
-              });
-              $sheet->cell('A2', function($cell){
+                    $cell->setBackground('#ffff00');
+                });
+                $sheet->cell('A1', function ($cell) {
                     $cell->setFontWeight('bold');
-              });
-              $sheet->cell('A3', function($cell){
+                });
+                $sheet->cell('A2', function ($cell) {
                     $cell->setFontWeight('bold');
-              });
-              $sheet->cell('A4', function($cell){
+                });
+                $sheet->cell('A3', function ($cell) {
                     $cell->setFontWeight('bold');
-              });
-              $last_row = count($entry) + count($heading) + 1;
-              $sheet->cell('E'.$last_row.':F'.$last_row, function($cell){
+                });
+                $sheet->cell('A4', function ($cell) {
+                    $cell->setFontWeight('bold');
+                });
+                $last_row = count($entry) + count($heading) + 1;
+                $sheet->cell('E' . $last_row . ':F' . $last_row, function ($cell) {
                     $cell->setFontWeight('bold');
                     $cell->setBackground('#ffff00');
                 });
@@ -434,117 +402,116 @@ class COAController extends Controller
     }
 
 
-    public function GetNextCode(Request $request){
-     $id=$request->id;
-     $group_data= COAgroups::find($id);
-     $group_code=$group_data->code;
-     $g= COAgroups::where('parent_id',$id)->where('org_id',\Auth::user()->org_id)->where('code','!=','null')->get();
-        $new_index= "01";
-        $new_code= $group_code.'-'.$new_index;
-     if(count($g) > 0){
-       $last= $g->last();
-       $last = $last->code;
-       $l_array = explode('-', $last);
-       $new_index = end($l_array);
-       $new_index += 1;
-       $new_index = sprintf("%02d", $new_index);
-         $new_code=$group_code."-".$new_index;
-     }
+    public function GetNextCode(Request $request)
+    {
+        $id = $request->id;
+        $group_data = COAgroups::find($id);
+        $group_code = $group_data->code;
+        $g = COAgroups::where('parent_id', $id)->where('org_id', \Auth::user()->org_id)->where('code', '!=', 'null')->get();
+        $new_index = "01";
+        $new_code = $group_code . '-' . $new_index;
+        if (count($g) > 0) {
+            $last = $g->last();
+            $last = $last->code;
+            $l_array = explode('-', $last);
+            $new_index = end($l_array);
+            $new_index += 1;
+            $new_index = sprintf("%02d", $new_index);
+            $new_code = $group_code . "-" . $new_index;
+        }
         $formatted_count = function ($index) {
             return str_pad(($index), 2, '0', STR_PAD_LEFT);
         };
 
-        while(\App\Models\COAgroups::where('code',$new_code)->exists()){
+        while (\App\Models\COAgroups::where('code', $new_code)->exists()) {
             $new_index++;
-            $new_code=$group_code."-".$formatted_count($new_index);
+            $new_code = $group_code . "-" . $formatted_count($new_index);
         }
-      return $new_code;
+        return $new_code;
 
     }
 
+    public function getNextCodeLedgers(Request $request)
+    {
+        $id = $request->id;
+        $group_data = COAgroups::find($id);
+        $group_code = $group_data->code;
+        $q = COALedgers::where('group_id', $id)->where('org_id', \Auth::user()->org_id)->where('code', '!=', 'null')->get();
 
-  public function getNextCodeLedgers(Request $request) {
-    $id=$request->id;
-    $group_data= COAgroups::find($id);
-    $group_code=$group_data->code;
-    $q= COALedgers::where('group_id',$id)->where('org_id',\Auth::user()->org_id)->where('code','!=','null')->get();
+        $new_index = '0001';
+        $new_code = $group_code . '-' . $new_index;
 
-      $new_index='0001';
-      $new_code=$group_code.'-'.$new_index;
+        if (count($q) > 0) {
+            $codes = [];
+            foreach ($q as $c) {
+                $code = $c->code;
+                $codearr = explode('-', $code);
+                array_push($codes, (int)$codearr[count($codearr) - 1]);
+            }
+            $new_index = max($codes) + 1;
+            $new_index = sprintf("%04d", $new_index);
+            $new_code = $group_code . "-" . $new_index;
+        }
+        $formatted_count = function ($index) {
+            return str_pad(($index), 4, '0', STR_PAD_LEFT);
+        };
 
-      if(count($q) > 0){
-      $codes =[];
-      foreach($q as $c){
-        $code = $c->code;
-        $codearr = explode('-', $code);
-        array_push($codes,(int)$codearr[count($codearr)-1]);
-      }
-      $new_index = max($codes) + 1;
-      $new_index = sprintf("%04d", $new_index);
-      $new_code=$group_code."-".$new_index;
+        while (\App\Models\COALedgers::where('code', $new_code)->exists()) {
+            $new_index++;
+            $new_code = $group_code . "-" . $formatted_count($new_index);
+        }
+
+        return $new_code;
+
     }
-      $formatted_count = function ($index) {
-          return str_pad(($index), 4, '0', STR_PAD_LEFT);
-      };
 
-      while(\App\Models\COALedgers::where('code',$new_code)->exists()){
-          $new_index++;
-          $new_code=$group_code."-".$formatted_count($new_index);
-      }
-
-      return $new_code;
-
-  }
-
-
-
-  public function getModalDeleteGroups($id){
+    public function getModalDeleteGroups($id)
+    {
 
         $groups = COAgroups::find($id);
 
-         $modal_title = 'Delete Group';
+        $modal_title = 'Delete Group';
 
-         $groups = COAgroups::find($id);
+        $groups = COAgroups::find($id);
 
-         $modal_route = route('admin.chartofaccounts.groups.delete', $groups->id);
+        $modal_route = route('admin.chartofaccounts.groups.delete', $groups->id);
 
         $modal_body = 'Are you sure you want to delete this Group?';
 
         return view('modal_confirmation', compact('error', 'modal_route', 'modal_title', 'modal_body'));
 
 
-  }
+    }
 
-  public function destroyGroups($id){
+    public function destroyGroups($id)
+    {
 
         $groups = COAgroups::find($id);
 
-        if($id ==''){
-          Flash::error('Group Not Specified.');
-          return redirect('/admin/chartofaccounts');
+        if ($id == '') {
+            Flash::error('Group Not Specified.');
+            return redirect('/admin/chartofaccounts');
         }
 
-        if($id <='4'){
-          Flash::error('Permission Denied You cannot Delete this Group');
-          return redirect('/admin/chartofaccounts');
+        if ($id <= '4') {
+            Flash::error('Permission Denied You cannot Delete this Group');
+            return redirect('/admin/chartofaccounts');
         }
 
-         $no_of_child=COAgroups::where('parent_id',$id)->get();
-          if(count($no_of_child)>0){
+        $no_of_child = COAgroups::where('parent_id', $id)->get();
+        if (count($no_of_child) > 0) {
 
-          Flash::error('Child Group Exists So cannot Delete Group');
-          return redirect('/admin/chartofaccounts');
+            Flash::error('Child Group Exists So cannot Delete Group');
+            return redirect('/admin/chartofaccounts');
         }
 
-         $no_of_ledgers=COALedgers::where('group_id',$id)->get();
+        $no_of_ledgers = COALedgers::where('group_id', $id)->get();
 
-          if(count($no_of_ledgers)>0){
+        if (count($no_of_ledgers) > 0) {
 
-          Flash::error('Ledgers Of Group Exists So cannot Delete Group');
-          return redirect('/admin/chartofaccounts');
+            Flash::error('Ledgers Of Group Exists So cannot Delete Group');
+            return redirect('/admin/chartofaccounts');
         }
-
-
 
 
         COAgroups::find($id)->delete();
@@ -554,42 +521,44 @@ class COAController extends Controller
 
         return redirect('/admin/chartofaccounts');
 
-  }
+    }
 
-  public function getModalDeleteLedgers($id){
+    public function getModalDeleteLedgers($id)
+    {
 
         $ledgers = COALedgers::find($id);
 
-         $modal_title = 'Delete Ledger';
+        $modal_title = 'Delete Ledger';
 
-         $ledgers = COALedgers::find($id);
+        $ledgers = COALedgers::find($id);
 
-         $modal_route = route('admin.chartofaccounts.ledgers.delete',  $ledgers->id);
+        $modal_route = route('admin.chartofaccounts.ledgers.delete', $ledgers->id);
 
-         $modal_body = 'Are you sure you want to delete this Ledgers?';
+        $modal_body = 'Are you sure you want to delete this Ledgers?';
 
         return view('modal_confirmation', compact('error', 'modal_route', 'modal_title', 'modal_body'));
 
-  }
+    }
 
-  public function destroyLedgers($id){
+    public function destroyLedgers($id)
+    {
 
         $ledgers = COALedgers::find($id);
 
 
-        if($id ==''){
+        if ($id == '') {
 
-          Flash::error('Ledger Not Specified.');
-          return redirect('/admin/chartofaccounts');
+            Flash::error('Ledger Not Specified.');
+            return redirect('/admin/chartofaccounts');
 
         }
 
-        $no_of_ledgers=\App\Models\Entryitem::where('ledger_id',$id)->get();
+        $no_of_ledgers = \App\Models\Entryitem::where('ledger_id', $id)->get();
 
-        if(count($no_of_ledgers)>0){
+        if (count($no_of_ledgers) > 0) {
 
-          Flash::error('Entries Of Ledger Exists So cannot Delete Ledger');
-          return redirect('/admin/chartofaccounts');
+            Flash::error('Entries Of Ledger Exists So cannot Delete Ledger');
+            return redirect('/admin/chartofaccounts');
 
         }
 
@@ -599,267 +568,245 @@ class COAController extends Controller
 
         return redirect('/admin/chartofaccounts');
 
-  }
-
-  public function excelLedger(){
-    $page_title = 'Admin | Export | Import';
-    $page_description = "Export Import Ledger";
-    return view('admin.excel.importExportLedger',compact('page_description','page_title'));
-  }
-
-  public function exportLedger($type){
-  if($type!='csv')
-      return \Excel::download(new \App\Exports\CoaExport($data), "Overall COA ".date('d M Y').".xls");
-
-      $data = COALedgers::with('group')->where('org_id',\Auth::user()->org_id)->get()->toArray();
-
-   return \Excel::download(new \App\Exports\ExcelExport($data), "ledgers.{$type}");
-
-
-  }
-  public function importLedger(Request $request){
-    if(\Request::hasFile('import_file')){
-      $path = \Request::file('import_file')->getRealPath();
-
-      $data  = \Excel::toCollection(new \App\Exports\ExcelImport(), \Request::file('import_file'));
-
-      if(!empty($data) && $data->count()){
-       $data = $data->first()->toArray();
-        foreach ($data as $key => $value) {
-          $value = (object) $value;
-          $insert [] = [
-            'group_id' => $value->group_id,
-            'name' => $value->name,
-            'op_balance_dc' => $value->op_balance_dc,
-            'op_balance' => $value->op_balance,
-            'org_id'=>\Auth::user()->org_id,
-            'user_id'=>\Auth::user()->id,
-            'type'=>$value->type ? '1' : '0',
-            'reconciliation'=>$value->type ? '1' : '0',
-            'notes'=>$value->notes
-          ];
-
-        }
-        if(!empty($insert)){
-          $ledger = COALedgers::insert($insert);
-          $lastcreated = COALedgers::orderBy('id', 'desc')->take(count($insert))->get();
-          $lastcreated = $lastcreated->reverse();
-          foreach ($lastcreated as $key => $ledger) {
-            $request->request->add(['id'=>$ledger->group_id]);
-            $this->getNextCodeLedgers($request);
-            $code = $this->getNextCodeLedgers($request);
-            $ledger->update(['code'=>$code]);
-          }
-        }
-      }
-      Flash::success("Ledger successfully added");
-      return redirect()->back();
     }
-    Flash::success('Sorry no file is selected to import leads.');
-    return redirect()->back();
 
-  }
-  public function excelLedgergroups(){
-    $page_title = 'Admin | Export | Import';
-    $page_description = "Export Import Ledger";
-    return view('admin.excel.importExportLedgerGroup',compact('page_description','page_title'));
-  }
-
-  public function exportLedgergroups($type){
-    $data = COAgroups::where('org_id',\Auth::user()->org_id)->get()->toArray();
-    return \Excel::download(new \App\Exports\ExcelExport($data), "ledgers_groups.{$type}");
-  }
-  public function importLedgergroups(Request $request){
-    if(\Request::hasFile('import_file')){
-      $path = \Request::file('import_file')->getRealPath();
-
-      $data  = \Excel::toCollection(new \App\Exports\ExcelImport(), \Request::file('import_file'));
-
-      if(!empty($data) && $data->count()){
-        $data = $data->first()->toArray();
-        foreach ($data as $key => $value) {
-          $value = (object) $value;
-          $insert [] = [
-            'parent_id'=> $value->parent_id,
-            'name' => $value->name,
-            'user_id'=>\Auth::user()->id,
-            'org_id'=>\Auth::user()->org_id
-          ];
-        }
-
-        if(!empty($insert)){
-          $ledger = COAgroups::insert($insert);
-          $lastcreated = COAgroups::orderBy('id', 'desc')->take(count($insert))->get();
-          $lastcreated = $lastcreated->reverse();
-          foreach ($lastcreated as $key => $ledgergrp) {
-            $request->request->add(['id'=>$ledgergrp->parent_id]);
-            $this->getNextCodeLedgers($request);
-            $code = $this->GetNextCode($request);
-            $ledgergrp->update(['code'=>$code]);
-          }
-        }
-      }
-      Flash::success("Ledgers Groups successfully added");
-      return redirect()->back();
+    public function excelLedger()
+    {
+        $page_title = 'Admin | Export | Import';
+        $page_description = "Export Import Ledger";
+        return view('admin.excel.importExportLedger', compact('page_description', 'page_title'));
     }
-      Flash::success('Sorry no file is selected to import leads.');
-      return redirect()->back();
-  }
 
-  public function filterByGroups(){
+    public function exportLedger($type)
+    {
+        if ($type != 'csv')
+            return \Excel::download(new \App\Exports\CoaExport($data), "Overall COA " . date('d M Y') . ".xls");
 
-          $parentgroups = \App\Models\COAgroups::where('parent_id',null)->get();
+        $data = COALedgers::with('group')->where('org_id', \Auth::user()->org_id)->get()->toArray();
 
-          $page_title = "Ledgers By Main Account Heads";
+        return \Excel::download(new \App\Exports\ExcelExport($data), "ledgers.{$type}");
 
-          $page_description = "List of Groups and Ledgers By Parent Group";
 
-          //dd($parentgroups);
+    }
 
-         return view('admin.coa.filterbygroups',compact('parentgroups','page_title','page_description'));
+    public function importLedger(Request $request)
+    {
+        if (\Request::hasFile('import_file')) {
+            $path = \Request::file('import_file')->getRealPath();
 
-  }
+            $data = \Excel::toCollection(new \App\Exports\ExcelImport(), \Request::file('import_file'));
 
-    public function filterByGroupPost(Request $request){
+            if (!empty($data) && $data->count()) {
+                $data = $data->first()->toArray();
+                foreach ($data as $key => $value) {
+                    $value = (object)$value;
+                    $insert [] = [
+                        'group_id' => $value->group_id,
+                        'name' => $value->name,
+                        'op_balance_dc' => $value->op_balance_dc,
+                        'op_balance' => $value->op_balance,
+                        'org_id' => \Auth::user()->org_id,
+                        'user_id' => \Auth::user()->id,
+                        'type' => $value->type ? '1' : '0',
+                        'reconciliation' => $value->type ? '1' : '0',
+                        'notes' => $value->notes
+                    ];
+
+                }
+                if (!empty($insert)) {
+                    $ledger = COALedgers::insert($insert);
+                    $lastcreated = COALedgers::orderBy('id', 'desc')->take(count($insert))->get();
+                    $lastcreated = $lastcreated->reverse();
+                    foreach ($lastcreated as $key => $ledger) {
+                        $request->request->add(['id' => $ledger->group_id]);
+                        $this->getNextCodeLedgers($request);
+                        $code = $this->getNextCodeLedgers($request);
+                        $ledger->update(['code' => $code]);
+                    }
+                }
+            }
+            Flash::success("Ledger successfully added");
+            return redirect()->back();
+        }
+        Flash::success('Sorry no file is selected to import leads.');
+        return redirect()->back();
+
+    }
+
+    public function excelLedgergroups()
+    {
+        $page_title = 'Admin | Export | Import';
+        $page_description = "Export Import Ledger";
+        return view('admin.excel.importExportLedgerGroup', compact('page_description', 'page_title'));
+    }
+
+    public function exportLedgergroups($type)
+    {
+        $data = COAgroups::where('org_id', \Auth::user()->org_id)->get()->toArray();
+        return \Excel::download(new \App\Exports\ExcelExport($data), "ledgers_groups.{$type}");
+    }
+
+    public function importLedgergroups(Request $request)
+    {
+        if (\Request::hasFile('import_file')) {
+            $path = \Request::file('import_file')->getRealPath();
+
+            $data = \Excel::toCollection(new \App\Exports\ExcelImport(), \Request::file('import_file'));
+
+            if (!empty($data) && $data->count()) {
+                $data = $data->first()->toArray();
+                foreach ($data as $key => $value) {
+                    $value = (object)$value;
+                    $insert [] = [
+                        'parent_id' => $value->parent_id,
+                        'name' => $value->name,
+                        'user_id' => \Auth::user()->id,
+                        'org_id' => \Auth::user()->org_id
+                    ];
+                }
+
+                if (!empty($insert)) {
+                    $ledger = COAgroups::insert($insert);
+                    $lastcreated = COAgroups::orderBy('id', 'desc')->take(count($insert))->get();
+                    $lastcreated = $lastcreated->reverse();
+                    foreach ($lastcreated as $key => $ledgergrp) {
+                        $request->request->add(['id' => $ledgergrp->parent_id]);
+                        $this->getNextCodeLedgers($request);
+                        $code = $this->GetNextCode($request);
+                        $ledgergrp->update(['code' => $code]);
+                    }
+                }
+            }
+            Flash::success("Ledgers Groups successfully added");
+            return redirect()->back();
+        }
+        Flash::success('Sorry no file is selected to import leads.');
+        return redirect()->back();
+    }
+
+    public function filterByGroups()
+    {
+
+        $parentgroups = \App\Models\COAgroups::where('parent_id', null)->get();
+
+        $page_title = "Ledgers By Main Account Heads";
+
+        $page_description = "List of Groups and Ledgers By Parent Group";
+
+        return view('admin.coa.filterbygroups', compact('parentgroups', 'page_title', 'page_description'));
+
+    }
+
+    public function filterByGroupPost(Request $request)
+    {
 
 
         $parent_id = $request->parent_id;
         $page_title = "Ledgers By Main Account Heads";
 
         $page_description = "List of Groups and Ledgers By Parent Group";
-        $parentgroups = \App\Models\COAgroups::where('parent_id',null)->where('org_id',\Auth::user()->org_id)->get();
-        $maingroup='';
-        $maingroupledgers=[];
-        if (!$parent_id)
-            return view('admin.coa.filterbygroupdetail',compact('page_title','page_description','parentgroups','parent_id','maingroup','maingroupledgers'));
-
+        $parentgroups = \App\Models\COAgroups::where('parent_id', null)->where('org_id', \Auth::user()->org_id)->get();
+        $maingroup = '';
+        $maingroupledgers = [];
+        if (!$parent_id) return view('admin.coa.filterbygroupdetail', compact('page_title', 'page_description', 'parentgroups', 'parent_id', 'maingroup', 'maingroupledgers'));
 
         $maingroup = \App\Models\COAGroups::find($parent_id);
 
-        //dd($maingroup);
-        $maingroupledgers = \App\Models\COALedgers::orderBy('code', 'asc')->where('group_id',$maingroup->id)->where('org_id',\Auth::user()->org_id)->get();
+        $maingroupledgers = \App\Models\COALedgers::orderBy('code', 'asc')->where('group_id', $maingroup->id)->where('org_id', \Auth::user()->org_id)->get();
 
-        //dd($maingroupledgers);
-
-
-
-
-      return view('admin.coa.filterbygroupdetail',compact('page_title','page_description','parentgroups','parent_id','maingroup','maingroupledgers'));
-
+        return view('admin.coa.filterbygroupdetail', compact('page_title', 'page_description', 'parentgroups', 'parent_id', 'maingroup', 'maingroupledgers'));
     }
+
     public function get_ledger()
-
-  {
-
+    {
         $term = strtolower(\Request::get('term'));
-        if(!$term){
+        if (!$term) $term = strtolower(\Request::get('q'));
 
-            $term = strtolower(\Request::get('q'));
-        }
         $sub_groups = \App\Models\COAgroups::where('parent_id',
-            \Config::get('restro.DEBTOR_LEDGER','20'))->pluck('id')->toArray();
+            \Config::get('restro.DEBTOR_LEDGER', '20'))->pluck('id')->toArray();
 
-        //dd($sub_groups);
-
-        //dd($term);
-
-        $ledgers = \App\Models\COALedgers::select('id', 'name','code')
-                  ->whereIn('group_id',$sub_groups)
-                  ->where('name', 'LIKE', '%'.$term.'%')
-                  ->groupBy('name')
-                  ->take(10)->get();
-
-
-
-      //dd($ledgers);
+        $ledgers = \App\Models\COALedgers::select('id', 'name', 'code')
+            ->whereIn('group_id', $sub_groups)
+            ->where('name', 'LIKE', '%' . $term . '%')
+            ->groupBy('name')
+            ->take(10)->get();
 
         $return_array = array();
 
-
-
         foreach ($ledgers as $v) {
-
-        if (strpos(strtolower($v->name), $term) !== FALSE) {
-
-                $return_array[] = array('value' => $v->name , 'id' =>$v->id,'label'=>$v->name.' ['.$v->code.']');
-
+            if (strpos(strtolower($v->name), $term) !== FALSE) {
+                $return_array[] = array('value' => $v->name, 'id' => $v->id, 'label' => $v->name . ' [' . $v->code . ']');
             }
-
         }
 
         return \Response::json($return_array);
-
     }
-public function getLedgersAjax(Request $request){
-    $ledgers= \App\Models\COALedgers::orderBy('code', 'asc')->where('group_id',$request->group_id)
-        ->where('org_id',auth()->user()->org_id)->get();
-    if(count($ledgers) >0){
-        $submark= "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp";
-        $sub_mark = $submark."&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
 
-        $ledger_row='';
-        foreach($ledgers as $ledger){
+    public function getLedgersAjax(Request $request)
+    {
+        $ledgers = \App\Models\COALedgers::orderBy('code', 'asc')->where('group_id', $request->group_id)
+            ->where('org_id', auth()->user()->org_id)->get();
+        if (count($ledgers) > 0) {
+            $submark = "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp";
+            $sub_mark = $submark . "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
 
-            $closing_balance =\TaskHelper::getLedgerBalance($ledger->id);
+            $ledger_row = '';
+            foreach ($ledgers as $ledger) {
 
-            $ledger_row.= '<tr class="ledger-class">
-                <td><a href="/admin/accounts/reports/ledger_statement?ledger_id='.$ledger->id.'">'.$sub_mark.$ledger->code.'</a></td>
-                <td><a href="/admin/accounts/reports/ledger_statement?ledger_id='.$ledger->id.'">'.$ledger->name.'</a></td>
+                $closing_balance = \TaskHelper::getLedgerBalance($ledger->id);
+
+                $ledger_row .= '<tr class="ledger-class">
+                <td><a href="/admin/accounts/reports/ledger_statement?ledger_id=' . $ledger->id . '">' . $sub_mark . $ledger->code . '</a></td>
+                <td><a href="/admin/accounts/reports/ledger_statement?ledger_id=' . $ledger->id . '">' . $ledger->name . '</a></td>
                 <td>Ledgers</td>
-                <td>'.($ledger->op_balance_dc=='D'?'Dr ':'Cr ').$ledger->op_balance.'</td>
-                <td>'.$closing_balance.'</td>
-                <td><a href="'.route('admin.chartofaccounts.edit.ledgers', $ledger->id).'" title="Edit"><i class="fa fa-edit"></i></a>
-                <a href="'.route('admin.chartofaccounts.ledgers.confirm-delete', $ledger->id).'" title="Delete" data-toggle="modal" data-target="#modal_dialog"><i class="fa fa-trash deletable"></i></a>
+                <td>' . ($ledger->op_balance_dc == 'D' ? 'Dr ' : 'Cr ') . $ledger->op_balance . '</td>
+                <td>' . $closing_balance . '</td>
+                <td><a href="' . route('admin.chartofaccounts.edit.ledgers', $ledger->id) . '" title="Edit"><i class="fa fa-edit"></i></a>
+                <a href="' . route('admin.chartofaccounts.ledgers.confirm-delete', $ledger->id) . '" title="Delete" data-toggle="modal" data-target="#modal_dialog"><i class="fa fa-trash deletable"></i></a>
                 </td>
 
                </tr>';
 
+            }
+            $sub_mark = $submark;
+
         }
-        $sub_mark=$submark;
-
-
+        return $ledger_row;
     }
-    return $ledger_row;
-}
-    public function DetailGroups(Request $request ,$id)
-    {
 
+    public function DetailGroups(Request $request, $id)
+    {
         $requestData = $request->except('group_id');
 
         $page_title = 'Groups Detail';
         $page_description = 'Detail Groups';
-        if ($id=='search')
-            return view('admin.coa.detailgroups', compact('page_title','page_description','groups','groups_data','entry_items','id','requestData'));
+        if ($id == 'search')
+            return view('admin.coa.detailgroups', compact('page_title', 'page_description', 'groups', 'groups_data', 'entry_items', 'id', 'requestData'));
 
         // $groups= COAgroups::orderBy('code', 'asc')->where('org_id',\Auth::user()->org_id)->get();
 
-        if(!empty($request->input('group_id')))
-        {
+        if (!empty($request->input('group_id'))) {
             $requestData['group_id'] = $request->group_id;
             $groups_data = COAgroups::find($request->group_id);
-            $ledgers_ids = $this->get_ledger_ids($request->group_id,new COALedgers());
-        }else{
+            $ledgers_ids = $this->get_ledger_ids($request->group_id, new COALedgers());
+        } else {
             $groups_data = COAgroups::find($id);
-            $ledgers_ids = $this->get_ledger_ids($id,new COALedgers());
+            $ledgers_ids = $this->get_ledger_ids($id, new COALedgers());
             $requestData['group_id'] = $id;
         }
 
+        $groups = COAgroups::orderBy('code', 'asc')->where('org_id', \Auth::user()->org_id)->get();
 
-        $groups= COAgroups::orderBy('code', 'asc')->where('org_id',\Auth::user()->org_id)->get();
-
-        if(!empty($request->input('startdate')) && !empty($request->input('enddate'))){
+        if (!empty($request->input('startdate')) && !empty($request->input('enddate'))) {
             $startdate = $request->startdate;
             $enddate = $request->enddate;
-            $entry_items = Entryitem::whereIn('ledger_id',$ledgers_ids)
-                ->leftjoin('entries','entryitems.entry_id','=','entries.id')
-                ->where('entries.date','>=',$startdate)->where('entries.date','<=',$enddate)->paginate(100);
-
-
+            $entry_items = Entryitem::whereIn('ledger_id', $ledgers_ids)
+                ->leftjoin('entries', 'entryitems.entry_id', '=', 'entries.id')
+                ->where('entries.date', '>=', $startdate)->where('entries.date', '<=', $enddate)->paginate(100);
+        } else {
+            $entry_items = Entryitem::whereIn('ledger_id', $ledgers_ids)->paginate(100);
         }
-        else{
-            $entry_items= Entryitem::whereIn('ledger_id',$ledgers_ids)->paginate(100);
-        }
-        return view('admin.coa.detailgroups', compact('page_title','page_description','groups','groups_data','entry_items','id','requestData'));
+        return view('admin.coa.detailgroups', compact('page_title', 'page_description', 'groups', 'groups_data', 'entry_items', 'id', 'requestData'));
     }
 
     public function groupLedgerStatement(Request $request)
@@ -872,106 +819,104 @@ public function getLedgersAjax(Request $request){
         $startdate = $request->startdate;
         $enddate = $request->enddate;
         $groups = COAgroups::orderBy('code', 'asc')->get();
-        $allFiscalYear = \App\Models\Fiscalyear::select('id','fiscal_year','start_date','end_date')->latest()->where('org_id',auth()->user()->org_id)->get();
-        $current_fiscal=\App\Models\Fiscalyear::where('current_year', 1)->where('org_id',auth()->user()->org_id)->first();
-        $fiscal_year = \Request::get('fiscal_year')?  \Request::get('fiscal_year'): $current_fiscal->fiscal_year ;
+        $allFiscalYear = \App\Models\Fiscalyear::select('id', 'fiscal_year', 'start_date', 'end_date')->latest()->where('org_id', auth()->user()->org_id)->get();
+        $current_fiscal = \App\Models\Fiscalyear::where('current_year', 1)->where('org_id', auth()->user()->org_id)->first();
+        $fiscal_year = \Request::get('fiscal_year') ? \Request::get('fiscal_year') : $current_fiscal->fiscal_year;
 
-        if(!$request->group_id)
-            return view('admin.accountreport.groupledgerstatement.detailgroups', compact('fiscal_year','page_title','page_description','startdate','enddate','allFiscalYear'));
+        if (!$request->group_id)
+            return view('admin.accountreport.groupledgerstatement.detailgroups', compact('fiscal_year', 'page_title', 'page_description', 'startdate', 'enddate', 'allFiscalYear'));
 
 
-        $prefix='';
-        if ($fiscal_year!=$current_fiscal->fiscal_year){
-            $prefix=Fiscalyear::where('fiscal_year',$fiscal_year)->where('org_id',auth()->user()->org_id)->first()->numeric_fiscal_year.'_';
+        $prefix = '';
+        if ($fiscal_year != $current_fiscal->fiscal_year) {
+            $prefix = Fiscalyear::where('fiscal_year', $fiscal_year)->where('org_id', auth()->user()->org_id)->first()->numeric_fiscal_year . '_';
         }
         $ledgers_data = new COALedgers();
-        $entry_item_table=new Entryitem();
-        $new_table=$prefix.$entry_item_table->getTable();
-        $new_ledger_table=$prefix.$ledgers_data->getTable();
+        $entry_item_table = new Entryitem();
+        $new_table = $prefix . $entry_item_table->getTable();
+        $new_ledger_table = $prefix . $ledgers_data->getTable();
         $entry_item_table->setTable($new_table);
         $ledgers_data->setTable($new_ledger_table);
 
 
-
-
         $requestData['group_id'] = $request->group_id;
-            $groups_data = COAgroups::find($request->group_id);
-            $ledgers_ids = $this->get_ledger_ids($request->group_id,$ledgers_data);
+        $groups_data = COAgroups::find($request->group_id);
+        $ledgers_ids = $this->get_ledger_ids($request->group_id, $ledgers_data);
 
 
+        $groups = COAgroups::orderBy('code', 'asc')->where('org_id', \Auth::user()->org_id)->get();
 
-        $groups= COAgroups::orderBy('code', 'asc')->where('org_id',\Auth::user()->org_id)->get();
 
-
-        if($request->startdate && $request->enddate){
+        if ($request->startdate && $request->enddate) {
             $startdate = $request->startdate;
             $enddate = $request->enddate;
-            $entry_items = $entry_item_table->whereIn('ledger_id',$ledgers_ids)
-                ->leftjoin($prefix.'entries',$prefix.'entryitems.entry_id','=',$prefix.'entries.id')
-                ->where($prefix.'entries.date','>=',$startdate)->where($prefix.'entries.date','<=',$enddate)
-            ->orderBy($prefix.'entries.date','asc')->where($prefix.'entries.org_id',auth()->user()->org_id)
-            ->orderBy($prefix.'entries.id','asc');
+            $entry_items = $entry_item_table->whereIn('ledger_id', $ledgers_ids)
+                ->leftjoin($prefix . 'entries', $prefix . 'entryitems.entry_id', '=', $prefix . 'entries.id')
+                ->where($prefix . 'entries.date', '>=', $startdate)->where($prefix . 'entries.date', '<=', $enddate)
+                ->orderBy($prefix . 'entries.date', 'asc')->where($prefix . 'entries.org_id', auth()->user()->org_id)
+                ->orderBy($prefix . 'entries.id', 'asc');
 
 
-            $entry_items1 = $entry_item_table->whereIn('ledger_id',$ledgers_ids)->with(['entry'])
-                ->join($prefix.'entries',function($join) use ($startdate,$prefix){
-                    $join->on($prefix.'entryitems.entry_id','=',$prefix.'entries.id')
-                        ->whereDate($prefix.'entries.date','<',$startdate);
+            $entry_items1 = $entry_item_table->whereIn('ledger_id', $ledgers_ids)->with(['entry'])
+                ->join($prefix . 'entries', function ($join) use ($startdate, $prefix) {
+                    $join->on($prefix . 'entryitems.entry_id', '=', $prefix . 'entries.id')
+                        ->whereDate($prefix . 'entries.date', '<', $startdate);
                 });
 
             $entry_items1 = $entry_items1->get();
 
-        }
-        else{
-            $entry_items= $entry_item_table->whereIn('ledger_id',$ledgers_ids)->join($prefix.'entries',function($join) use ($selected_currency,$prefix){
-                $join->on($prefix.'entryitems.entry_id','=',$prefix.'entries.id');
-            })->orderBy($prefix.'entries.date','asc')->where($prefix.'entries.org_id',auth()->user()->org_id)
-                ->orderBy($prefix.'entries.id','asc');
+        } else {
+            $entry_items = $entry_item_table->whereIn('ledger_id', $ledgers_ids)->join($prefix . 'entries', function ($join) use ($selected_currency, $prefix) {
+                $join->on($prefix . 'entryitems.entry_id', '=', $prefix . 'entries.id');
+            })->orderBy($prefix . 'entries.date', 'asc')->where($prefix . 'entries.org_id', auth()->user()->org_id)
+                ->orderBy($prefix . 'entries.id', 'asc');
         }
         $paginate = 30;
-        $previous_closing['amount']=0;
-        $previous_closing['dc']='D';
-        if (\Request::get('page')>1){
-            $previous_entries=$entry_items->take((\Request::get('page')-1)*$paginate)->get();
-            foreach ($previous_entries as $ei){
+        $previous_closing['amount'] = 0;
+        $previous_closing['dc'] = 'D';
+        if (\Request::get('page') > 1) {
+            $previous_entries = $entry_items->take((\Request::get('page') - 1) * $paginate)->get();
+            foreach ($previous_entries as $ei) {
                 $previous_closing = \TaskHelper::calculate_withdc($previous_closing['amount'], $previous_closing['dc'],
                     $ei['amount'], $ei['dc']);
             }
         }
 //        $opening_balance = \App\Helpers\TaskHelper::check_opening_balance1($ledgers_data,$entry_items1);
-        if ($request->excel=='true'){
-            $entry_items= $entry_items->get();
-            return \Excel::download(new \App\Exports\GroupLedgerExcelExport($entry_items,$groups_data,$opening_balance,$startdate,$enddate), 'ledger_group_'.$groups_data->name.'.xls');
+        if ($request->excel == 'true') {
+            $entry_items = $entry_items->get();
+            return \Excel::download(new \App\Exports\GroupLedgerExcelExport($entry_items, $groups_data, $opening_balance, $startdate, $enddate), 'ledger_group_' . $groups_data->name . '.xls');
 
         }
-        $entry_items =  $entry_items->paginate($paginate);
+        $entry_items = $entry_items->paginate($paginate);
 
-        return view('admin.accountreport.groupledgerstatement.detailgroups', compact('previous_closing','opening_balance','fiscal_year','startdate','enddate','allFiscalYear','page_title','page_description','groups','groups_data','entry_items','id','requestData'));
+        return view('admin.accountreport.groupledgerstatement.detailgroups', compact('previous_closing', 'opening_balance', 'fiscal_year', 'startdate', 'enddate', 'allFiscalYear', 'page_title', 'page_description', 'groups', 'groups_data', 'entry_items', 'id', 'requestData'));
     }
-    public function get_ledger_ids($parentId,$ledger_table)
+
+    public function get_ledger_ids($parentId, $ledger_table)
     {
         $ledgers_data = collect();
-        $parent =  COAgroups::find($parentId);
-        $ledgers_data = $ledger_table->where('group_id',$parentId)->where('org_id',\Auth::user()->org_id)->get();
+        $parent = COAgroups::find($parentId);
+        $ledgers_data = $ledger_table->where('group_id', $parentId)->where('org_id', \Auth::user()->org_id)->get();
         // dd($parent);
-        $subcategories = COAgroups::where('parent_id',$parent->id)->where('org_id',\Auth::user()->org_id)->get();
+        $subcategories = COAgroups::where('parent_id', $parent->id)->where('org_id', \Auth::user()->org_id)->get();
 
         foreach ($subcategories as $subcategory) {
-            $ledgers_data = $ledgers_data->merge($ledger_table->where('group_id',$subcategory->id)->where('org_id',\Auth::user()->org_id)->get());
-            $ledgers_data = $this->get_ledger_next_level($subcategory->id ,$ledgers_data,$ledger_table);
+            $ledgers_data = $ledgers_data->merge($ledger_table->where('group_id', $subcategory->id)->where('org_id', \Auth::user()->org_id)->get());
+            $ledgers_data = $this->get_ledger_next_level($subcategory->id, $ledgers_data, $ledger_table);
         }
 
         return ($ledgers_data->pluck(id));
     }
-    public function get_ledger_next_level($parentId , $ledgers_data,$ledger_table)
+
+    public function get_ledger_next_level($parentId, $ledgers_data, $ledger_table)
     {
-        $parent =  COAgroups::find($parentId);
-        $ledgers_data = $ledgers_data->merge($ledger_table->where('group_id',$parentId)->where('org_id',\Auth::user()->org_id)->get());
-        $subcategories = COAgroups::where('parent_id',$parent->id)->where('org_id',\Auth::user()->org_id)->get();
+        $parent = COAgroups::find($parentId);
+        $ledgers_data = $ledgers_data->merge($ledger_table->where('group_id', $parentId)->where('org_id', \Auth::user()->org_id)->get());
+        $subcategories = COAgroups::where('parent_id', $parent->id)->where('org_id', \Auth::user()->org_id)->get();
 
         foreach ($subcategories as $subcategory) {
-            $ledgers_data = $ledgers_data->merge($ledger_table->where('group_id',$subcategory->id)->where('org_id',\Auth::user()->org_id)->get());
-            $this->get_ledger_next_level($subcategory->id ,$ledgers_data,$ledger_table);
+            $ledgers_data = $ledgers_data->merge($ledger_table->where('group_id', $subcategory->id)->where('org_id', \Auth::user()->org_id)->get());
+            $this->get_ledger_next_level($subcategory->id, $ledgers_data, $ledger_table);
         }
         return $ledgers_data;
     }
@@ -979,55 +924,54 @@ public function getLedgersAjax(Request $request){
 
     public function downloadGroupExcel(Request $request)
     {
-        $groups= COAgroups::orderBy('code', 'asc')->where('org_id',\Auth::user()->org_id)->get();
+        $groups = COAgroups::orderBy('code', 'asc')->where('org_id', \Auth::user()->org_id)->get();
 
         $groups_data = COAgroups::find($request->group_id);
         $ledgers_ids = $this->get_ledger_ids($request->group_id);
 
         // $groups= COAgroups::orderBy('code', 'asc')->where('org_id',\Auth::user()->org_id)->get();
 
-        if(!empty($request->input('startdate')) && !empty($request->input('enddate'))){
+        if (!empty($request->input('startdate')) && !empty($request->input('enddate'))) {
             $startdate = $request->startdate;
             $enddate = $request->enddate;
-            $entry_items = Entryitem::whereIn('ledger_id',$ledgers_ids)->leftjoin('entries','entryitems.entry_id','=','entries.id')->where('entries.date','>=',$startdate)->where('entries.date','<=',$enddate)->get();
-        }
-        else{
-            $entry_items= Entryitem::whereIn('ledger_id',$ledgers_ids)->get();
+            $entry_items = Entryitem::whereIn('ledger_id', $ledgers_ids)->leftjoin('entries', 'entryitems.entry_id', '=', 'entries.id')->where('entries.date', '>=', $startdate)->where('entries.date', '<=', $enddate)->get();
+        } else {
+            $entry_items = Entryitem::whereIn('ledger_id', $ledgers_ids)->get();
         }
 
 
         $mytime = \Carbon\Carbon::now();
         $startOfYear = $mytime->copy()->startOfYear();
-        $endOfYear   = $mytime->copy()->endOfYear();
+        $endOfYear = $mytime->copy()->endOfYear();
         // $type = ($groups_data->op_balance_dc == 'D')?'Dr':'Cr';
         // $closing_balance = \TaskHelper::getLedgerBalance($id)['ledger_balance'];
         $heading = [
             [
-                'Bank or cash account',($groups_data->name),
+                'Bank or cash account', ($groups_data->name),
             ],
         ];
 
-        $total=0;
-        foreach($entry_items as $ei){
+        $total = 0;
+        foreach ($entry_items as $ei) {
             $entry_balance = \TaskHelper::calculate_withdc($entry_balance['amount'], $entry_balance['dc'],
                 $ei['amount'], $ei['dc']);
-            $getledger= \TaskHelper::getLedger($ei->entry_id);
-            $type = $ei->dc=='D'?'Dr':'Cr';
+            $getledger = \TaskHelper::getLedger($ei->entry_id);
+            $type = $ei->dc == 'D' ? 'Dr' : 'Cr';
             $entry[] = [
-                'entry_date'=>$ei->entry->date,
-                'entry_number'=>$ei->entry->number,
-                'ledger'=>$ei->ledgerdetail->name,
-                'Description'=>$getledger,
-                'entry_type'=>$ei->entry->entrytype->name,
-                'tagname'=>$ei->entry->tagname->title,
-                'Dr'=>$ei->dc=='D'? $ei->amount:'0',
-                'Cr'=>$ei->dc!='D'? $ei->amount:'0',
-                'balance'=> $type.' '.$entry_balance['amount'],
+                'entry_date' => $ei->entry->date,
+                'entry_number' => $ei->entry->number,
+                'ledger' => $ei->ledgerdetail->name,
+                'Description' => $getledger,
+                'entry_type' => $ei->entry->entrytype->name,
+                'tagname' => $ei->entry->tagname->title,
+                'Dr' => $ei->dc == 'D' ? $ei->amount : '0',
+                'Cr' => $ei->dc != 'D' ? $ei->amount : '0',
+                'balance' => $type . ' ' . $entry_balance['amount'],
             ];
-            $total = $type.' '.$entry_balance['amount'];
+            $total = $type . ' ' . $entry_balance['amount'];
         }
-        $entry[] = ['','','','','','','Total',$total];
-        return \Excel::download(new \App\Exports\ExcelExport($entry), 'group_'.$groups_data->name.'.csv');
+        $entry[] = ['', '', '', '', '', '', 'Total', $total];
+        return \Excel::download(new \App\Exports\ExcelExport($entry), 'group_' . $groups_data->name . '.csv');
     }
 
     public function groupLedgerBulk(Request $request)
@@ -1039,91 +983,88 @@ public function getLedgersAjax(Request $request){
         $startdate = $request->startdate;
         $enddate = $request->enddate;
         $groups = COAgroups::orderBy('code', 'asc')->get();
-        $allFiscalYear = \App\Models\Fiscalyear::select('id','fiscal_year','start_date','end_date')->latest()->where('org_id',auth()->user()->org_id)->get();
-        $current_fiscal=\App\Models\Fiscalyear::where('current_year', 1)->where('org_id',auth()->user()->org_id)->first();
-        $fiscal_year = \Request::get('fiscal_year')?  \Request::get('fiscal_year'): $current_fiscal->fiscal_year ;
+        $allFiscalYear = \App\Models\Fiscalyear::select('id', 'fiscal_year', 'start_date', 'end_date')->latest()->where('org_id', auth()->user()->org_id)->get();
+        $current_fiscal = \App\Models\Fiscalyear::where('current_year', 1)->where('org_id', auth()->user()->org_id)->first();
+        $fiscal_year = \Request::get('fiscal_year') ? \Request::get('fiscal_year') : $current_fiscal->fiscal_year;
 
-        if(!$request->group_id)
-            return view('admin.accountreport.groupledgerbulk.detailgroups', compact('fiscal_year','page_title','page_description','startdate','enddate','allFiscalYear'));
+        if (!$request->group_id)
+            return view('admin.accountreport.groupledgerbulk.detailgroups', compact('fiscal_year', 'page_title', 'page_description', 'startdate', 'enddate', 'allFiscalYear'));
 
 
-        $prefix='';
-        if ($fiscal_year!=$current_fiscal->fiscal_year){
-            $prefix=Fiscalyear::where('fiscal_year',$fiscal_year)->where('org_id',auth()->user()->org_id)->first()->numeric_fiscal_year.'_';
+        $prefix = '';
+        if ($fiscal_year != $current_fiscal->fiscal_year) {
+            $prefix = Fiscalyear::where('fiscal_year', $fiscal_year)->where('org_id', auth()->user()->org_id)->first()->numeric_fiscal_year . '_';
         }
         $ledgers_data = new COALedgers();
-        $entry_item_table=new Entryitem();
-        $new_table=$prefix.$entry_item_table->getTable();
-        $new_ledger_table=$prefix.$ledgers_data->getTable();
+        $entry_item_table = new Entryitem();
+        $new_table = $prefix . $entry_item_table->getTable();
+        $new_ledger_table = $prefix . $ledgers_data->getTable();
         $entry_item_table->setTable($new_table);
         $ledgers_data->setTable($new_ledger_table);
 
 
-
-
         $requestData['group_id'] = $request->group_id;
         $groups_data = COAgroups::find($request->group_id);
-        $ledgers_ids = $this->get_ledger_ids($request->group_id,$ledgers_data);
+        $ledgers_ids = $this->get_ledger_ids($request->group_id, $ledgers_data);
 
 
+        $groups = COAgroups::orderBy('code', 'asc')->where('org_id', \Auth::user()->org_id)->get();
 
-        $groups= COAgroups::orderBy('code', 'asc')->where('org_id',\Auth::user()->org_id)->get();
+        $ledgers = COALedgers::whereIn('id', $ledgers_ids)->get();
+        $ledgers_data = [];
 
-        $ledgers=COALedgers::whereIn('id',$ledgers_ids)->get();
-        $ledgers_data=[];
-
-        foreach ($ledgers as $ledger){
-        if ($request->startdate && $request->enddate) {
-            $startdate = $request->startdate;
-            $enddate = $request->enddate;
-            $entry_items = $entry_item_table->where('ledger_id', $ledger->id)
-                ->leftjoin($prefix . 'entries', $prefix . 'entryitems.entry_id', '=', $prefix . 'entries.id')
-                ->where($prefix . 'entries.date', '>=', $startdate)->where($prefix . 'entries.date', '<=', $enddate)
-                ->orderBy($prefix . 'entries.date', 'asc')
-                ->where($prefix.'entries.org_id',auth()->user()->org_id)
-                ->orderBy($prefix . 'entries.id', 'asc')->get();
+        foreach ($ledgers as $ledger) {
+            if ($request->startdate && $request->enddate) {
+                $startdate = $request->startdate;
+                $enddate = $request->enddate;
+                $entry_items = $entry_item_table->where('ledger_id', $ledger->id)
+                    ->leftjoin($prefix . 'entries', $prefix . 'entryitems.entry_id', '=', $prefix . 'entries.id')
+                    ->where($prefix . 'entries.date', '>=', $startdate)->where($prefix . 'entries.date', '<=', $enddate)
+                    ->orderBy($prefix . 'entries.date', 'asc')
+                    ->where($prefix . 'entries.org_id', auth()->user()->org_id)
+                    ->orderBy($prefix . 'entries.id', 'asc')->get();
 
 
-            $entry_items1 = $entry_item_table->where('ledger_id', $ledger->id)->with(['entry'])
-                ->join($prefix . 'entries', function ($join) use ($startdate, $prefix) {
-                    $join->on($prefix . 'entryitems.entry_id', '=', $prefix . 'entries.id')
-                        ->whereDate($prefix . 'entries.date', '<', $startdate);
-                })->get();
-        }
-        else {
-            $entry_items = $entry_item_table->where('ledger_id', $ledger->id)->join($prefix . 'entries', function ($join) use ($selected_currency, $prefix) {
-                $join->on($prefix . 'entryitems.entry_id', '=', $prefix . 'entries.id');
-            })->orderBy($prefix . 'entries.date', 'asc')
-                ->orderBy($prefix . 'entries.id', 'asc')->get();
-        }
-            $data['dr_amount']=$entry_items->where('dc','D')->sum('amount');
-            $data['cr_amount']=$entry_items->where('dc','C')->sum('amount');
-            if ($data['dr_amount']>0||$data['cr_amount']>0){
-                $opening = \App\Helpers\TaskHelper::check_opening_balance1($ledger,$entry_items1);
-                $data['id']=$ledger->id;
-                $data['code']=$ledger->code;
-                $data['name']=$ledger->name;
-                $data['op_balance']=$opening['amount'];
-                $data['op_dc']=$opening['dc'];
-                $data['dr_amount']=$entry_items->where('dc','D')->sum('amount');
-                $data['cr_amount']=$entry_items->where('dc','C')->sum('amount');
-                $closing_balance= \TaskHelper::getFinalLedgerBalance($ledger->id,$opening,$startdate,$enddate);
-                $data['closing_balance']=$closing_balance['amount'];
-                $data['closing_dc']=$closing_balance['dc'];
-                $ledgers_data[]=$data;
+                $entry_items1 = $entry_item_table->where('ledger_id', $ledger->id)->with(['entry'])
+                    ->join($prefix . 'entries', function ($join) use ($startdate, $prefix) {
+                        $join->on($prefix . 'entryitems.entry_id', '=', $prefix . 'entries.id')
+                            ->whereDate($prefix . 'entries.date', '<', $startdate);
+                    })->get();
+            } else {
+                $entry_items = $entry_item_table->where('ledger_id', $ledger->id)->join($prefix . 'entries', function ($join) use ($selected_currency, $prefix) {
+                    $join->on($prefix . 'entryitems.entry_id', '=', $prefix . 'entries.id');
+                })->orderBy($prefix . 'entries.date', 'asc')
+                    ->orderBy($prefix . 'entries.id', 'asc')->get();
+            }
+            $data['dr_amount'] = $entry_items->where('dc', 'D')->sum('amount');
+            $data['cr_amount'] = $entry_items->where('dc', 'C')->sum('amount');
+            if ($data['dr_amount'] > 0 || $data['cr_amount'] > 0) {
+                $opening = \App\Helpers\TaskHelper::check_opening_balance1($ledger, $entry_items1);
+                $data['id'] = $ledger->id;
+                $data['code'] = $ledger->code;
+                $data['name'] = $ledger->name;
+                $data['op_balance'] = $opening['amount'];
+                $data['op_dc'] = $opening['dc'];
+                $data['dr_amount'] = $entry_items->where('dc', 'D')->sum('amount');
+                $data['cr_amount'] = $entry_items->where('dc', 'C')->sum('amount');
+                $closing_balance = \TaskHelper::getFinalLedgerBalance($ledger->id, $opening, $startdate, $enddate);
+                $data['closing_balance'] = $closing_balance['amount'];
+                $data['closing_dc'] = $closing_balance['dc'];
+                $ledgers_data[] = $data;
             }
 
         }
 
-        if ($request->excel=='true'){
-            return \Excel::download(new \App\Exports\BulkGroupLedgerExcelExport($ledgers_data,$groups_data,$startdate,$enddate), 'group_ledger_bulk_'.$groups_data->name.'.xls');
+        if ($request->excel == 'true') {
+            return \Excel::download(new \App\Exports\BulkGroupLedgerExcelExport($ledgers_data, $groups_data, $startdate, $enddate), 'group_ledger_bulk_' . $groups_data->name . '.xls');
 
         }
 
-        return view('admin.accountreport.groupledgerbulk.detailgroups', compact('fiscal_year','startdate','enddate','allFiscalYear','page_title','page_description','groups','groups_data','ledgers_data'));
+        return view('admin.accountreport.groupledgerbulk.detailgroups', compact('fiscal_year', 'startdate', 'enddate', 'allFiscalYear', 'page_title', 'page_description', 'groups', 'groups_data', 'ledgers_data'));
     }
 
-    public function deleteSelected(Request $request){
+    public function deleteSelected(Request $request)
+    {
         \App\Models\COALedgers::destroy($request->ledger_ids);
 
         Flash::success('Ledgers Deleted Successfully');

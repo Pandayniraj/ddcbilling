@@ -69,7 +69,7 @@
                         {!! Form::text('end_date', \Request::get('end_date'), ['style' => 'width:120px; display:inline-block;', 'class' => 'form-control input-sm input-sm date-toggle-nep-eng1', 'id'=>'end_date', 'placeholder'=>'Bill end date..','autocomplete' =>'off']) !!}&nbsp;&nbsp;
 
                          {!! Form::text('bill_no', \Request::get('bill_no'), ['style' => 'width:100px; display:inline-block;', 'class' => 'form-control input-sm input-sm', 'id'=>'bill_no', 'placeholder'=>'Enter bill number...','autocomplete' =>'off']) !!}&nbsp;&nbsp;
-                         
+
                          <select class="form-control input-sm searchable" style="width: 150px;" name="outlet_id">
                             <option value="">Select Outlet</option>
                             @if(isset($outlets))
@@ -181,16 +181,16 @@
                                 @else
                                 <td><span class="label label-warning">Unpaid</span></td>
                                 @endif
-                                    <?php 
+                                    <?php
                                         $checkprintformat= \App\Models\Posoutlets::where('id', $o->outlet_id)->first()->printformat;
                                     ?>
-                                <td>
+                                <td style="display: flex;">
                                    @if($checkprintformat=="thermal")
-                                    <a href="/admin/invoice/thermalprint/{{$o->id}}" target="_blank" title="print"><i class="fa fa-print"></i></a>
+                                    <a href="/admin/invoice/thermalprint/{{$o->id}}" target="_blank" title="print"><i class="fa fa-print" style="font-size: 25px;"></i></a>
                                    @else
-                                    <a href="/admin/invoice/print/{{$o->id}}" target="_blank" title="print"><i class="fa fa-print"></i></a>
+                                    <a href="/admin/invoice/print/{{$o->id}}" target="_blank" title="print"><i class="fa fa-print" style="font-size: 25px;"></i></a>
                                    @endif
-                                    <a href="/admin/invoice/payment/{{$o->id}}" title="Receive Payments"><i class="fa fa-credit-card"></i></a>
+                                    <a href="/admin/invoice/payment/{{$o->id}}" title="Receive Payments" style="margin-left: 5px;"><i class="fa fa-credit-card" style="font-size: 22px;"></i></a>
                                     {{-- @if( $o->isEditable())
                                     <a href="{{ route('admin.invoice.edit',$o->id) }}" title="edit"><i class="fa fa-edit"></i></a>
                                     @endif --}}

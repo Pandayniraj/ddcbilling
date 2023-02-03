@@ -68,7 +68,6 @@ class InvoiceController extends Controller
         })
             ->where(function ($q) use ($outletuser) {
                 if (!\Auth::user()->hasRole('admins')) {
-                    //    dd( $userwiseoutlet->outlet_id);
                     $q->whereIn('outlet_id', $outletuser);
                 }
             })
@@ -323,7 +322,8 @@ class InvoiceController extends Controller
             Flash::warning('Bill not synced with ird');
         }
         \DB::commit();
-        return redirect('/admin/invoice1');
+        return \redirect()->route('admin.payment.invoice.create', $invoice->id);
+        // php artisan return redirect('/admin/invoice1');
     }
 
     /**
@@ -1525,9 +1525,12 @@ class InvoiceController extends Controller
     public function transactionreports(Request $request)
     {
         $outlets = \App\Models\PosOutlets::select('name', 'id')->get();
-        $op = "pdf";
+        $op = "not assign";
+        if ($request->has('type')) {
+            if ($request->type == 'export') $op = "excel";
+            elseif ($request->type == 'print') $op = "pdf";
+        }
         $data = [];
-        // dd($request->all(), ($request->startdate != ""));
 
         if ($request->startdate && ($request->startdate != "")) {
             $startdate = $request->startdate;
@@ -1553,25 +1556,27 @@ class InvoiceController extends Controller
 
             $organization = \Auth::user()->organization;
             $outletname = \App\Models\PosOutlets::where('id', $outlet)->select('name')->first();
-            if ($op == "excel") {
+            $file = $startdate . '_' . $enddate . '_' . str_replace(' ', '_', $organization->organization_name);
 
+            if ($op == "excel") {
+                return \Excel::download(new \App\Exports\Reports\TransactionReport($detail_transaction, $clients, $outletname,
+                    $startdate, $enddate, $nepalistartdate, $nepalienddate, $organization), $file.'.xls');
             } elseif ($op == "pdf") {
-                return view('admin.reports.customerwisereportPDF', compact( 'detail_transaction','clients', 'startdate','enddate','organization'));
-                $pdf = \PDF::loadView('admin.reports.customerwisereportPDF', compact('detail_transaction', 'clients', 'outletname', 'startdate', 'enddate', 'nepalistartdate', 'nepalienddate', 'organization'))->setPaper('a4', 'landscape');
-                $file = $startdate . '_' . $enddate . '_' . str_replace(' ', '_', $organization->organization_name) . '.pdf';
-                if (\File::exists('reports/' . $file)) {
-                    \File::Delete('reports/' . $file);
+                $pdf = \PDF::loadView('admin.reports.customerwisereportPDF', compact('detail_transaction', 'clients', 'outletname',
+                    'startdate', 'enddate', 'nepalistartdate', 'nepalienddate', 'organization'))->setPaper('a4', 'landscape');
+                $full_name = $file . '.pdf';
+                if (\File::exists('reports/' . $full_name)) {
+                    \File::Delete('reports/' . $full_name);
                 }
-                return $pdf->download($file);
+                return $pdf->download($full_name);
             }
-            return view('admin.reports.transactionreports', compact('data'));
+            return view('admin.reports.transactionreports', compact('outlets', 'detail_transaction', 'clients', 'outletname', 'startdate', 'enddate', 'nepalistartdate', 'nepalienddate', 'organization'));
         }
         return view('admin.reports.transactionreports', compact('outlets'));
     }
 
     public function customerwisedetailreports(Request $request)
     {
-        // dd("hello");
         $page_title = "Customer-Wise-Detail Report";
         $page_description = "Detail Report";
         $outlets = \App\Models\PosOutlets::select('name', 'id')->get();

@@ -328,7 +328,6 @@ class ExpensesController extends Controller
             $stamp = time();
 
             $file = $request->file('attachment');
-            //dd($file);
             $destinationPath = public_path().'/attachment/';
             $filename = $file->getClientOriginalName();
             $request->file('attachment')->move($destinationPath, $stamp.'_'.$filename);
@@ -336,7 +335,6 @@ class ExpensesController extends Controller
             $attributes['attachment'] = $stamp.'_'.$filename;
         }
 
-        // dd($attributes);
         $expenses = $this->expense->create($attributes);
         Audit::log(Auth::user()->id, trans('admin/clients/general.audit-log.category'), trans('admin/clients/general.audit-log.msg-store', ['name' => $attributes['name'] ?? '--']));
 
@@ -487,7 +485,6 @@ class ExpensesController extends Controller
             $stamp = time();
 
             $file = $request->file('attachment');
-            //dd($file);
             $destinationPath = public_path() . '/attachment/';
             $filename = $file->getClientOriginalName();
             $request->file('attachment')->move($destinationPath, $stamp . '_' . $filename);

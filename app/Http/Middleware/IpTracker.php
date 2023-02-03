@@ -46,18 +46,17 @@ class IpTracker
 
         if (Authorize::inactive() && auth()->check()) {
             $this->authorize = Authorize::make();
-    
+
             if ($this->authorize->noAttempt()) {
 
                 $tomail = $request->user()->email;
                 $authorize = new IpTrackerMail($this->authorize);
                 $authorize = $authorize->build();
 
-                // dd($authorize->);
                 try{
                     $from = env('APP_EMAIL');
                     $to = $tomail;
-                    
+
                     $mail = Mail::send('emails.auth.authorize',compact('authorize'),function ($message) use ($from, $to) {
                         $message->subject('Authorize New Device');
                         $message->from($from, env('APP_COMPANY'));
@@ -65,7 +64,7 @@ class IpTracker
                     });
                 }
                 catch(\Exception $e){
-                    
+
                 }
                 // Mails::to($tomail)
                 //     ->send(new IpTrackerMail($this->authorize));

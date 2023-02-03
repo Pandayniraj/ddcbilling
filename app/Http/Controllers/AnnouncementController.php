@@ -47,9 +47,7 @@ class AnnouncementController extends Controller
 
         $teams = \App\Models\Team::orderBy('id', 'desc')->get();
 
-        //dd($teams);
 
-        //dd($departments);
         $announcements = Announcement::where('org_id', Auth::user()->org_id)->orderBy('created_at', 'desc')->get();
 
         return view('admin.announcement.index', compact('page_title', 'page_description', 'announcements', 'departments', 'teams'));
@@ -77,12 +75,10 @@ class AnnouncementController extends Controller
                     $users_id = \App\Models\UserTeam::where('team_id', $request->team_id)->select('user_id')->get()->toArray();
                     $users = \App\User::whereIn('id', $users_id)->where('enabled', '1')->pluck('email')->all();
 
-                //dd($users);
                 } else {
                     $users = \App\User::orderBy('id', 'desc')->where('enabled', '1')->pluck('email')->all();
                 }
 
-                //dd($users);
 
                 try {
                     Mail::send('emails.announcement-create', compact('announcement'), function ($message) use ($attributes, $request, $users, $announcement) {
@@ -95,7 +91,6 @@ class AnnouncementController extends Controller
                 }
             }
 
-            //dd($announcement);
 
             Flash::success('Announcement created Successfully');
         } else {
@@ -232,7 +227,6 @@ class AnnouncementController extends Controller
     public function ReadAnnouncement($id)
     {
 
-        // dd($id);
         $readannouncement = new ReadAnnouncement();
         $readannouncement->user_id = Auth::user()->id;
         $readannouncement->announcement_id = $id;
