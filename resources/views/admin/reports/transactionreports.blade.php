@@ -76,7 +76,7 @@
                                     </div>
                                 </div>
                             </div>
-                            @if (\Auth::user()->username == 'root')
+                            @if (\Auth::user()->hasRole('admins'))
                                 <div class="col-md-3">
                                     <div class="form-group">
                                         <label>Outlet</label>

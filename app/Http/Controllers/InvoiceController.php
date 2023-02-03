@@ -215,7 +215,13 @@ class InvoiceController extends Controller
         $order_attributes['is_bill_active'] = 1;
         $order_attributes['fiscal_year_id'] = $ckfiscalyear->id;
         $order_attributes['outlet_id'] = $request->outlet_id;
-        $order_attributes['ledger_id'] = (\App\Models\Client::find($request->customer_id))->ledger_id;
+        dd(\App\Helpers\FinanceHelper::get_ledger_id("RANDOM_CUSTOMER"), $request->all());
+        if($request->client_type=="random_customer")
+        {
+            $order_attributes['ledger_id'] = \App\Helpers\FinanceHelper::get_ledger_id("RANDOM_CUSTOMER");
+        }else{
+            $order_attributes['ledger_id'] = (\App\Models\Client::find($request->customer_id));
+        }
         $invoice = $this->invoice->create($order_attributes);
 
         $deposit_deduct['user_id'] = \auth()->id();
@@ -809,8 +815,8 @@ class InvoiceController extends Controller
 
     public function InvoicePaymentPost(Request $request, $id)
     {
-        // dd("check");
         $attributes = $request->all();
+        dd($attributes);
         $attributes['created_by'] = \auth()->id();
         $invoice = \App\Models\Invoice::find($id);
         if ($request->file('attachment')) {
@@ -823,7 +829,6 @@ class InvoiceController extends Controller
 
             $attributes['attachment'] = $stamp . '_' . $filename;
         }
-
         \App\Models\InvoicePayment::create($attributes);
 
         $paid_amount = DB::table('invoice_payment')->where('invoice_id', $id)->sum('amount');
@@ -840,15 +845,10 @@ class InvoiceController extends Controller
             $attributes_purchase['payment_status'] = 'Pending';
             $sale_order->update($attributes_purchase);
         }
-
-        $customer_ledger = $invoice->client->ledger_id;
+        $customer_ledger = $invoice->client->ledger_id??\App\Helpers\FinanceHelper::get_ledger_id("RANDOM_CUSTOMER");
         if (!$customer_ledger) {
-
             Flash::error("Create custome Ledger first !!");
-
             return redirect()->back();
-
-
         }
 
 
@@ -875,7 +875,6 @@ class InvoiceController extends Controller
         $sub_amount->amount = $request->amount;
         $sub_amount->narration = 'Invoice Receipt Made';
         $sub_amount->save();
-
         // cash account
         $cash_amount = new \App\Models\Entryitem();
         $cash_amount->entry_id = $entry->id;

@@ -254,7 +254,6 @@ public function debtors_lists(Request $request){
         $paid_type = 'city-ledger';
     }
 
-
     $current_fiscal=\App\Models\Fiscalyear::where('current_year', 1)->first();
     $fiscal_year = \Request::get('fiscal_year') ?  \Request::get('fiscal_year'): $current_fiscal->fiscal_year ;
     $allFiscalYear = \App\Models\Fiscalyear::select('id','fiscal_year','start_date','end_date')->latest()->get();
@@ -374,7 +373,6 @@ public function debtors_lists(Request $request){
     }
     $name = array_column($debtorsLists, 'name');
     array_multisort($name, SORT_ASC, $debtorsLists);
-
     // dd($debtorsLists);
     $selected_ledger=$request->ledger_id?$ledger_table->find($request->ledger_id):null;
     $page_title = 'Debots|List';
