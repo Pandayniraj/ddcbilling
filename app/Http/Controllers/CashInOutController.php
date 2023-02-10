@@ -40,8 +40,6 @@ class CashInOutController extends Controller
 					->where('date','<=',$end_date)
 					->get();
 
-	//					dd($bankingIncome);
-
 		$page_title = 'Day Book & Cash Flow';
 
 		return view('admin.cashinout.list',compact('payment','bankingIncome','expenses','types','page_title','start_date','end_date'));

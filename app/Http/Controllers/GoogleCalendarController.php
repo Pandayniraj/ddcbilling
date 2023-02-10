@@ -36,7 +36,6 @@ class GoogleCalendarController extends Controller
                     ->whereNotNull('task_due_date')
                     ->get();
             // $service->calendars->clear('primary');
-            // dd("STOP");
             foreach ($tasks as $le) {
                 try {
                     $event = new Google_Service_Calendar_Event([

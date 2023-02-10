@@ -20,9 +20,9 @@ class StaffAppraisalController extends Controller
     {
         $page_title = 'Admin | Staff Appraisals';
         $page_description = 'List of Staff Appraisals';
-    
+
             $appraisals = AppraisalPerformance::select('id','employee_id','evaluator_id','appraisal_month','template_id','total_marks','marks_by_evaluator','date_reviewed_by_evaluator', 'marks_by_employee','entry_by','appraisal_from','appraisal_to','form_level')->with('employee:id,first_name,last_name,username', 'evaluator:id,first_name,last_name,username', 'template:id,name')->orderBy('id', 'desc')->get();
-   
+
         return view('admin.appraisal.staff.index', compact('appraisals', 'page_title', 'page_description'));
     }
 
@@ -115,11 +115,9 @@ class StaffAppraisalController extends Controller
 
         $page_title = 'Admin | Staff Appraisal | Edit';
         $appraisal = AppraisalPerformance::with('template:id,name', 'selfAppraisalData:id,appraisal_performance_id,appraisal_data_field,appraisal_data_field_key,appraisal_point,comment,appraisal_by')->findOrFail($id);
-        // dd($appraisal);
         $templates = AppraisalTemplate::orderBy('name', 'asc')->get();
         $apprisalObjTypes = AppraisalObjectiveType::select('id','name','points')->with('objectives:id,obj_type_id,objective,marks')->where([['is_master', '=', 'master'],['status' ,'=', '1']])->get();
         $department = Department::all();
-        // dd($appraisal,$page_title,$apprisalObjTypes,$templates,$department);
         return view('admin.appraisal.staff.edit', compact('appraisal', 'page_title', 'apprisalObjTypes', 'templates', 'department'));
 
 
@@ -135,7 +133,6 @@ class StaffAppraisalController extends Controller
         $appraisalMarks = $request->appraisal_marks;
         $comments = $request->comments;
         $marks = $request->marks;
-        // dd($request->all());
         $appraisal = AppraisalPerformance::where('evaluator_id', \Auth::user()->id)->findOrFail($id);
         if($appraisal->entry_by != \Auth::user()->id)
             $data = $request->except(['_token', 'employee_id', 'appraisal_month', 'template_id', 'appraisal_marks', 'comments', 'marks']);

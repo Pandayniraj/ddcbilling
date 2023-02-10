@@ -25,7 +25,6 @@ class BrandController extends Controller
         $page_description = 'All Brands';
 
         $brands= $this->brand->orderBy('id', 'desc')->paginate(25);
-        //  dd($airlines);
 
         return view('admin.brands.index', compact('page_title', 'page_description', 'brands'));
     }
@@ -126,7 +125,7 @@ class BrandController extends Controller
         $brand = $this->brand->find($id);
         $modal_route = route('admin.brand.delete', array('id' => $brand->id));
 
-        $modal_body = "Are You Sure Youy Want To Delete This? This Is Irreversible";
+        $modal_body = "Are You Sure You Want To Delete This? This Is Irreversible";
         return view('modal_confirmation', compact('error', 'modal_route', 'modal_title', 'modal_body'));
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Store;
 use Illuminate\Http\Request;
 
 use App\Http\Requests;
@@ -50,8 +51,6 @@ class PosOutletsController extends Controller
         return view('admin.posoutlets.dashboard', compact('page_title', 'description', 'outlets', 'users', 'sessions'));
     }
 
-
-
     /**
      * Show the form for creating a new resource.
      *
@@ -59,12 +58,12 @@ class PosOutletsController extends Controller
      */
     public function create()
     {
-
         $page_title = 'Admin | Hotel | Pos Outlets';
 
         $description = 'Create a new Outlets';
+        $projects = Store::OrderBy('id')->get();
 
-        return view('admin.posoutlets.create', compact('page_title', 'description'));
+        return view('admin.posoutlets.create', compact('page_title', 'description', 'projects'));
     }
 
     /**
@@ -75,22 +74,11 @@ class PosOutletsController extends Controller
      */
     public function store(Request $request)
     {
-
+        $request->validate(['project_id' => 'required|exists:store,id']);
         $outlets = $request->all();
         \App\Models\PosOutlets::create($outlets);
         Flash::success('POS Outlets added');
         return redirect('/admin/pos-outlets/index');
-    }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
-    {
-        //
     }
 
     /**
@@ -101,12 +89,11 @@ class PosOutletsController extends Controller
      */
     public function edit($id)
     {
-
         $description = 'Edit an Pos Outlets ';
         $page_title = 'Admin | Hotel | Outlets';
         $edit =  \App\Models\PosOutlets::find($id);
-
-        return view('admin.posoutlets.edit', compact('edit', 'description', 'page_title'));
+        $projects = Store::OrderBy('id')->get();
+        return view('admin.posoutlets.edit', compact('edit', 'description', 'page_title', 'projects'));
     }
 
     /**
@@ -118,6 +105,7 @@ class PosOutletsController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $request->validate(['project_id' => 'required|exists:store,id']);
         $attributes = $request->all();
         $pos_outlets =  \App\Models\PosOutlets::find($id);
         $pos_outlets->update($attributes);
@@ -157,7 +145,6 @@ class PosOutletsController extends Controller
         return view('modal_confirmation', compact('error', 'modal_route', 'modal_title', 'modal_body'));
     }
 
-
     public function openoutlets(Request $request)
     {
 
@@ -193,7 +180,6 @@ class PosOutletsController extends Controller
 
         if (\Auth::user()->hasRole('admins')) {
             $outlets = \App\Models\PosOutlets::where('fnb_outlet', 1)->get();
-            // dd($outlets);
         } else {
             $outletusers = \App\Models\OutletUser::where('user_id', \Auth::user()->id)->get()->pluck('outlet_id');
             $outlets = \App\Models\PosOutlets::whereIn('id', $outletusers)
@@ -329,7 +315,6 @@ class PosOutletsController extends Controller
             ->leftjoin('pos_outlets', 'pos_outlets.id', '=', 'pos_floors.outlet_id')
             ->where('pos_outlets.id', $outlet_id)
             ->get();
-        // dd($table_area);
 
        // $order= \App\Models\Orders::orderBy('id', 'desc')
        //      ->where('org_id', \Auth::user()->org_id)
@@ -338,5 +323,11 @@ class PosOutletsController extends Controller
 
 
         return view('admin.posoutlets.tableshow', compact('page_title', 'table_area', 'page_description', 'type', 'outlet_id'));
+    }
+
+    public function getOutlet(Request $request)
+    {
+        $outlets = \App\Models\PosOutlets::where('project_id', $request->project_id)->select('name', 'id')->get();
+        return response()->json($outlets, 200);
     }
 }

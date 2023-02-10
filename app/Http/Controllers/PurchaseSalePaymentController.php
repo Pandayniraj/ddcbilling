@@ -47,7 +47,7 @@ class PurchaseSalePaymentController extends Controller
     {
         $purchase_id = $id;
         $purchase_detail = \App\Models\PurchaseOrder::find($id);
-        $purchase_name = $purchase_detail->client->name ?? ''; 
+        $purchase_name = $purchase_detail->client->name ?? '';
 
         // dd($purchase_name);
 
@@ -100,21 +100,18 @@ class PurchaseSalePaymentController extends Controller
         $sale_id = $id;
 
         $payment_method = Paymentmethod::orderby('id')->pluck('name', 'id');
-
         $purchase_order = \App\Models\Orders::where('id', $id)->first();
         if(!$purchase_order){
-
             Flash::error("Purchase Not found");
             return redirect()->back();
         }
-
         $purchase_total = $purchase_order->total_amount;
         $source = $purchase_order->source;
         $paid_amount = DB::table('payments')->where('sale_id', $id)->sum('amount');
         $payment_remain = $purchase_total - $paid_amount;
-
         return view('admin.orders.paymentcreate', compact('page_title', 'page_description', 'sale_id', 'payment_method', 'payment_remain', 'source','purchase_order'));
     }
+
     public function creatOrUpdatePuchPaymentEntries($payments,$paid_amount,$purchase_order,$request){
         $attributes['entrytype_id'] = '14'; //receipt
         $attributes['tag_id'] = '24'; //bill payment
@@ -129,7 +126,7 @@ class PurchaseSalePaymentController extends Controller
         $entry = \App\Models\Entry::find($payments->entry_id);
 
         if($entry){ //updateEntrues
-          
+
             $entry = $entry->update($attributes);
             $entry = \App\Models\Entry::find($payments->entry_id);
         }else{
@@ -138,7 +135,7 @@ class PurchaseSalePaymentController extends Controller
            $payments = \App\Models\Payment::find($payments->id);
            $payments->update(['entry_id'=>$entry->id]);
         }
-        \App\Models\Entryitem::where('entry_id',$payments->entry_id)->delete(); 
+        \App\Models\Entryitem::where('entry_id',$payments->entry_id)->delete();
 
              //Purchase account
         $sub_amount =new  \App\Models\Entryitem();
@@ -153,7 +150,7 @@ class PurchaseSalePaymentController extends Controller
 
         $creditTds = $request->tds;
         $createPaymentWithTds =(float) $paid_amount - (float)$creditTds;
-      
+
         // cash account
         $cash_amount = new \App\Models\Entryitem();
         $cash_amount->entry_id = $entry->id;
@@ -179,12 +176,9 @@ class PurchaseSalePaymentController extends Controller
 
     }
 
-
-
-
     public function PurchasePaymentPost(Request $request, $id)
     {
-        DB::beginTransaction();       
+        DB::beginTransaction();
 
         $attributes = $request->all();
 
@@ -194,7 +188,7 @@ class PurchaseSalePaymentController extends Controller
 
 
 
-        $attributes['bill_amount'] = (float) $request->amount - (float) $request->tds; 
+        $attributes['bill_amount'] = (float) $request->amount - (float) $request->tds;
 
         //this amount will be used to adjust bill amount
 
@@ -229,9 +223,9 @@ class PurchaseSalePaymentController extends Controller
         $paid_amount = $request->amount;
 
         $this->creatOrUpdatePuchPaymentEntries($payment,$paid_amount,$purchase_order,$request);
-   
+
         Flash::success('Payment Created');
-        
+
         DB::commit();
         return redirect('/admin/payment/purchase/' . $id . '');
     }
@@ -370,7 +364,7 @@ class PurchaseSalePaymentController extends Controller
 
             $attributes['attachment'] = $stamp . '_' . $filename;
         }
-       
+
         $payment->update($attributes);
 
         $paid_amount = DB::table('payments')->where('purchase_id', $id)->sum('amount');
@@ -389,7 +383,7 @@ class PurchaseSalePaymentController extends Controller
         }
 
         $paid_amount = $request->amount;
-        
+
         $this->creatOrUpdatePuchPaymentEntries($payment,$paid_amount,$purchase_order,$request);
 
         Flash::success('Payment Updated Successfully');

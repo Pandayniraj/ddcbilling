@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\TaskHelper;
+use App\Models\NewStock;
+use App\Models\PosOutlets;
 use App\Models\Projects;
 use App\Models\Role as Permission;
 use App\Models\Stock;
 use App\Models\StockAssign;
 use App\Models\StockCategory;
+use App\Models\StockMove;
 use App\Models\StockReturn;
 use App\Models\StockSubCategory;
 use App\User;
@@ -33,81 +37,200 @@ class StockController extends Controller
         parent::__construct();
         $this->permission = $permission;
     }
-    public function addstock(){
+    public function addstock() {
         $products=\App\Models\Product::where('org_id',\Auth::user()->org_id)->pluck('name','id');
-        $outletuser=\App\Models\OutletUser::where('user_id', \Auth::user()->id)->select('outlet_id')->get()->toArray();
+        foreach ($products as $productId=>$product) {
+            $productStockCount=\TaskHelper::getTranslations($productId);
+            $stockMove = StockMove::where('stock_id', $productId)->orderBy('tran_date', 'desc')->first();
+            if (isset($stockMove)) {
+                $stockMove->opening_stock = $productStockCount ?? 0;
+                $stockMove->save();
+            }
+        }
+        $outletuser=\App\Models\OutletUser::where('user_id', auth()->id())->select('outlet_id')->get()->toArray();
 
-        if( \Auth::user()->hasRole('admins')){
-            $stores = \App\Models\PosOutlets::select('name', 'id')->get();
-        }
-        else{
-           $stores = \App\Models\PosOutlets::whereIn('id', $outletuser)->select('name', 'id')->get();
-        }
-       
+        if( \Auth::user()->hasRole('admins')) $stores = \App\Models\PosOutlets::select('name', 'id')->get();
+        else $stores = \App\Models\PosOutlets::whereIn('id', $outletuser)->select('name', 'id')->get();
+
         $date=\Carbon\Carbon::now()->format('Y-m-d');
         return view('admin.stock.addstock',compact('products','date','stores'));
     }
-    public function storestock(Request $request){
+    public function storestock(Request $request) {
+        $request->validate([
+            'quantity' => 'array|required',
+            'return_quantity' => 'array|required',
+            'remarks' => 'array|required',
+            'store_id' => 'required|exists:pos_outlets,id',
+        ], ['store_id.required' => 'Outlets is compulsary']);
 
+        DB::beginTransaction();
         $data['date']=$request->date;
-        $data['user_id']=\Auth::user()->id;
+        $data['user_id']= auth()->id();
         $data['org_id']=\Auth::user()->org_id;
         $data['store_id']=$request->store_id;
+        $outlet = PosOutlets::find($request->store_id);
+        if (@$outlet->project_id) $projectId = $outlet->project_id;
+        else $projectId = null;
 
         $stock=\App\Models\NewStock::create($data);
+        $products=\App\Models\Product::where('org_id',\Auth::user()->org_id)->pluck('name','id');
+        $quantity=$request->quantity;
+        $remarks=$request->remarks;
+        $check = 0;
+        foreach($products as $id=>$name){
+            if ($quantity[$id] > 0) {
+                $check = 1;
+                $stockMove = new \App\Models\StockMove();
+                $stockMove->stock_id = $id;
+                $stockMove->trans_type = PURCHINVOICE;
+                $stockMove->tran_date = $request->date;
+                $stockMove->user_id = auth()->id();
+                $stockMove->org_id = \Auth::user()->org_id;
+                $stockMove->reference = 'store_in_' . $stock->id;
+                $stockMove->transaction_reference_id = $stock->id;
+                $stockMove->store_id = $request->store_id;
+                $stockMove->buy_qty = $quantity[$id] ?? 0;
+                $stockMove->qty = $quantity[$id] ?? 0;
+                $stockMove->remarks = $remarks[$id];
+
+                $outletIds = PosOutlets::where('project_id', $projectId)->pluck('id')->toArray();
+                $opening_stock_check_exists = StockMove::where('stock_id', $projectId)->where('tran_date', '<', $request->date)
+                    ->where(function ($que) use ($outletIds) {
+                        $que->whereIn('store_id', $outletIds);
+                    })->orderBy('tran_date', 'desc')->first();
+                if($opening_stock_check_exists && $projectId)
+                    $stockMove->opening_stock = \App\Helpers\TaskHelper::getOpeningStock($id, $request->date, $projectId) ?? 0;
+                else $stockMove->opening_stock = $quantity[$id]??0;
+                $stockMove->save();
+            }
+        }
+        if ($check) DB::commit();
+        else DB::rollBack();
+
+        return redirect(route('admin.stock.stocklists'));
+    }
+
+    public function updatestock(Request $request) {
+        $request->validate([
+            'quantity' => 'array|required',
+            'remarks' => 'array|required',
+            'quantity.*' => 'required|numeric|gt:-1',
+        ]);
+        $data['date']=$request->date;
+        $data['user_id']=auth()->id();
+        $data['org_id']=\Auth::user()->org_id;
+        $data['store_id']=$request->store_id;
+        $outlet = PosOutlets::find($request->store_id);
+        if (@$outlet->project_id) $projectId = $outlet->project_id;
+        else $projectId = null;
+
+        \App\Models\NewStock::where('id',$request->stock_id)->update($data);
+        $stock = NewStock::findOrFail($request->stock_id);
 
         $products=\App\Models\Product::where('org_id',\Auth::user()->org_id)->pluck('name','id');
         $quantity=$request->quantity;
         $remarks=$request->remarks;
-        foreach($products as $id=>$name){
-            $stockMove = new \App\Models\StockMove();
-            $stockMove->stock_id = $id;
-            $stockMove->trans_type = PURCHINVOICE;
-            $stockMove->tran_date = $request->date;
-            $stockMove->user_id = \Auth::user()->id;
-            $stockMove->org_id = \Auth::user()->org_id;
-            $stockMove->reference = 'store_in_' . $stock->id;
-            $stockMove->transaction_reference_id = $stock->id;
-            $stockMove->store_id = $request->store_id;
-            $stockMove->qty = $quantity[$id]??0;
-            $stockMove->remarks = $remarks[$id];
-            $stockMove->save();
+        // \App\Models\StockMove::where('transaction_reference_id',$request->stock_id)->where('reference', 'store_in_'.$request->stock_id)->delete();
+        foreach($products as $id=>$name) {
+            if ($quantity[$id] > 0) {
+                $stockMove = \App\Models\StockMove::where('transaction_reference_id', $request->stock_id)
+                    ->where('reference', 'store_in_' . $request->stock_id)->where('stock_id', $id)->first();
+                if (isset($stockMove)) {
+                    // $stockMove = new \App\Models\StockMove();
+                    // $stockMove->stock_id = $id;
+                    // $stockMove->trans_type = PURCHINVOICE;
+                    $stockMove->tran_date = $request->date;
+                    $stockMove->user_id = auth()->id();
+                    $stockMove->org_id = \Auth::user()->org_id;
+                    // $stockMove->reference = 'store_in_' . $stock->id;
+                    // $stockMove->transaction_reference_id = $stock->id;
+                    $stockMove->store_id = $request->store_id;
+                    $stockMove->qty = $quantity[$id] ?? 0;
+                    $stockMove->buy_qty = $quantity[$id]+$stockMove->return_qty;
+                    $stockMove->remarks = $remarks[$id];
 
+                    $outletIds = PosOutlets::where('project_id', $projectId)->pluck('id')->toArray();
+                    $opening_stock_check_exists = StockMove::where('stock_id', $projectId)
+                        ->where('tran_date', '<', $request->date)
+                        ->where(function ($que) use ($outletIds) {
+                            $que->whereIn('store_id', $outletIds);
+                        })->orderBy('tran_date', 'desc')->first();
+                    if ($opening_stock_check_exists && $projectId)
+                        $stockMove->opening_stock = \App\Helpers\TaskHelper::getOpeningStock($id, $request->date, $projectId) ?? 0;
+                    else $stockMove->opening_stock = $quantity[$id] ?? 0;
+                    $stockMove->save();
+                }
+            }
         }
 
         return redirect(route('admin.stock.stocklists'));
     }
 
-    public function updatestock(Request $request){
-
+    public function saveReturn(Request $request) {
+        $request->validate([
+            'quantity' => 'array|required',
+            'return_quantity' => 'array|required',
+            'remarks' => 'array|required',
+            'quantity.*' => 'required|numeric|gt:-1',
+        ]);
         $data['date']=$request->date;
-        $data['user_id']=\Auth::user()->id;
+        $data['user_id']=auth()->id();
         $data['org_id']=\Auth::user()->org_id;
         $data['store_id']=$request->store_id;
-
+        $outlet = PosOutlets::find($request->store_id);
+        if (@$outlet->project_id) $projectId = $outlet->project_id;
+        else $projectId = null;
 
         \App\Models\NewStock::where('id',$request->stock_id)->update($data);
         $stock=\App\Models\NewStock::find($request->stock_id);
 
         $products=\App\Models\Product::where('org_id',\Auth::user()->org_id)->pluck('name','id');
         $quantity=$request->quantity;
-        $remarks=$request->remarks;
         $return_quantity=$request->return_quantity;
-// dd($request->all());
-        $hello=\App\Models\StockMove::where('transaction_reference_id',$request->stock_id)->delete();
-        foreach($products as $id=>$name){
-            $stockMove = new \App\Models\StockMove();
-            $stockMove->stock_id = $id;
-            $stockMove->trans_type = PURCHINVOICE;
-            $stockMove->tran_date = $request->date;
-            $stockMove->user_id = \Auth::user()->id;
-            $stockMove->org_id = \Auth::user()->org_id;
-            $stockMove->reference = 'store_in_' . $stock->id;
-            $stockMove->transaction_reference_id = $stock->id;
-            $stockMove->store_id =$request->store_id;
-            $stockMove->qty = $quantity[$id]??0;
-            $stockMove->remarks = $remarks[$id];
-            $stockMove->save();
+        $remarks=$request->remarks;
+        // \App\Models\StockMove::where('transaction_reference_id',$request->stock_id)->where('reference', 'store_in_'.$request->stock_id)->delete();
+
+        foreach($products as $id=>$name) {
+            if (($return_quantity[$id] > 0) && ($return_quantity[$id] < $quantity[$id])) {
+                $stockMove = \App\Models\StockMove::where('transaction_reference_id', $request->stock_id)
+                    ->where('reference', 'store_in_' . $request->stock_id)->where('stock_id', $id)->first();
+                if (isset($stockMove)) {
+                    // $stockMove->stock_id = $id;
+                    $stockMove->trans_type = PURCHINVOICE;
+                    $stockMove->tran_date = $request->date;
+                    $stockMove->user_id = auth()->id();
+                    $stockMove->org_id = \Auth::user()->org_id;
+                    // $stockMove->reference = 'store_in_' . $stock->id;
+                    // $stockMove->transaction_reference_id = $stock->id;
+                    $stockMove->store_id = $request->store_id;
+                    if ($stockMove->return_qty>0) {
+                        $qty = $stockMove->buy_qty - ($stockMove->return_qty+$return_quantity[$id]);
+                        $rtn = $stockMove->return_qty + ($return_quantity[$id] ?? 0);
+                    }
+                    else {
+                        $qty = $stockMove->buy_qty - $return_quantity[$id] ?? 0;
+                        $rtn = $return_quantity[$id] ?? 0;
+                    }
+                    $stockMove->qty = $qty;
+                    $stockMove->return_qty = $rtn;
+
+                    $outletIds = PosOutlets::where('project_id', $projectId)->pluck('id')->toArray();
+                    $opening_stock_check_exists = StockMove::where('stock_id', $projectId)
+                        ->where('tran_date', '<', $request->date)
+                        ->where('id', '!=', $stockMove->id)
+                        ->where(function ($que) use ($outletIds) {
+                            $que->whereIn('store_id', $outletIds);
+                        })->orderBy('tran_date', 'desc')->first();
+                    if($opening_stock_check_exists && $projectId)
+                        $stockMove->opening_stock = \App\Helpers\TaskHelper::getOpeningStock($id, $request->date, $projectId) ?? 0;
+                    else $stockMove->opening_stock = $qty;
+                    $stockMove->remarks = $remarks[$id];
+                    $stockMove->save();
+                }
+            } elseif (($return_quantity[$id] == $quantity[$id]) || ($quantity[$id] == 0)) {
+                \App\Models\StockMove::where('transaction_reference_id', $request->stock_id)
+                    ->where('reference', 'store_in_' . $request->stock_id)->where('stock_id', $id)->delete();
+            }
         }
 
         return redirect(route('admin.stock.stocklists'));
@@ -116,7 +239,7 @@ class StockController extends Controller
     public function list_stocks(){
         $page_title="Stock Entries List";
         $page_description="List of stock entries";
-        $outletuser=\App\Models\OutletUser::where('user_id', \Auth::user()->id)->select('outlet_id')->get()->toArray();
+        $outletuser=\App\Models\OutletUser::where('user_id', auth()->id())->select('outlet_id')->get()->toArray();
         if(\Auth::user()->hasRole('admins')){
             $stock_lists=\App\Models\NewStock::where('org_id',\Auth::user()->org_id)->orderby('id','desc')->paginate(25);
         }else{
@@ -128,11 +251,21 @@ class StockController extends Controller
         $stock_id=\Request::get('stock_id');
         $page_title="Stock Entries Edit";
         $page_description="Editing stock entries";
-        $stock_entries=\App\Models\StockMove::where('transaction_reference_id',$stock_id)->get();
+        $stock_entries=\App\Models\StockMove::where('transaction_reference_id',$stock_id)->where('reference','store_in_'.$stock_id)->get();
         $newstock=\App\Models\NewStock::find($stock_id);
         $stores = \App\Models\PosOutlets::pluck('name', 'id')->all();
         return view('admin.stock.stockedit',compact('stores','newstock','stock_id','stock_entries','page_title','page_description'));
     }
+
+    public function return($stock_id){
+        $page_title="Stock Entries Edit";
+        $page_description="Editing stock entries";
+        $stock_entries=\App\Models\StockMove::where('transaction_reference_id',$stock_id)->where('reference','store_in_'.$stock_id)->get();
+        $newstock=\App\Models\NewStock::find($stock_id);
+        $stores = \App\Models\PosOutlets::pluck('name', 'id')->all();
+        return view('admin.stock.return',compact('stores','newstock','stock_id','stock_entries','page_title','page_description'));
+    }
+
     public function stockdetails(){
         $stock_id=\Request::get('stock_id');
         $page_title="Stock Entries Detail View";
@@ -267,7 +400,6 @@ class StockController extends Controller
 
         $projectslist = Projects::orderBy('id', 'desc')->get();
         $departments = \App\Models\Department::all();
-        //dd($allStockCats);
         $suplier = \App\Models\Client::where('relation_type', 'supplier')->get();
         $stocks = Stock::select('assets.*')->where(function ($query) {
             if (\Request::get('category') && \Request::get('category') != '') {
@@ -281,7 +413,6 @@ class StockController extends Controller
             ->groupBy('assets.stock_id')
             ->paginate(20);
 
-        // dd($stocks);
 
         return view('admin.stock.list', compact('page_title', 'page_description', 'allStockCats', 'stockCats', 'projectslist', 'departments', 'suplier', 'stocks'));
     }
@@ -354,7 +485,6 @@ class StockController extends Controller
 
         $allStockCats = StockSubCategory::select('asset_sub_category.stock_category_id', 'asset_sub_category.stock_sub_category_id', 'asset_sub_category.stock_sub_category')
             ->join('assets', 'assets.stock_sub_category_id', '=', 'asset_sub_category.stock_sub_category_id')
-            //->groupBy('asset_sub_category.stock_category_id')
             ->orderBy('asset_sub_category.stock_category_id', 'desc')
             ->get();
 
@@ -538,28 +668,6 @@ class StockController extends Controller
         return $pdf->download($file);
     }
 
-    public function return()
-    {
-        $page_title = 'Assign Stock';
-        $page_description = 'Assign Stock';
-        $projectslist = Projects::orderBy('id', 'desc')->get();
-
-        $returns = StockReturn::orderBy('return_date', 'desc')->get();
-
-        $categories = StockCategory::orderBy('stock_category', 'asc')->get();
-        $users = User::select('id', 'first_name', 'last_name')->where('enabled', '1')->where('id', '!=', '1')->get();
-
-        return view('admin.stock.return', compact('page_title', 'page_description', 'projectslist', 'returns', 'categories', 'users'));
-    }
-
-    public function saveReturn(Request $request)
-    {
-        StockReturn::create($request->all());
-        Flash::success('Stock has been Returned Successfully');
-
-        return redirect('/admin/stock/return');
-    }
-
     public function printReturn()
     {
         $assigns = StockReturn::orderBy('return_date', 'desc')->get();
@@ -585,5 +693,23 @@ class StockController extends Controller
         Flash::success('Stock Returned deleted Successfully');
         //return redirect('/admin/stock/assign');
         return Redirect::back();
+    }
+
+    public function getOpeningStockPrice(Request $request)
+    {
+        if ($request->has('outlet_id') && ($request->outlet_id != '')) {
+            $outlet = PosOutlets::find($request->outlet_id);
+
+            if (@$outlet->project_id) $projectId = $outlet->project_id;
+            else $projectId = 'over-all';
+        } else $projectId = 'over-all';
+        if($request->has('product_id')) {
+            $data = [];
+            foreach (json_decode($request->product_id) as $productId=>$product) {
+                $data[$productId] = \App\Helpers\TaskHelper::getOpeningStock($productId, null, $projectId);
+            }
+            return response()->json($data, 200);
+        }
+        return response()->json('false', 401);
     }
 }

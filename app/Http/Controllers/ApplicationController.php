@@ -42,7 +42,6 @@ class ApplicationController extends Controller
         // Courses means Product here
         $key1 = \Request::get('communication_id');
 
-        //dd($key1);
         $key2 = \Request::get('course_id');
         if ($key2 != '') {
             $courses = \App\Models\Product::where('id', $key2)->select('name', 'id')->get();
@@ -51,10 +50,8 @@ class ApplicationController extends Controller
         }
         if ($key1 != '') {
             $communication_id = $key1;
-        // dd($communication_id);
         } else {
             $communication_id = 8;
-            //  dd($communication_id);
         }
 
         return view('application.enquiry', compact('courses', 'communication_id'));
@@ -256,12 +253,10 @@ class ApplicationController extends Controller
 
         $stamp = time();
         $file = $request->file('resume');
-        //dd($file);
         $destinationPath = public_path().'/job_applied/';
         $filename = $file->getClientOriginalName();
         $file->move($destinationPath, $stamp.'_'.$filename);
         $attributes['resume'] = $stamp.'_'.$filename;
-        //dd($attributes);
         $jobapplication = $this->jobapplication->create($attributes);
 
         //send email

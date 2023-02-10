@@ -3,7 +3,10 @@
 @section('head_extra')
 
     @include('partials._head_extra_select2_css')
-
+    <link href="{{ asset("/bower_components/admin-lte/plugins/jQueryUI/jquery-ui.css") }}" rel="stylesheet"
+          type="text/css"/>
+    <link href="{{ asset("/bower_components/admin-lte/bootstrap/css/bootstrap-datetimepicker.css") }}" rel="stylesheet"
+          type="text/css"/>
 @endsection
 @section('content')
     <section class="content-header" style="margin-top: -35px; margin-bottom: 20px">
@@ -20,10 +23,8 @@
                 <div class="box-body">
                     <form action="{{route('admin.payment.invoice.create',$invoice_id)}}" method="post"
                           enctype="multipart/form-data">
-
                         {{ csrf_field() }}
-
-                        <div class="content col-md-9">
+                        <div class="content col-md-12">
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="form-group">
@@ -59,45 +60,53 @@
                             <input type="hidden" name="invoice_id" value="{{$invoice_id}}">
 
                             <div class="row">
-
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label class="control-label col-sm-6">Amount</label>
                                         <div class="input-group ">
                                             <input type="text" name="amount" placeholder="Amount" id="price_value"
                                                    value="{{ $payment_remain }}" class="form-control"
-                                                   required="required">
+                                                   required readonly>
                                             <div class="input-group-addon">
                                                 <a href="#"><i class="fa fa-credit-card"></i></a>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label class="control-label col-sm-4">Paying In</label>
-                                        <div class="col-md-8">
-                                            <select class='form-control searchable select2' name='payment_method'>
-
-                                                <?php
-                                                //Sunny_deptors
-                                                $groups = \App\Models\COALedgers::orderBy('code', 'asc')->where('group_id', '13')->where('org_id', \Auth::user()->org_id)->get();
-                                                foreach ($groups as $grp) {
-                                                    echo '<option value="' . $grp->id . '"' .
-                                                        ((isset($client) && $grp->name == $client->type) ? 'selected="selected"' : "") .
-                                                        '>'
-                                                        . $grp->name . '</option>';
-                                                }
-                                                ?>
-
-
+                                        <label class="control-label col-sm-4">
+                                            <select name="payment_type" class="payment-type form-control">
+                                                <option value="Cash" @if($purchase_order->bill_type == 'Cash') selected @endif>Cash</option>
+                                                <option value="Credit" @if($purchase_order->bill_type == 'Credit') selected @endif>Credit</option>
                                             </select>
-
+                                            {{-- <input type="radio" id="cash" name="payment_type" class="payment-type" value="Cash" @if($purchase_order->bill_type == 'Cash') checked @endif>--}}
+                                            {{-- <label for="cash">Cash</label><br>--}}
+                                            {{-- <input type="radio" id="credit" name="payment_type" class="payment-type" value="Credit" @if($purchase_order->bill_type == 'Credit') checked @endif>--}}
+                                            {{-- <label for="credit">Credit</label><br>--}}
+                                        </label>
+                                        <div class="col-md-8">
+                                            <div class="col-md-8" @if($purchase_order->bill_type == 'Credit') style="display: none;" @endif id="cash-ledger">
+                                                <select class='form-control searchable select2' name='payment_method'>
+                                                    <?php $groups = \App\Models\COALedgers::orderBy('code', 'asc')->where('group_id', '13')->where('org_id', \Auth::user()->org_id)->get();
+                                                    foreach ($groups as $grp) {
+                                                        echo '<option value="' . $grp->id . '"' . ((isset($purchase_order) && ($grp->name == $purchase_order->type)) ? 'selected' : "") .'>'. $grp->name . '</option>';
+                                                    }
+                                                    ?>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-8" @if($purchase_order->bill_type == 'Cash') style="display: none;" @endif id="credit-ledger">
+                                                <select class='form-control searchable select2' name='payment_method'>
+                                                    <?php $groups = \App\Models\COALedgers::orderBy('code', 'asc')->where('group_id', '219')->where('org_id', \Auth::user()->org_id)->get();
+                                                    foreach ($groups as $grp) {
+                                                        echo '<option value="' . $grp->id . '"' . ((isset($purchase_order) && ($grp->id == $purchase_order->client->ledger_id)) ? 'selected' : "disabled") .'>'. $grp->name . '</option>';
+                                                    }
+                                                    ?>
+                                                </select>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-
                             </div>
 
                             <div class="row" style="display: none;">
@@ -132,26 +141,20 @@
                         </div>
                         <div class="col-md-12">
                             <div class="form-group">
-                                <button type="Submit" class="btn btn-success">Make Payment</button>
+                                <button type="Submit" class="btn btn-success" id="make-payment">Make Payment</button>
                                 <a href="{!! route('admin.invoice.payment',$invoice_id) !!}"
                                    class='btn btn-default'>{{ trans('general.button.cancel') }}</a>
                             </div>
                         </div>
-
                     </form>
                 </div>
-            </div><!-- /.box-body -->
-        </div><!-- /.col -->
-
-    </div><!-- /.row -->
+            </div>
+        </div>
+    </div>
 
 @endsection
 
 @section('body_bottom')
-    <link href="{{ asset("/bower_components/admin-lte/plugins/jQueryUI/jquery-ui.css") }}" rel="stylesheet"
-          type="text/css"/>
-    <link href="{{ asset("/bower_components/admin-lte/bootstrap/css/bootstrap-datetimepicker.css") }}" rel="stylesheet"
-          type="text/css"/>
     <script src="{{ asset("/bower_components/admin-lte/plugins/jQueryUI/jquery-ui.min.js") }}"></script>
     <script src="{{ asset ("/bower_components/admin-lte/plugins/daterangepicker/moment.js") }}"
             type="text/javascript"></script>
@@ -166,8 +169,28 @@
                 sideBySide: true,
                 allowInputToggle: true
             });
-
         });
+    </script>
+
+    <script>
+        $(document).on('click', '.payment-type', function () {
+            var v = $(this).val();
+            if(v == 'Credit') {
+                $('#credit-ledger').css('display', 'block');
+                $('#cash-ledger').css('display', 'none');
+            } else {
+                $('#credit-ledger').css('display', 'none');
+                $('#cash-ledger').css('display', 'block');
+            }
+        })
+
+        $(document).ready(function () {
+           if($("#price_value").val() == 0) {
+               $("#make-payment").html('');
+               $("#make-payment").html('Already Received');
+               $("#make-payment").attr('type', 'button');
+           }
+        })
     </script>
 
 @endsection

@@ -42,7 +42,6 @@ class ShiftController extends Controller
         if (! isset($attributes['enabled'])) {
             $attributes['enabled'] = 0;
         }
-        //dd($attributes);
 
         $shifts = \App\Models\Shift::create($attributes);
         Flash::success('Shift  sucessfully added');
@@ -68,7 +67,6 @@ class ShiftController extends Controller
         ]);
 
         $attributes = $request->all();
-       // dd(\App\Models\Shift::find($id));
         if (! isset($attributes['enabled'])) {
             $attributes['enabled'] = 0;
         }

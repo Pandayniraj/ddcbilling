@@ -132,7 +132,7 @@ class DivisionController extends Controller
         $division =$this->division->find($id);
         $modal_route = route('admin.division.delete', array('id' => $division->id));
 
-        $modal_body = "Are You Sure Youy Want To Delete This? This Is Irreversible";
+        $modal_body = "Are You Sure You Want To Delete This? This Is Irreversible";
         return view('modal_confirmation', compact('error', 'modal_route', 'modal_title', 'modal_body'));
     }
 

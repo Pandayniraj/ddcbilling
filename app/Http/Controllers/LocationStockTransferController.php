@@ -59,8 +59,6 @@ class LocationStockTransferController extends Controller
             return redirect()->back();
         }
 
-        //dd($attributes);
-
         $locationstocktransfer = LocationStockTransfer::create($attributes);
 
         $product_id = $request->product_id;
@@ -278,7 +276,6 @@ class LocationStockTransferController extends Controller
     {
         $product_id = $request->product_id;
         $source_id = $request->source_id;
-        // dd($product_id,$source_id);
         $transations = DB::table('product_stock_moves')
                               ->where('product_stock_moves.stock_id', $product_id)
                               ->leftjoin('products', 'products.id', '=', 'product_stock_moves.stock_id')

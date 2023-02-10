@@ -86,7 +86,6 @@ class UserDetailController extends Controller
         if ($request->file('id_proof')) {
             $stamp = time();
             $file = $request->file('id_proof');
-            //dd($file);
             $destinationPath = public_path().'/id_proof/';
 
             $filename = $file->getClientOriginalName();
@@ -99,7 +98,6 @@ class UserDetailController extends Controller
         if ($request->file('resume')) {
             $stamp = time();
             $file = $request->file('resume');
-            //dd($file);
             $destinationPath = public_path().'/resume/';
 
             $filename = $file->getClientOriginalName();
@@ -108,7 +106,6 @@ class UserDetailController extends Controller
             $attributes['resume'] = $stamp.'_'.$filename;
         }
 
-        //dd($attributes);
 
 
 
@@ -194,7 +191,6 @@ class UserDetailController extends Controller
                 if ($document_file[$key]) {
                     $stamp = time();
                     $file = $document_file[$key];
-                    //dd($file);
                     $destinationPath = public_path().'/userdocument/';
 
                     $filename = $file->getClientOriginalName();
@@ -372,7 +368,6 @@ class UserDetailController extends Controller
         $user_work_experience = UserWorkExperience::where('user_detail_id', $user_detail->id)->get();
         $user_documents = UserDocument::where('user_detail_id', $user_detail->id)->get();
 
-        // dd($user_documents);
 
 
         $team = \App\Models\UserTeam::orderBy('id', 'desc')->where('user_id', $user_id)->first();
@@ -398,7 +393,7 @@ class UserDetailController extends Controller
                 $fromProxy = true;
 
                 $user_detail = $user_detail_proxy;
-                
+
                 $changed_data = \App\Helpers\TaskHelper::changed_data($user_detail , $user_detail1);
             }
 
@@ -419,15 +414,13 @@ class UserDetailController extends Controller
         $user = \App\User::find($user_id);
 
         $page_title =$user->first_name .' '.$user->last_name;
-//            dd($page_title);
 
 
 
         $array = $this->user_detail_info($user_id);
         $banking_detail_changed = array();
 
-        // dd($array['changed_data']);
-     
+
 
         extract($array);
         $cnt_chg_bank_detl = (count($array['changed_data']['bank_deatil_changed']));
@@ -460,7 +453,6 @@ class UserDetailController extends Controller
         if ($request->file('resume')) {
             $stamp = time();
             $file = $request->file('resume');
-            //dd($file);
             $destinationPath = public_path().'/resume/';
             $filename = $file->getClientOriginalName();
             $request->file('resume')->move($destinationPath, $stamp.'_'.$filename);
@@ -475,7 +467,6 @@ class UserDetailController extends Controller
             $user_detail->update($attributes);
 
         }
-        //dd($attributes);
         $dependents_name = $request->dependents_name;
         $dependents_relationship = $request->dependents_relationship;
         $dependents_dob = $request->dependents_dob;
@@ -576,10 +567,8 @@ class UserDetailController extends Controller
 
         if ($request->file('file')) {
 
-            //dd('done');
             $stamp = time();
             $file = $request->file('file');
-            //dd($file);
             $destinationPath = public_path().'/userdocument/';
 
             $filename = $file->getClientOriginalName();
@@ -588,7 +577,6 @@ class UserDetailController extends Controller
             $attributes['file'] = $stamp.'_'.$filename;
         }
 
-        //dd($attributes);
 
         \App\Models\UserDocument::create($attributes);
 
@@ -652,14 +640,12 @@ class UserDetailController extends Controller
         $page_description = 'Personal Information System';
 
         // $page_title =$user->first_name .' '.$user->last_name;
-//            dd($page_title);
 
         $user_id = \Auth::user()->id;
         $array = $this->user_detail_info($user_id);
         $banking_detail_changed = array();
 
-        // dd($array['changed_data']);
-     
+
         $user = \App\User::find($user_id);
 
         extract($array);
@@ -865,7 +851,7 @@ class UserDetailController extends Controller
           }
         }
 
-       
+
 
         if(\Auth::user()->hasRole(['admins','hr-staff']) || $user_detail->user->isLineManager() ){
             $user_detail_id = $user_detail->id;

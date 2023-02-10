@@ -44,7 +44,7 @@
 
         <div class="form-group">
             <label for="inputEmail3" class="col-sm-4 control-label">
-                VAT/TAX ID
+                VAT/TAX/PAN ID
             </label>
             <div class="col-sm-8">
                 {!! Form::text('vat', null, ['class' => 'form-control', $readonly]) !!}
@@ -54,9 +54,9 @@
             <label for="inputEmail3" class="col-sm-4 control-label">
              Outlet
             </label>
-            <div class="col-sm-8">    
-               <select name="outlet_id" class="form-control" id="outlet_id">       
-                
+            <div class="col-sm-8">
+               <select name="outlet_id" class="form-control" id="outlet_id">
+
                 <option value="">Select</option>
                 @foreach($outlets as $key => $outlet)
                 <option value={{ $key}}>{{ $outlet }}</option>
@@ -163,7 +163,7 @@
 
             </label>
             <div class="col-sm-8">
-               
+
                 <select class='form-control searchable select2 ' name="types" required>
                     @if($_GET['relation_type']=='supplier')
 
@@ -221,14 +221,6 @@
             </div>
         </div>
         @endif
-        <div class="form-group">
-            <label for="inputEmail3" class="col-sm-4 control-label">
-                Notes
-            </label>
-            <div class="col-md-8">
-                {!! Form::textarea('notes', null, ['class'=>'form-control', 'rows'=>'2']) !!}
-            </div>
-        </div>
 
         <div class="form-group">
             <label for="inputEmail3" class="col-sm-4 control-label">
@@ -252,6 +244,15 @@
         </div>
 
         @endif
+
+        <div class="form-group">
+            <label for="inputEmail3" class="col-sm-4 control-label">
+                Notes
+            </label>
+            <div class="col-md-8">
+                {!! Form::textarea('notes', null, ['class'=>'form-control', 'rows'=>'2']) !!}
+            </div>
+        </div>
     </div>
 
     <div class="form-group">

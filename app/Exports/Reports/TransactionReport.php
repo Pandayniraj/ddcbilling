@@ -39,7 +39,7 @@ class TransactionReport implements FromView, ShouldAutoSize
 
     public function view(): View
     {
-        return view('admin.reports.customerwisereportExcel',['detail_transaction'=>$this->detail_transaction, 'clients'=>$this->clients,
+        return view('admin.reports.excel.customerwisereportExcel',['detail_transaction'=>$this->detail_transaction, 'clients'=>$this->clients,
             'outletname'=>$this->outletname, 'startdate'=>$this->startdate, 'enddate'=>$this->enddate, 'nepalistartdate'=>$this->nepalistartdate,
             'nepalienddate'=>$this->nepalienddate, 'organization'=>$this->organization]);
     }

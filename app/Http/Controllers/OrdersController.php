@@ -8,6 +8,7 @@ use App\Models\MasterComments;
 use App\Models\Order as Order;
 use App\Models\OrderDetail;
 use App\Models\Orders;
+use App\Models\PosOutlets;
 use App\Models\Product;
 use App\Models\Role as Permission;
 use App\Models\StockMove;
@@ -133,7 +134,6 @@ class OrdersController extends Controller
             })
             ->paginate(25);
 
-        //dd($orders);
 
         $locations = \App\Models\ProductLocation::where('enabled', '1')
             ->where('org_id', \Auth::user()->org_id)
@@ -144,7 +144,6 @@ class OrdersController extends Controller
 
         $fiscalyears = \App\Models\Fiscalyear::orderBy('fiscal_year', 'desc')->pluck('fiscal_year', 'id')->all();
 
-        // dd($fiscalyears);
 
         $page_title = 'Orders';
         $page_description = 'Manage Orders';
@@ -207,7 +206,6 @@ class OrdersController extends Controller
 
         $fiscalyears = \App\Models\Fiscalyear::orderBy('fiscal_year', 'desc')->pluck('fiscal_year', 'id')->all();
 
-        // dd($fiscalyears);
 
         $page_title = 'Renewals';
         $page_description = 'Renewal Orders';
@@ -225,9 +223,7 @@ class OrdersController extends Controller
         $page_title = 'Orders';
         $page_description = 'View Order';
         $orderDetails = OrderDetail::where('order_id', $ord->id)->get();
-        //dd($orderDetails);
         $imagepath = \Auth::user()->organization->logo;
-        // dd($imagepath);
 
         return view('admin.orders.show', compact('ord', 'imagepath', 'page_title', 'page_description', 'orderDetails'));
     }
@@ -236,7 +232,6 @@ class OrdersController extends Controller
     {
         $ord = $this->orders->find($id);
         $orderDetails = OrderDetail::where('order_id', $ord->id)->get();
-        //dd($orderDetails);
         $imagepath = \Auth::user()->organization->logo;
 
         return view('admin.orders.print', compact('ord', 'imagepath', 'orderDetails'));
@@ -295,7 +290,6 @@ class OrdersController extends Controller
 
         $prod_unit = \App\Models\ProductsUnit::orderBy('id', 'desc')->get();
 
-        // dd($prod_unit);
 
         $lead_clients = \App\Models\Lead::select('id', 'name')->where('org_id', \Auth::user()->org_id)->orderBy('id', 'DESC')->get();
         $customer_clients = \App\Models\Client::where('enabled', '1')->where('org_id', \Auth::user()->org_id)->orderBy('id', 'desc')->get();
@@ -323,12 +317,9 @@ class OrdersController extends Controller
         }
         $fiscal_year = \App\Models\Fiscalyear::where('current_year', '1')->where('org_id', $org_id)->first();
 
-        //dd($ckfiscalyear);
         $bill_no = \DB::select("SELECT MAX(Convert(`bill_no`,SIGNED)) as last_bill from fin_orders WHERE fiscal_year_id = '$ckfiscalyear->id' AND  org_id = '$org_id' limit 1");
 
         $bill_no = $bill_no[0]->last_bill + 1;
-        //dd($bill_no);
-        //dd($request->all());
         $order_attributes = $request->all();
 
         $order_attributes['user_id'] = \Auth::user()->id;
@@ -338,7 +329,6 @@ class OrdersController extends Controller
         $order_attributes['total_amount'] = $request->final_total;
         $order_attributes['bill_no'] = $bill_no;
         $order_attributes['fiscal_year_id'] = $fiscal_year->id;
-        //dd($order_attributes);
         $order = $this->orders->create($order_attributes);
         $isInvoice = false;
         if ($order->order_type == 'proforma_invoice') {
@@ -347,7 +337,6 @@ class OrdersController extends Controller
         }
 
         $product_id = $request->product_id;
-        //dd($product_ids);
         $price = $request->price;
         $unit = $request->unit;
         $quantity = $request->quantity;
@@ -412,7 +401,6 @@ class OrdersController extends Controller
                 $detail->total = $custom_total[$key];
                 $detail->date = date('Y-m-d H:i:s');
                 $detail->is_inventory = 0;
-                //  dd($detail);
                 $detail->save();
             }
         }
@@ -667,7 +655,6 @@ class OrdersController extends Controller
     private function postLedger($ord_id)
     {
         $order = \App\Models\Orders::find($ord_id);
-        //dd($order);
 
         if ($order->entry_id && $order->entry_id != '0') {
             //upadte entries
@@ -818,11 +805,28 @@ class OrdersController extends Controller
     public function getProductDetailAjax($productId)
     {
         if (\Request::get('term')) {
-            $product = Product::select('id', 'name', 'price','distributor_price','retailer_price','boothman_price','direct_customer_price','is_vat', 'cost')->where('name', \Request::get('term'))->first();
+            $product = Product::select('id', 'name', 'price','distributor_price','retailer_price','boothman_price',
+                'direct_customer_price','is_vat', 'cost')
+                ->where('name', \Request::get('term'))->first();
         } else {
-            $product = Product::select('id', 'name', 'price', 'distributor_price','retailer_price','boothman_price','direct_customer_price','cost','is_vat', 'product_unit')->with('unit:id,symbol')->where('id', $productId)->first();
+            if (request()->has('outlet_id') && (request()->outlet_id != '')) {
+                $outlet = PosOutlets::findOrFail(request()->outlet_id);
+                $product = Product::select('products.id', 'products.name', 'product_prices.distributor_price', 'product_prices.retailer_price',
+                    'product_prices.customer_price', 'products.is_vat', 'products.product_unit')
+                    ->with('unit:id,symbol')
+                    ->leftJoin('product_prices', 'product_prices.product_id', 'products.id')
+                    ->where('product_prices.product_id', $productId)
+                    ->where('product_prices.project_id', $outlet->project_id)
+                    ->first();
+            } else {
+                $product = Product::select('id', 'name', 'price', 'distributor_price', 'retailer_price',
+                    'direct_customer_price', 'cost', 'is_vat', 'product_unit')->with('unit:id,symbol')->where('id', $productId)->first();
+            }
         }
-        $stock=\TaskHelper::getTranslations($product->id);
+        if ($outlet->project_id) $stock=\TaskHelper::returnAvailableStock($productId, $outlet->project_id);
+        else $stock=\TaskHelper::getTranslations($productId);
+
+
 
         $stock_moves=StockMove::selectRaw('sum(qty) as total_qty,sum(price*qty) as total_price')->where('trans_type',103)->where('stock_id',$product->id)->first();
 
@@ -842,7 +846,6 @@ class OrdersController extends Controller
 
         $orders = $this->orders->find($id);
 
-        // dd($orders);
 
         if (!$orders->isdeletable()) {
             abort(403);
@@ -850,7 +853,6 @@ class OrdersController extends Controller
 
         $modal_title = 'Delete Order';
 
-        //dd($modal_title);
 
         $orders = $this->orders->find($id);
         if (\Request::get('type')) {
@@ -922,8 +924,9 @@ class OrdersController extends Controller
         $page_description = 'Listing of all tax sales Payments';
 
         $payment_list = \App\Models\InvoicePayment::orderBy('id', 'desc')->whereNotNull('invoice_id')->get();
+        $orderTopay = \App\Models\Invoice::orderBy('id')->whereIn('payment_status', ['Partial', 'Pending'])->orWhere('payment_status', null)->get();
 
-        return view('admin.orders.salespaymentlist', compact('page_title', 'page_description', 'payment_list'));
+        return view('admin.orders.salespaymentlist', compact('page_title', 'page_description', 'payment_list', 'orderTopay'));
     }
 
     public function paymentlist(){
@@ -991,7 +994,6 @@ class OrdersController extends Controller
 
     public function convertToPI($id)
     {
-        //dd($id);
 
         $orders = \App\Models\Orders::find($id);
 
@@ -1003,21 +1005,18 @@ class OrdersController extends Controller
 
         $leads = \App\Models\Lead::find($orders->client_id);
 
-        // dd($leads);
         if ( ($leads->company->name ?? '') ) {
             $clients_name = $leads->name;
         } else {
             $clients_name = $leads->name ?? '';
         }
 
-        //dd($clients_name);
         if (($leads->mob_phone ?? '')) {
             $mobile = $leads->mob_phone;
         } else {
             $mobile = '';
         }
 
-        //dd($moblie);
         $clients = [
             'org_id' => \Auth::user()->org_id,
             'name' => $clients_name,
@@ -1027,7 +1026,6 @@ class OrdersController extends Controller
             'enabled' => '1',
         ];
 
-        //dd($clients);
         $client = \App\Models\Client::create($clients);
         $full_name = $client->name;
         $_ledgers = \TaskHelper::PostLedgers($full_name, \FinanceHelper::get_ledger_id('CUSTOMER_LEDGER_GROUP'));
@@ -1067,9 +1065,7 @@ class OrdersController extends Controller
         $page_title = 'Credit Note';
         $page_description = 'View Order';
         $orderDetails = OrderDetail::where('order_id', $ord->id)->get();
-        //dd($orderDetails);
         $imagepath = \Auth::user()->organization->logo;
-        // dd($imagepath);
         return view('admin.orders.credit_note_show', compact('ord', 'imagepath', 'page_title', 'page_description', 'orderDetails'));
     }
 

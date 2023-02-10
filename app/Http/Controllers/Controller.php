@@ -5,16 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Announcement;
 use App\Models\Attendance;
 use App\Models\Audit as Audit;
-use App\Models\LeadTransfer;
 use App\Models\Organization;
 use App\Models\Query;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Routing\Controller as BaseController;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\View;
 
 class Controller extends BaseController
 {
@@ -40,8 +35,6 @@ class Controller extends BaseController
         $this->global_audits = $this->audit->pushCriteria(new AuditByCreatedDateDescending())->paginate(10);
         View::share('global_audits', $this->global_audits);*/
         $this->due_marketing_tasks = null;
-        $this->not_viewed_leads = null;
-        $this->not_viewed_cases = null;
         $this->attendance_log = null;
         $this->org = null;
         $this->announce = null;
@@ -61,38 +54,12 @@ class Controller extends BaseController
                         ->take(25)->get();
                 });
             }
-            if (\Cache::has('not_viewed_leads')) {
-                $this->not_viewed_leads = \Cache::get('not_viewed_leads');
-            } else {
-                $this->not_viewed_leads = \Cache::remember('not_viewed_leads', 2, function () {
-                    return         \App\Models\Lead::where('viewed', '0')
-                        ->where('rating', 'active')
-                        ->where('enabled', '1')
-                        ->where('org_id', \Auth::user()->org_id)
-                        ->orderBy('id', 'desc')->take(100)->get();
-                });
-            }
-            if (\Cache::has('not_viewed_cases')) {
-                $this->not_viewed_cases = \Cache::get('not_viewed_cases');
-            } else {
-                $this->not_viewed_cases = \Cache::remember('not_viewed_cases', 2, function () {
-                    return \App\Models\Cases::where('status', '!=', 'closed')
-                        ->where('org_id', \Auth::user()->org_id)
-                        ->where('enabled', '1')
-                        ->orderBy('id', 'desc')->take(100)->get();
-                });
-            }
 
             // $this->attendance_log = Attendance::where('user_id', \Auth::user()->id)->where('clocking_status', '1')->first();
 
             $this->announce = Announcement::orderBy('announcements_id', 'DESC')->where('org_id', \Auth::user()->org_id)
                 ->where('status', 'published')
                 ->first();
-
-            $this->transfer = LeadTransfer::orderBy('id', 'DESC')
-                ->where('to_user_id', \Auth::user()->id)
-                ->where('notify', '0')
-                ->get();
 
             $this->next_action_query = Query::orderBy('id', 'DESC')
                 ->where('user_id', \Auth::user()->id)
@@ -124,8 +91,6 @@ class Controller extends BaseController
 
 
         \View::share('due_marketing_tasks', $this->due_marketing_tasks);
-        \View::share('not_viewed_leads', $this->not_viewed_leads);
-        \View::share('not_viewed_cases', $this->not_viewed_cases);
         // \View::share('all_projects', $this->all_projects);
 
         // \View::share('attendance_log', $this->attendance_log);

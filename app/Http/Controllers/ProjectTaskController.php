@@ -67,7 +67,7 @@ class ProjectTaskController extends Controller
                 }
             })
             ->where(function ($query) {
-                if (\Request::get('user_id') && \Request::get('user_id') != '') 
+                if (\Request::get('user_id') && \Request::get('user_id') != '')
                 {
                     $user_id = \Request::get('user_id') ;
                     $project_task_user = \App\Models\ProjectTaskUser::where('user_id',$user_id)->pluck('project_task_id')->toArray();
@@ -90,7 +90,7 @@ class ProjectTaskController extends Controller
 
             ->paginate(30);
 
-            
+
 
         Audit::log(Auth::user()->id, trans('admin/leads/general.`audit-log.category'), trans('admin/leads/general.audit-log.msg-index'));
 
@@ -188,13 +188,11 @@ class ProjectTaskController extends Controller
 
             $page_title = trans('admin/project-task/general.page.show.title'); // "Admin | Project | Show";
             $page_description = 'Project Name:' . $task->project->name; // "Displaying client: :name";
-            //  dd($page_description);
             $comments = MasterComments::where('type', 'project_task')->where('master_id', $id)->get();
             $cat = DB::select('select id as value ,name AS text from project_task_categories');
             $projects = \App\Models\Projects::select('name as text', 'id as value')->get();
             $task_attachments = \App\Models\ProjectTaskAttachment::where('task_id', $id)->get();
             $sub_cat = \App\Models\TaskSubCat::select('name as text','id as value')->where('task_cat_id',$task->category_id)->get();
-            //dd("OK");
             return view('admin.project_task.show', compact('task', 'page_title', 'page_description', 'comments', 'cat', 'projects', 'project_status', 'peoples', 'task_attachments','sub_cat'));
         } catch (ModelNotFoundException $e) {
             Flash::warning('Invalid Task Id');
@@ -329,7 +327,6 @@ class ProjectTaskController extends Controller
 
 
         $attributes = $request->all();
-        //dd($attributes);
         $projectId = $attributes['project_id'];
         $attributes['user_id'] = Auth::user()->id;
         $attributes['org_id'] = Auth::user()->org_id;
@@ -373,7 +370,6 @@ class ProjectTaskController extends Controller
     {
         $attributes = $request->all();
 
-        //dd($attributes);
         $attributes['user_id'] = Auth::user()->id;
          $attributes['org_id'] = Auth::user()->org_id;
         if (!isset($attributes['enabled'])) {
@@ -920,7 +916,6 @@ class ProjectTaskController extends Controller
             abort(403);
         }
         $task_attachments = \App\Models\ProjectTaskAttachment::where('task_id', $id)->get();
-        //dd($task_attachments);
         $projects = Projects::orderBy('name', 'ASC')->pluck('name', 'id')->all();
          $sub_cat = \App\Models\TaskSubCat::orderBy('name', 'ASC')->where('task_cat_id',$task->category_id)->where('org_id',Auth::user()->org_id)->select('name', 'id')->get();
          $project_status = ['new' => 'New', 'ongoing' => 'Ongoing', 'completed' => 'Completed'];
@@ -982,7 +977,6 @@ class ProjectTaskController extends Controller
                 $attributes['attachment'] = $stamp . $filename;
                 $request->file('attachment')->move($destinationPath, $stamp . $filename);
             }
-            //dd($attributes);
             foreach ($request->attachments as $key => $doc_) {
                 if ($doc_) {
                     $doc_name = time() . '' . $doc_->getClientOriginalName();
@@ -994,7 +988,6 @@ class ProjectTaskController extends Controller
             }
 
             $task->update($attributes);
-            //dd($theTags);
             $task->tags()->sync($theTags);
         }
         \App\Models\ProjectTaskActivity::create([
@@ -1350,7 +1343,6 @@ class ProjectTaskController extends Controller
                 if ($request->end_date) {
                     $attributes['end_date'] = $request->end_date;
                 }
-                // dd($attributes);
                 $request->update_value = $attributes['start_date'] . '-' . $attributes['end_date'];
                 break;
             case 'sub_cat_id':
@@ -1367,7 +1359,6 @@ class ProjectTaskController extends Controller
             'activity' => $changetype . ' has been updated to ' . $request->update_value,
             'user_id' => \Auth::User()->id,
         ]);
-        //dd($attributes);
         $task->update($attributes);
         $updated = $this->projectTask->find($request->id);
         $updated['stages_color'] = $updated->stage->bg_color;

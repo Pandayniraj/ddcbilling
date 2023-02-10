@@ -16,7 +16,7 @@ class AdmsBiometricController extends Controller
 
 
 	  public function biometricattendanceReports(Request $request)
-    { 
+    {
        $requestData = $request->all();
        $page_title = 'Attendance | history';
        $page_description = 'Filter User By attendance';
@@ -29,12 +29,11 @@ class AdmsBiometricController extends Controller
           $date1 = date("Y/m/d", strtotime($request->start_date));
           $date2 = date("Y/m/d", strtotime($request->end_date));
           $attendance_data = \App\Helpers\AttendanceHelper::get_adms_data($request->DeviceSerialNo,$date1,$date2);
-          // $return_data = $return_data->where('UserPin',$request->userpin)->get(); 
+          // $return_data = $return_data->where('UserPin',$request->userpin)->get();
           if(!empty($request->input('userpin'))){
           $return_data  = (collect($attendance_data->Data)->where('UserPin',$userpin));
           }else{ $return_data = collect($attendance_data->Data); }
-        
-          // dd($return_data);
+
        }
       return view('admin.adms.index',compact('devices','users','return_data','start_date','end_date','requestData'));
     }
@@ -44,7 +43,7 @@ class AdmsBiometricController extends Controller
     {
 
         // Branch Code
-         
+
             $curl = curl_init();
             curl_setopt_array($curl, array(
               // CURLOPT_URL => 'http://202.51.74.187:8454/api/AdmsEx/GetDeviceByBranch?branchCode=BG',
@@ -68,9 +67,7 @@ class AdmsBiometricController extends Controller
             if ($err) {
               echo "cURL Error #:" . $err;
             } else {
-                // dd($response);
-              $result = json_decode($response); 
-              dd($result);
+              $result = json_decode($response);
           }
 
     }
@@ -91,7 +88,7 @@ class AdmsBiometricController extends Controller
           $date1 = date("Y/m/d", strtotime($request->start_date));
           $date2 = date("Y/m/d", strtotime($request->end_date));
           $attendance_data = \App\Helpers\AttendanceHelper::get_adms_data($request->DeviceSerialNo,$date1,$date2);
-          // $return_data = $return_data->where('UserPin',$request->userpin)->get(); 
+          // $return_data = $return_data->where('UserPin',$request->userpin)->get();
           if(!empty($request->input('userpin'))){
           $return_data  = (collect($attendance_data->Data)->where('UserPin',$userpin));
           }else{ $return_data = collect($attendance_data->Data); }
@@ -99,5 +96,5 @@ class AdmsBiometricController extends Controller
         return \Excel::download(new \App\Exports\ExcelDiviceAttendanceExport($return_data,$start_date,$end_date,$request->DeviceSerialNo), 'device_attendance.xlsx');
     }
 
-   
+
 }

@@ -21,9 +21,7 @@
     {{ csrf_field() }}
     <div class="panel panel-custom">
         <div class="panel-heading">
-
             <div class="row">
-
                 <div class="col-sm-6">
                     <div class="form-group">
                         <label class="control-label col-sm-12">Outlet Code</label>
@@ -36,7 +34,7 @@
                     </div>
                 </div>
 
-                <div class="col-sm-6">
+                <div class="col-sm-4">
                     <div class="form-group">
                         <label class="control-label col-sm-12">Name</label>
                         <div class="input-group ">
@@ -47,7 +45,19 @@
                         </div>
                     </div>
                 </div>
-
+                <div class="col-sm-2">
+                    <div class="form-group">
+                        <label class="control-label col-sm-12">Project Cat.</label>
+                        <div class="input-group">
+                            <select name="project_id" id="project-id" class="form-control" required>
+                                <option value="">Select Project</option>
+                                @foreach($projects as $project)
+                                    <option value="{{$project->id}}">{{$project->name}}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="row">
@@ -84,7 +94,7 @@
                         <label class="control-label col-sm-12">Bank Name</label>
                         <div class="input-group ">
                             <input type="text" name="bank_name_one" value="" class="form-control" required>
-                         
+
                             <div class="input-group-addon">
                                 <a href="#"><i class="fa fa-stack-exchange"></i></a>
                             </div>
@@ -93,11 +103,11 @@
                     </div>
                 </div>
 
-               
+
                 <div class="col-sm-6">
                     <div class="form-group">
                         <label class="control-label col-sm-12">Bank Name (second)</label>
-                        <div class="input-group ">                      
+                        <div class="input-group ">
                             <input type="text" name="bank_name_two" value="" class="form-control" required>
                             <div class="input-group-addon">
                                 <a href="#"><i class="fa fa-stack-exchange"></i></a>
@@ -114,7 +124,7 @@
                         <label class="control-label col-sm-12">Bank Address</label>
                         <div class="input-group ">
                             <input type="text" name="bank_address_one" value="" class="form-control" required>
-                         
+
                             <div class="input-group-addon">
                                 <a href="#"><i class="fa fa-stack-exchange"></i></a>
                             </div>
@@ -123,11 +133,11 @@
                     </div>
                 </div>
 
-               
+
                 <div class="col-sm-6">
                     <div class="form-group">
                         <label class="control-label col-sm-12">Bank Address (second)</label>
-                        <div class="input-group ">                      
+                        <div class="input-group ">
                             <input type="text" name="bank_address_two" value="" class="form-control" required>
                             <div class="input-group-addon">
                                 <a href="#"><i class="fa fa-stack-exchange"></i></a>
@@ -144,7 +154,7 @@
                         <label class="control-label col-sm-12">Bank Account Name</label>
                         <div class="input-group ">
                             <input type="text" name="bank_ac_name_one" value="" class="form-control" required>
-                         
+
                             <div class="input-group-addon">
                                 <a href="#"><i class="fa fa-stack-exchange"></i></a>
                             </div>
@@ -153,11 +163,11 @@
                     </div>
                 </div>
 
-               
+
                 <div class="col-sm-6">
                     <div class="form-group">
                         <label class="control-label col-sm-12">Bank Account Name (second)</label>
-                        <div class="input-group ">                      
+                        <div class="input-group ">
                             <input type="text" name="bank_ac_name_two" value="" class="form-control" required>
                             <div class="input-group-addon">
                                 <a href="#"><i class="fa fa-stack-exchange"></i></a>
@@ -167,7 +177,7 @@
                 </div>
 
             </div>
-            
+
             <div class="row">
 
                 <div class="col-sm-6">
@@ -175,7 +185,7 @@
                         <label class="control-label col-sm-12">Bank Acccount No</label>
                         <div class="input-group ">
                             <input type="text" name="bank_account_one" value="" class="form-control" required>
-                         
+
                             <div class="input-group-addon">
                                 <a href="#"><i class="fa fa-stack-exchange"></i></a>
                             </div>
@@ -184,11 +194,11 @@
                     </div>
                 </div>
 
-               
+
                 <div class="col-sm-6">
                     <div class="form-group">
                         <label class="control-label col-sm-12">Bank Account no(second)</label>
-                        <div class="input-group ">                      
+                        <div class="input-group ">
                             <input type="text" name="bank_account_two" value="" class="form-control" required>
                             <div class="input-group-addon">
                                 <a href="#"><i class="fa fa-stack-exchange"></i></a>
@@ -337,7 +347,7 @@
                 <div class="col-sm-3">
                     <div class="form-group">
                         <input type="radio" id="a4" name="printformat" value="a4">
-                        <label for="a4">A4 Print Format</label><br>  
+                        <label for="a4">A4 Print Format</label><br>
                     </div>
                 </div>
                 <div class="col-sm-3">

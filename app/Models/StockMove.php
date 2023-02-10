@@ -15,7 +15,8 @@ class StockMove extends Model
     /**
      * @var array
      */
-    protected $fillable = ['org_id','location','store_id','stock_id','master_id', 'order_no', 'trans_type', 'tran_date', 'person_id', 'order_reference', 'reference', 'transaction_reference_id', 'note', 'qty', 'price'];
+    protected $fillable = ['org_id','location','store_id','stock_id','master_id', 'order_no', 'trans_type', 'tran_date', 'buy_qty',
+        'person_id', 'order_reference', 'reference', 'transaction_reference_id', 'note', 'qty', 'price', 'opening_stock', 'return_qty'];
 
     public function user()
     {

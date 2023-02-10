@@ -17,7 +17,7 @@
                 {{$page_title ?? 'Page Title'}}
                 <small>{!! $page_description ?? "Page description" !!}</small>
             </h1>
-            
+
 
             {!! MenuBuilder::renderBreadcrumbTrail(null, 'root', false)  !!}
         </section>
@@ -25,12 +25,12 @@
 <div class="row">
     <div class="col-sm-12">
         <div class="panel panel-custom" data-collapsed="0">
-           
+
             <div class="panel-body">
                 <form id="attendance-form" role="form" enctype="multipart/form-data" action="/admin/product/statement" method="GET" class="form-horizontal form-groups-bordered">
-                  
+
                     <div class="row">
-                       
+
                         <div class="col-sm-3">
                           <label class="control-label">Select Product</label>
                             {!! Form::select('product_id', $products, $current_product, ['class'=>'form-control searchable','placeholder'=>'Select Product','required'=>'required']) !!}
@@ -48,14 +48,14 @@
 
                     </div>
                     <br>
-                   
+
                     <div class="row">
                         <div class="col-sm-4 ">
                             <button type="submit" id="sbtn" class="btn btn-primary btn-sm no-loading">Search</button>
-                        
+
                               <button type='submit' name="submit" value="excel" class="btn btn-success btn-sm no-loading">Excel</button>
                               <a href="/admin/product/statement" class="btn btn-danger btn-sm">Clear</a>
-                       
+
                         </div>
                     </div>
                 </form>
@@ -72,7 +72,6 @@
                 <div class="panel-heading">
                     <h3 class="panel-title">
                         <strong> List of Stocks </strong>
-                        
                     </h3>
                 </div>
                 @include('admin.products.product-statement')
@@ -126,5 +125,10 @@ $(function() {
 
         $('[data-toggle="tooltip"]').tooltip();
     });
+    $(document).ready( function () {
+        $("#nep-eng-date-toogle").val('nep');
+        $("#nep-eng-date-toogle").trigger('change');
+    });
+
 </script>
 @endsection

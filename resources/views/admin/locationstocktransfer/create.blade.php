@@ -35,7 +35,7 @@
         }
 
         .panel.is-fullscreen .mce-tinymce {
-            height:100%;
+            height: 100%;
         }
 
         .panel.is-fullscreen .mce-edit-area,
@@ -49,63 +49,70 @@
             min-height: 100%;
         }
 
-.footer {
-   position: fixed;
-   left: 0;
-   bottom: 0;
-   width: 100%;
-   background-color: #efefef;
-   color: white;
-   text-align: center;
-}
+        .footer {
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            background-color: #efefef;
+            color: white;
+            text-align: center;
+        }
 
 
     </style>
 @endsection
 
 @section('content')
-<link href="/bower_components/admin-lte/select2/css/select2.min.css" rel="stylesheet" />
-<script src="/bower_components/admin-lte/select2/js/select2.min.js"></script>
+    <link href="/bower_components/admin-lte/select2/css/select2.min.css" rel="stylesheet"/>
+    <script src="/bower_components/admin-lte/select2/js/select2.min.js"></script>
 
-<section class="content-header" style="margin-top: -35px; margin-bottom: 20px">
-            <h1>
-                 {{ $page_title ?? "Page Title"}}
-                     <small> {{ $page_description ?? "Page Description" }}</small>
-            </h1>
-            {!! MenuBuilder::renderBreadcrumbTrail(null, 'root', false)  !!}
-        </section>
+    <section class="content-header" style="margin-top: -35px; margin-bottom: 20px">
+        <h1>
+            {{ $page_title ?? "Page Title"}}
+            <small> {{ $page_description ?? "Page Description" }}</small>
+        </h1>
+        {!! MenuBuilder::renderBreadcrumbTrail(null, 'root', false)  !!}
+    </section>
 
 
-   <div class='row'>
+    <div class='row'>
         <div class='col-md-12'>
             <div class="box box-header">
                 <div id="orderFields" style="display: none;">
                     <table class="table">
                         <tbody id="more-tr">
-                            <tr>
-                                <td>
+                        <tr>
+                            <td>
 
-                                  <select class="form-control product_id hiddensearchable" name="product_id[]" required="required">
-                                       <option value="">Select Product</option>
-                                      @foreach($products as $key => $pk)
-                                          <option value="{{ $pk->id }}"@if(isset($orderDetail->product_id) && $orderDetail->product_id == $pk->id) selected="selected"@endif>{{ $pk->name }}</option>
-                                      @endforeach
-                                  </select>
-                                </td>
-                                <td>
-                                    <input type="text" class="form-control availablity" name="availablity[]" placeholder="Available" value="" required="required" readonly>
-                                </td>
-                                <td>
-                                    <input type="number" class="form-control quantity" name="quantity[]" placeholder="Quantity" min="1" value="1" required="required">
-                                </td>
+                                <select class="form-control product_id hiddensearchable" name="product_id[]"
+                                        required="required">
+                                    <option value="">Select Product</option>
+                                    @foreach($products as $key => $pk)
+                                        <option value="{{ $pk->id }}"
+                                                @if(isset($orderDetail->product_id) && $orderDetail->product_id == $pk->id) selected="selected"@endif>{{ $pk->name }}</option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td>
+                                <input type="text" class="form-control availablity" name="availablity[]"
+                                       placeholder="Available" value="" required="required" readonly>
+                            </td>
+                            <td>
+                                <input type="number" class="form-control quantity" name="quantity[]"
+                                       placeholder="Quantity" min="1" value="1" required="required">
+                            </td>
 
-                                <td>
-                                    <input type="text" class="form-control total" name="reason[]" placeholder="REason" value="@if(isset($orderDetail->total)){{ $orderDetail->total }}@endif" style="float:left; width:80%;">
-                                    <a href="javascript::void(1);" style="width: 10%;">
-                                        <i class="remove-this btn btn-xs btn-danger icon fa fa-trash deletable" style="float: right; color: #fff;"></i>
-                                    </a>
-                                </td>
-                            </tr>
+                            <td>
+                                <input type="text" class="form-control total" name="reason[]" placeholder="REason"
+                                       value="@if(isset($orderDetail->total)){{ $orderDetail->total }}@endif"
+                                       style="float:left; width:80%;">
+                                <a href="javascript::void(1);" style="width: 10%;">
+                                    <i class="remove-this btn btn-xs btn-danger icon fa fa-trash deletable"
+                                       style="float: right; color: #fff;"></i>
+                                </a>
+                            </td>
+                        </tr>
                         </tbody>
                     </table>
                 </div>
@@ -118,92 +125,101 @@
 
                             <div class="">
 
-                             <div class="clearfix"></div>
+                                <div class="clearfix"></div>
                                 <div class="col-md-12">
 
-                           <div class="col-md-12">
+                                    <div class="col-md-12">
 
-                                <div class="col-md-3 form-group" style="">
-                                    <label for="comment">Source </label>
-                                    {!! Form::select('source_id', [''=>'Select Source Location']+ $locations, null, ['class' => 'form-control input-sm', 'id'=>'source_id']) !!}
-                                </div>
+                                        <div class="col-md-3 form-group" style="">
+                                            <label for="comment">Source </label>
+                                            {!! Form::select('source_id', [''=>'Select Source Location']+ $locations, null, ['class' => 'form-control input-sm', 'id'=>'source_id']) !!}
+                                        </div>
 
-                                <div class="col-md-3 form-group" style="">
-                                    <label for="user_id"> <i class="fa fa-user"></i> User</label>
-                                    {!! Form::select('user_id',  $users, \Auth::user()->id, ['class' => 'form-control input-sm', 'id'=>'user_id']) !!}
-                                </div>
+                                        <div class="col-md-3 form-group" style="">
+                                            <label for="user_id"> <i class="fa fa-user"></i> User</label>
+                                            {!! Form::select('user_id',  $users, \Auth::user()->id, ['class' => 'form-control input-sm', 'id'=>'user_id']) !!}
+                                        </div>
 
-                                <div class="col-md-3 form-group" style="">
-                                    <label for="user_id">Status</label>
-                                    {!! Form::select('status',['parked'=>'Parked','completed'=>'Completed'],null, ['class' => 'form-control input-sm', 'id'=>'user_id']) !!}
-                                </div>
+                                        <div class="col-md-3 form-group" style="">
+                                            <label for="user_id">Status</label>
+                                            {!! Form::select('status',['parked'=>'Parked','completed'=>'Completed'],null, ['class' => 'form-control input-sm', 'id'=>'user_id']) !!}
+                                        </div>
 
-                                <div class="col-md-3 form-group" style="">
-                                    <label for="comment">Transfer Date </label>
-                                      <input type="text" class="form-control input-sm pull-right datepicker date-toggle-nep-eng" name="transfer_date" value="{{\Carbon\Carbon::now()->toDateString()}}" id="bill_date">
-                                </div>
+                                        <div class="col-md-3 form-group" style="">
+                                            <label for="comment">Transfer Date </label>
+                                            <input type="text"
+                                                   class="form-control input-sm pull-right datepicker date-toggle-nep-eng"
+                                                   name="transfer_date"
+                                                   value="{{\Carbon\Carbon::now()->toDateString()}}" id="bill_date">
+                                        </div>
 
-                            </div>
-                            <div class="col-md-12">
-                                <div class="col-md-3 form-group" style="">
-                                    <label for="comment">Destination </label>
-                                     {!! Form::select('destination_id', [''=>'Select Destination Location']+$destination_location, null, ['class' => 'form-control input-sm', 'id'=>'destination_id']) !!}
-                                </div>
-                            </div>
-
-
-
-                                <div class="clearfix"></div><br/><br/>
-
-                                <div class="col-md-12">
-                                    <a href="javascript::void(0)" class="btn btn-default btn-xs" id="addMore" style="float: right;">
-                                        <i class="fa fa-plus"></i> <span>Add Products Item</span>
-                                    </a>
-
-                                </div>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <div class="col-md-3 form-group" style="">
+                                            <label for="comment">Destination </label>
+                                            {!! Form::select('destination_id', [''=>'Select Destination Location']+$destination_location, null, ['class' => 'form-control input-sm', 'id'=>'destination_id']) !!}
+                                        </div>
+                                    </div>
 
 
-                                <hr/>
-                                <table class="table table-striped">
-                                    <thead>
+                                    <div class="clearfix"></div>
+                                    <br/><br/>
+
+                                    <div class="col-md-12">
+                                        <a href="javascript::void(0)" class="btn btn-default btn-xs" id="addMore"
+                                           style="float: right;">
+                                            <i class="fa fa-plus"></i> <span>Add Products Item</span>
+                                        </a>
+
+                                    </div>
+
+
+                                    <hr/>
+                                    <table class="table table-striped">
+                                        <thead>
                                         <tr class="bg-gray">
                                             <th>Item Description *</th>
                                             <th>Available</th>
                                             <th>Quantity *</th>
                                             <th>Reason</th>
                                         </tr>
-                                    </thead>
+                                        </thead>
 
-                                    <tbody>
+                                        <tbody>
                                         <tr class="multipleDiv">
 
                                         </tr>
-                                    </tbody>
-                                </table>
+                                        </tbody>
+                                    </table>
 
-                                <br/>
+                                    <br/>
 
-                                <div class="box">
-                                   <div class="box-header with-border">
+                                    <div class="box">
+                                        <div class="box-header with-border">
 
-                                <div class="col-md-6 form-group" style="margin-top:5px;">
-                                    <label for="comment">Remarks </label>
-                                    <small class="text-muted"></small>
-                                    <textarea class="form-control TextBox comment" name="comment">@if(isset($order->comment)){{ $order->comment }}@endif</textarea>
+                                            <div class="col-md-6 form-group" style="margin-top:5px;">
+                                                <label for="comment">Remarks </label>
+                                                <small class="text-muted"></small>
+                                                <textarea class="form-control TextBox comment" name="comment">@if(isset($order->comment))
+                                                        {{ $order->comment }}
+                                                    @endif</textarea>
+                                            </div>
+
+                                        </div>
+                                    </div>
+
+
                                 </div>
+                                <div class="panel-footer footer">
+                                    <button type="submit" class="btn btn-social btn-foursquare">
+                                        <i class="fa fa-save"></i>Save {{ isset($_GET['type']) ? $_GET['type'] : null   }}
+                                    </button>
 
-                            </div></div>
+                                    <a class="btn btn-social btn-foursquare"
+                                       href="/admin/orders/?type={{ isset($_GET['type']) ? $_GET['type'] : null   }}">
+                                        <i class="fa fa-times"></i> Cancel </a>
 
-
-                            </div>
-                            <div class="panel-footer footer">
-                                <button type="submit" class="btn btn-social btn-foursquare">
-                                    <i class="fa fa-save"></i>Save {{ isset($_GET['type']) ? $_GET['type'] : null   }}
-                                </button>
-
-                                <a class="btn btn-social btn-foursquare" href="/admin/orders/?type={{ isset($_GET['type']) ? $_GET['type'] : null   }}"> <i class="fa fa-times"></i> Cancel </a>
-
-                            </div>
+                                </div>
                         </form>
                     </div>
                 </div>
@@ -221,67 +237,62 @@
 
     <script type="text/javascript">
 
-    // $(function() {
-    //     $('.datepicker').datetimepicker({
-    //       //inline: true,
-    //       format: 'YYYY-MM-DD',
-    //       sideBySide: true,
-    //       allowInputToggle: true
-    //     });
+        // $(function() {
+        //     $('.datepicker').datetimepicker({
+        //       //inline: true,
+        //       format: 'YYYY-MM-DD',
+        //       sideBySide: true,
+        //       allowInputToggle: true
+        //     });
 
-    //   });
-  </script>
+        //   });
+    </script>
 
-<script>
+    <script>
 
-    function isNumeric(n) {
-  return !isNaN(parseFloat(n)) && isFinite(n);
-}
+        function isNumeric(n) {
+            return !isNaN(parseFloat(n)) && isFinite(n);
+        }
 
+        $("#addMore").on("click", function () {
+            $(".multipleDiv").after($('#orderFields #more-tr').html());
+            $(".multipleDiv").next('tr').find('select').select2({width: '100%'});
+        });
+    </script>
 
-$("#addMore").on("click", function () {
-
-    $(".multipleDiv").after($('#orderFields #more-tr').html());
-    $(".multipleDiv").next('tr').find('select').select2({ width: '100%' });
-});
-
-
-
-</script>
-
-<script type="text/javascript">
-    $(document).ready(function() {
-        $('.select2').select2();
-    });
-$(function() {
-    $('.date-toggle-nep-eng').nepalidatetoggle();
-        $('.datepicker').datetimepicker({
-          //inline: true,
-          format: 'YYYY-MM-DD',
-          sideBySide: true,
-          allowInputToggle: true
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('.select2').select2();
+        });
+        $(function () {
+            $('.date-toggle-nep-eng').nepalidatetoggle();
+            $('.datepicker').datetimepicker({
+                //inline: true,
+                format: 'YYYY-MM-DD',
+                sideBySide: true,
+                allowInputToggle: true
+            });
         });
 
-      });
+        $(document).on('click', '.remove-this', function () {
+            $(this).parent().parent().parent().remove();
+            calcTotal();
+        });
 
-$(document).on('click', '.remove-this', function () {
-    $(this).parent().parent().parent().remove();
-    calcTotal();
-});
+        $(document).ready(function () {
+            $("#nep-eng-date-toogle").val('nep');
+            $("#nep-eng-date-toogle").trigger('change');
+        });
+    </script>
 
-
-</script>
-
-<script type="text/javascript">
-
-    $(document).on('change', '.product_id', function() {
-        var parentDiv = $(this).parent().parent();
-        $.ajax(
-            {
-             url: "/admin/getStockAvailability",
-             data: { product_id: $(this).val(),source_id:$('#source_id').val() },
-             dataType: "json",
-                success: function( data ) {
+    <script type="text/javascript">
+        $(document).on('change', '.product_id', function () {
+            var parentDiv = $(this).parent().parent();
+            $.ajax({
+                url: "/admin/getStockAvailability",
+                data: {product_id: $(this).val(), source_id: $('#source_id').val()},
+                dataType: "json",
+                success: function (data) {
                     console.log(data);
                     // conosle.log(data);
                     var available = data.available;
@@ -289,38 +300,24 @@ $(document).on('click', '.remove-this', function () {
                 }
             });
 
-    });
+        });
 
 
-    $(document).on('change','#source_id',function(){
+        $(document).on('change', '#source_id', function () {
 
-        $('.multipleDiv').nextAll('tr').remove();
+            $('.multipleDiv').nextAll('tr').remove();
 
-    });
+        });
 
-
-     $(document).on('change', '.quantity', function() {
-
-        var parentDiv = $(this).parent().parent();
-
-        if(this.value != ''){
-
-            var availablity =parseInt( parentDiv.find('.availablity').val());
-
-            if(parseInt(this.value) > availablity){
-                  $(this).val(availablity);
-
-                alert("Stock Quantity Cannot Be Greater Than Available Quantity");
-
+        $(document).on('change', '.quantity', function () {
+            var parentDiv = $(this).parent().parent();
+            if (this.value != '') {
+                var availablity = parseInt(parentDiv.find('.availablity').val());
+                if (parseInt(this.value) > availablity) {
+                    $(this).val(availablity);
+                    alert("Stock Quantity Cannot Be Greater Than Available Quantity");
+                }
             }
-        }
-
-    });
-
-
-
-
-
-
-</script>
+        });
+    </script>
 @endsection

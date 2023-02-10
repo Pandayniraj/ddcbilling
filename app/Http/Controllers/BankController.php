@@ -111,7 +111,6 @@ class BankController extends Controller
         $group_id = \FinanceHelper::get_ledger_id('CASH_EQUIVALENTS'); //cash and cash equivalents
         $_ledgers = \TaskHelper::PostLedgers($request->account_name, $group_id);
         $attributes['ledger_id'] = $_ledgers;
-        //dd($attributes);
         $account->update($attributes);
 
         Flash::success('Account Successfully Created');
@@ -360,7 +359,6 @@ class BankController extends Controller
         $sub_amount->ledger_id = $income_ledger; // customer ledger if selected or ledgers from .env
         $sub_amount->amount = $attributes['amount'];
         $sub_amount->narration = 'Amount received'; //$request->user_id
-        //dd($sub_amount);
         $sub_amount->save();
 
         // Debitte to Bank or cash account that we are already in
@@ -371,7 +369,6 @@ class BankController extends Controller
         $cash_amount->org_id = \Auth::user()->org_id;
         $cash_amount->dc = 'D';
         $cash_amount->ledger_id = $bank_ledger; //bank ledger
-        // dd($cash_amount);
         $cash_amount->amount = $attributes['amount'];
         $cash_amount->narration = 'Amount Deposited';
         $cash_amount->save();
@@ -473,7 +470,6 @@ class BankController extends Controller
         $sub_amount->ledger_id = $income_ledger; // customer ledger if selected or ledgers from .env
         $sub_amount->amount = $attributes['amount'];
         $sub_amount->narration = 'Amount received'; //$request->user_id
-        //dd($sub_amount);
         $sub_amount->save();
 
         // Debitte to Bank or cash account that we are already in
@@ -484,7 +480,6 @@ class BankController extends Controller
         $cash_amount->org_id = \Auth::user()->org_id;
         $cash_amount->dc = 'D';
         $cash_amount->ledger_id = $bank_ledger; //bank ledger
-        // dd($cash_amount);
         $cash_amount->amount = $attributes['amount'];
         $cash_amount->narration = 'Amount Deposited';
         $cash_amount->save();
@@ -566,7 +561,6 @@ class BankController extends Controller
         }
 
         //$customer_ledger = \App\Models\Client::find($attributes['customer_id']);
-        // dd($customer_ledger);
 
         $income = \App\Models\BankIncome::find($id);
         \TaskHelper::authorizeOrg($income->banckAcc);
@@ -599,7 +593,6 @@ class BankController extends Controller
 
             $income->update($attributes);
             //income account
-            // dd($entry);
             $sub_amount = \App\Models\Entryitem::where('entry_id', $income->entry_id)->where('dc', 'C')->first() ??
                         new \App\Models\Entryitem();
             $sub_amount->entry_id = $entry->id;

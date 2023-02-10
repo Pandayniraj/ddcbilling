@@ -159,7 +159,7 @@ class EntryController extends Controller
         $attributes['image'] = $image;
         $attributes['fiscal_year_id'] = \FinanceHelper::cur_fisc_yr()->id;
         $attributes['currency'] = $request->currency;
-    
+
         $entry = Entry::create($attributes);
 
         $dc = $request->dc;
@@ -191,7 +191,7 @@ class EntryController extends Controller
 
     public function edit($label, $id)
     {
-        
+
 
         $page_title = 'Entry Edit';
         $page_description = 'edit entry';
@@ -211,7 +211,6 @@ class EntryController extends Controller
 
     public function Update(Request $request, $id)
     {
-
         DB::beginTransaction();
         $this->validate($request, [
 
@@ -455,7 +454,6 @@ class EntryController extends Controller
 
     public function DownloadExcel($label, $id)
     {
-        // dd('adf');
         $entries = Entry::where('id', $id)->first();
         // $data = Entryitem::orderBy('id', 'asc')->where('entry_id', $entries->id)->get()->toArray();
         return \Excel::download(new \App\Exports\ExcelExportFromView($id), 'entry_'.$label.'_'.$entries->number.'.xlsx');
@@ -463,7 +461,7 @@ class EntryController extends Controller
 
 
     public function importentries(Request $request)
-    { 
+    {
         try {
             if ($request->hasFile('import_file')) {
                 $file = $request->file('import_file');

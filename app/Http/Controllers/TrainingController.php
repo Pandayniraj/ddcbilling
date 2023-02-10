@@ -49,7 +49,6 @@ class TrainingController extends Controller
         } */
 
         $attributes = $request->except(['_token', 'remove_attachments']);
-        //dd($attributes);
         $attributes['upload_file'] = '';
         $attributes['org_id'] = \Auth::user()->org_id;
         $files = $request->file('upload_file');
@@ -247,7 +246,7 @@ class TrainingController extends Controller
                                                         </a>
                                                     </li>';
             }
-            $data .= '                   
+            $data .= '
                                         </ul>
                                     </div>
                                 </div>';

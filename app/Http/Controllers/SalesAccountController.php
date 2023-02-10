@@ -69,19 +69,15 @@ class SalesAccountController extends Controller
         $page_description = 'Manage Payment';
         $paymentlist = SalesPayment::orderby('payment_date', 'desc')->get();
 
-        //   dd($paymentlist);
-
         return view('admin.salesaccount.payment_index', compact('orders', 'page_title', 'page_description', 'paymentlist'));
     }
 
     public function quotationindex()
     {
         $quotation = SalesOrder::orderBy('order_no', 'DESC')->where('invoice_type', 'directOrder')->get();
-        //dd($quotation);
         $page_title = 'Quotation ';
         $page_description = 'Manage Quotation';
         //$orderData = $this->order->getAllSalseOrderQuotation(NULL, NULL, NULL, NULL);
-        //  dd($orderData);
 
         return view('admin.salesaccount.quotation_index', compact('quotation', 'page_title', 'page_description'));
     }
@@ -123,9 +119,7 @@ class SalesAccountController extends Controller
     {
         //    $ord = SalesOrder::find($id);
         $saleDataOrder = SalesOrder::where('order_no', '=', $id)->first();
-        //  dd($saleDataOrder);
         $salesDetails = SalesOrderDetail::orderBy('id', 'desc')->where('order_no', $id)->get();
-        //  dd($salesDetails);
         $page_title = 'Quotation';
         $page_description = 'View Quotation';
         //  $orderDetails = OrderDetail::where('order_id', $id)->get();
@@ -148,15 +142,11 @@ class SalesAccountController extends Controller
         $invoice_count = DB::table('sales_orders')->where('trans_type', SALESINVOICE)->count();
         if ($invoice_count > 0) {
             $invoiceReference = DB::table('sales_orders')->where('trans_type', SALESINVOICE)->select('reference')->orderBy('order_no', 'DESC')->first();
-            // dd($invoiceReference);
 
             $ref = explode('-', $invoiceReference->reference);
-            // dd($ref);
             $invoice_count = (int) $ref[1];
-        //dd($invoice_count);
         } else {
             $invoice_count = 0;
-            //dd($data);
         }
 
         return view('admin.salesaccount.invoice_create', compact('page_title', 'leads', 'invoice_count', 'page_description', 'order', 'orderDetail', 'products', 'clients'));
@@ -176,10 +166,8 @@ class SalesAccountController extends Controller
         $leads = \App\Models\Lead::orderBy('id', 'desc')->get();
 
         $saleDataInvoice = SalesOrder::where('order_no', '=', $invoiceNo)->first();
-        //  dd($saleDataInvoice);
 
         $saleDataOrder = SalesOrder::where('order_no', '=', $orderNo)->first();
-        //  dd($saleDataOrder);
 
         return view('admin.salesaccount.payment_create', compact('page_title', 'orderNo', 'invoiceNo', 'saleDataInvoice', 'saleDataOrder', 'page_description', 'leads', 'order', 'orderDetail', 'products', 'clients'));
     }
@@ -197,7 +185,6 @@ class SalesAccountController extends Controller
         $clients = Client::select('id', 'name', 'location')->orderBy('id', DESC)->get();
         $leads = \App\Models\Lead::orderBy('id', 'desc')->get();
 
-        // d($data['salesType'],1);
         $order_count = DB::table('sales_orders')->where('trans_type', SALESORDER)->count();
 
         if ($order_count > 0) {
@@ -225,7 +212,6 @@ class SalesAccountController extends Controller
         $unitPrice = $request->total;
         $stock_id = $request->stock_id;
         $description = $request->description;
-        //d($request->all(),1);
 
         // create salesOrder start
         $orderReferenceNo = DB::table('sales_orders')->where('trans_type', SALESORDER)->count();
@@ -310,7 +296,6 @@ class SalesAccountController extends Controller
         $custom_items_rate = $request->custom_items_rate;
         $custom_items_qty = $request->custom_items_qty;
         $custom_items_amount = $request->custom_items_amount;
-        // d($custom_items_name,1);
         if (! empty($custom_items_name)) {
             foreach ($custom_items_name as $key => $value) {
                 // custom item order detail
@@ -355,7 +340,6 @@ class SalesAccountController extends Controller
         $data['amount'] = abs($request->amount);
         $data['category_id'] = $request->category_id;
         $data['reference'] = $request->reference;
-        // dd($userId);
         $data['person_id'] = $userId;
         $data['trans_type'] = 'cash-in-by-sale';
         $data['payment_method'] = $request->payment_type_id;
@@ -373,7 +357,6 @@ class SalesAccountController extends Controller
         $payment['customer_id'] = $request->customer_id;
         $orderNo = $request->order_no;
         $invoiceNo = $request->invoice_no;
-        // dd($payment);
         $payment = DB::table('payment_history')->insertGetId($payment);
         if (! empty($payment)) {
             $paidAmount = $this->payment->updatePayment($request->invoice_reference, $request->amount);
@@ -411,7 +394,6 @@ class SalesAccountController extends Controller
         $salesOrder['payment_term'] = 2;
         $salesOrder['total'] = $request->final_total;
         $salesOrder['created_at'] = date('Y-m-d H:i:s');
-        // d($salesOrder,1);
         $salesOrderId = DB::table('sales_orders')->insertGetId($salesOrder);
         if (! empty($description)) {
             foreach ($description as $key => $item) {
@@ -437,7 +419,6 @@ class SalesAccountController extends Controller
         $custom_items_rate = $request->custom_items_rate;
         $custom_items_qty = $request->custom_items_qty;
         $custom_items_amount = $request->custom_items_amount;
-        // d($custom_items_name,1);
 
         if (! empty($custom_items_name)) {
             foreach ($custom_items_name as $key => $value) {
@@ -526,7 +507,6 @@ class SalesAccountController extends Controller
         $order_no = $request->order_no;
         $order_ref_no = $request->order_reference_id;
         $this->validate($request, []);
-        //d($request->all(),1);
         $itemQty = $request->item_quantity;
         $unitPrice = $request->unit_price;
         $taxIds = $request->tax_id;
@@ -535,7 +515,6 @@ class SalesAccountController extends Controller
         $description = $request->description;
 
         $itemRowIds = $request->item_rowid;
-        //  dd($itemRowIds);
         // update sales_order table
 
         $salesOrder['ord_date'] = $ord_date;
@@ -547,7 +526,6 @@ class SalesAccountController extends Controller
         $salesOrder['updated_at'] = date('Y-m-d H:i:s');
 
         DB::table('sales_orders')->where('order_no', $id)->update($salesOrder);
-        //  dd($itemRowIds);
 
         if (count($itemRowIds) > 0) {
             $orderItemRowIds = DB::table('sales_order_details')->where('order_no', $order_no)->pluck('id');
@@ -570,11 +548,9 @@ class SalesAccountController extends Controller
                 // Update stock_move table
             }
         }
-        //  dd($request->description_new);
 
         if ($request->description_new != null) {
 
-            // dd($request->description_new);
             $itemQtyNew = $request->item_quantity_new;
             $itemIdsNew = $request->item_id_new;
             $unitPriceNew = $request->unit_price_new;
@@ -640,9 +616,7 @@ class SalesAccountController extends Controller
             'name' => 'required',
         ]);
 
-        //dd($request->all());
         $order = $this->orders->find($id);
-        //dd($order);
         if ($order->isEditable()) {
             $order_attributes = $request->all();
 
@@ -706,7 +680,6 @@ class SalesAccountController extends Controller
         $userId = Auth::user()->id;
         $order_no = $request->order_no;
         $ord_date = \Carbon\Carbon::parse($request->ord_date);
-        //dd($ord_date);
         $this->validate($request, []);
 
         $itemQty = $request->item_quantity;
@@ -718,7 +691,6 @@ class SalesAccountController extends Controller
         $stock_id = $request->stock_id;
         $description = $request->description;
         $itemRowIds = $request->item_rowid;
-        // d($itemRowIds,1);
         // update sales_order table
         $salesOrder['ord_date'] = $ord_date;
         $salesOrder['lead_id'] = $request->lead_id;
@@ -730,14 +702,10 @@ class SalesAccountController extends Controller
         $salesOrder['comments'] = $request->comments;
         $salesOrder['total'] = $request->final_total;
         $salesOrder['updated_at'] = date('Y-m-d H:i:s');
-        //d($salesOrder,1);
-
-        //  dd($salesOrder);
 
         DB::table('sales_orders')->where('order_no', $order_no)->update($salesOrder);
 
         if (count($itemRowIds) > 0) {
-            //  dd($itemRowIds);
 
             $orderItemRowIds = DB::table('sales_order_details')->where('order_no', $order_no)->pluck('id');
             // Delete items from order if no exists on updated orders
@@ -761,7 +729,6 @@ class SalesAccountController extends Controller
         }
 
         if ($request->item_quantity_new != null) {
-            // dd($request->item_quantity);
             $itemQty = $request->item_quantity_new;
             //    $itemIdsNew = $request->item_id;
             $unitPriceNew = $request->unit_price_new;
@@ -893,7 +860,6 @@ class SalesAccountController extends Controller
     {
         $ord = $this->orders->find($id);
         $orderDetails = OrderDetail::where('order_id', $id)->get();
-        //dd($orderDetails);
         return view('admin.salesaccount.payment_print', compact('ord', 'orderDetails'));
     }
 
@@ -901,7 +867,6 @@ class SalesAccountController extends Controller
     {
         //    $ord = SalesOrder::find($id);
         $saleDataOrder = SalesOrder::where('order_no', '=', $id)->first();
-        //  dd($saleDataOrder);
         $salesDetails = SalesOrderDetail::orderBy('id', 'desc')->where('order_no', $id)->get();
 
         return view('admin.salesaccount.quotation_print', compact('saleDataOrder', 'salesDetails'));
@@ -943,7 +908,6 @@ class SalesAccountController extends Controller
     {
         //    $ord = SalesOrder::find($id);
         $saleDataOrder = SalesOrder::where('order_no', '=', $id)->first();
-        //  dd($saleDataOrder);
         $salesDetails = SalesOrderDetail::orderBy('id', 'desc')->where('order_no', $id)->get();
 
         $pdf = \PDF::loadView('admin.salesaccount.quotation_pdf', compact('saleDataOrder', 'salesDetails'));
@@ -1042,12 +1006,9 @@ class SalesAccountController extends Controller
                     ->where('bill_date', '<=', $enddate)
                     ->where('org_id',\Auth::user()->org_id)
                     ->where(function($query){
-                        if(\Request::get('outlet')){
-                            return $query->where('outlet_id',\Request::get('outlet'));
-                        }
+                        if(\Request::get('outlet')) return $query->where('outlet_id',\Request::get('outlet'));
                     })
-                    ->orderBy('id','desc')
-                    ->get();
+                    ->orderBy('id','desc')->get();
                 $report_title = 'Sales Book';
                 $pdf = \PDF::loadView('pdf.filteredsales', compact('sales_book', 'fiscal_year', 'startdate', 'enddate','report_title'))->setPaper('a4', 'landscape');
                 $file = 'Report_salebook_filtered'.date('_Y_m_d').'.pdf';
@@ -1061,21 +1022,21 @@ class SalesAccountController extends Controller
                 $sales_book = \App\Models\Invoice::where('bill_date', '>=', $startdate)
                     ->where('bill_date', '<=', $enddate)
                     ->where(function($query){
-
-                        if(\Request::get('outlet')){
-                            return $query->where('outlet_id',\Request::get('outlet'));
-                        }
-
+                        if(\Request::get('outlet')) return $query->where('outlet_id',\Request::get('outlet'));
                     })
                     ->where('org_id',\Auth::user()->org_id)
-                    ->orderBy('id','desc')
-
-                    ->get();
+                    ->orderBy('id','desc')->get();
 
                 return view('print.salesbook-print', compact('sales_book', 'fiscal_year', 'startdate', 'enddate'));
             }
             if ($op == 'excel') {
-                $data= \App\Models\Invoice::with('client')->where('bill_date','>=', $startdate)->where('bill_date','<=', $enddate)->where('outlet_id', $request->outlet)->get();
+                $data= \App\Models\Invoice::with('client')->where('bill_date','>=', $startdate)
+                    ->where('bill_date','<=', $enddate)
+                    ->where(function($query){
+                        if(\Request::get('outlet')) return $query->where('outlet_id',\Request::get('outlet'));
+                    })->get();
+                // return view('admin.sales-book.export.salesexport',['data'=>$data,'excel_name'=>$salesbook]);
+
                 return \Excel::download(new \App\Exports\SalesExport($data, 'salesbook'), 'salesbook.xls');
             }
             $sales_book = \App\Models\Invoice::where('bill_date', '>=', $startdate)
@@ -1092,13 +1053,8 @@ class SalesAccountController extends Controller
         } else {
             if ($op == 'pdf') {
                 $sales_book = \App\Models\Invoice::where('org_id',\Auth::user()->org_id)
-
                     ->where(function($query){
-
-                        if(\Request::get('outlet')){
-                            return $query->where('outlet_id',\Request::get('outlet'));
-                        }
-
+                        if(\Request::get('outlet')) return $query->where('outlet_id',\Request::get('outlet'));
                     })
                     ->orderBy('id','desc')->get();
                 $report_title = 'Sales Book';
@@ -1113,20 +1069,19 @@ class SalesAccountController extends Controller
             if ($op == 'print') {
                 $sales_book = \App\Models\Invoice::where('org_id',\Auth::user()->org_id)
                 ->where(function($query){
-
-                        if(\Request::get('outlet')){
-                            return $query->where('outlet_id',\Request::get('outlet'));
-                        }
-
+                        if(\Request::get('outlet')) return $query->where('outlet_id',\Request::get('outlet'));
                     })
                 ->orderBy('id','desc')
                 ->get();
+                return view('pdf.salesbook-print', compact('sales_book', 'fiscal_year'));
 
                 return view('print.salesbook-print', compact('sales_book', 'fiscal_year'));
             }
             if ($op == 'excel') {
-                $data= \App\Models\Invoice::with('client')->where('outlet_id', $request->outlet)->get();
-               // $data = DB::select("SELECT invoice.id as SN , invoice.bill_no as 'Bill Num', clients.name as 'Customers Name',clients.vat as 'Customers PAN No','' as 'Total Sales','' as 'Non Tax Sales','' as 'Export Sales','' as Discount ,invoice.taxable_amount as Amount,invoice.tax_amount as 'Tax(Rs)' from invoice LEFT JOIN clients ON clients.id = invoice.client_id where 'invoice.bill_date', '>=', $request->engstartdate AND 'invoice.bill_date', '<=' $request->engenddate");
+                $data= \App\Models\Invoice::with('client', 'invoicedetails')->where(function($query){
+                    if(\Request::get('outlet')) return $query->where('outlet_id',\Request::get('outlet'));
+                })->get();
+                // $data = DB::select("SELECT invoice.id as SN , invoice.bill_no as 'Bill Num', clients.name as 'Customers Name',clients.vat as 'Customers PAN No','' as 'Total Sales','' as 'Non Tax Sales','' as 'Export Sales','' as Discount ,invoice.taxable_amount as Amount,invoice.tax_amount as 'Tax(Rs)' from invoice LEFT JOIN clients ON clients.id = invoice.client_id where 'invoice.bill_date', '>=', $request->engstartdate AND 'invoice.bill_date', '<=' $request->engenddate");
                 return \Excel::download(new \App\Exports\SalesExport($data, 'salesbook'), 'salesbook.xls');
             }
             $sales_book = \App\Models\Invoice::orderBy('id','desc')->where(function($query){
@@ -1137,7 +1092,6 @@ class SalesAccountController extends Controller
 
                     })->paginate(50);
         }
-
         // return  response()->json($purchase_book);
         return view('admin.accountreport.sales-book', compact('sales_book', 'page_title', 'fiscal_year','outlets', 'posoutlets'));
     }
@@ -1147,7 +1101,6 @@ class SalesAccountController extends Controller
         $page_title = 'Admin | purchasebook';
         $fiscal_year = (\App\Models\Fiscalyear::where('org_id', \Auth::user()->org_id)->where('current_year', '1')->first())->fiscal_year;
 
-        //dd($fiscal_year);
         $fiscal_y = substr($fiscal_year, 0, 4);
         $cal = new \App\Helpers\NepaliCalendar();
         $days_list = $cal->bs;
@@ -1161,8 +1114,6 @@ class SalesAccountController extends Controller
         $end = $cal->nep_to_eng($year, $month, $year_array[(int) $month]);
         $startdate = $start['year'].'-'.$start['month'].'-'.$start['date'];
         $enddate = $end['year'].'-'.$end['month'].'-'.$end['date'];
-
-        // dd($startdate);
 
         if (\Request::has('op')) {
             $op = \Request::get('op');

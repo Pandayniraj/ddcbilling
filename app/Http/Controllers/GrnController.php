@@ -398,7 +398,6 @@ class GrnController extends Controller
     public function destroy($id)
     {
 
-        //dd($id);
         $ord = \App\Models\Grn::find($id);
 
         if (! $ord->isdeletable()) {
@@ -422,7 +421,6 @@ class GrnController extends Controller
     public function getModalDelete($id)
     {
 
-        //dd($id);
         $error = null;
 
         $ord = \App\Models\Grn::find($id);
@@ -461,7 +459,6 @@ class GrnController extends Controller
 
         $customer_name = \App\Models\Client::find($purchasebillsinfo->supplier_id)->name;
 
-        // dd($customer_name);
         $purchasedetailinfo = \App\Models\PurchaseOrderDetail::where('order_no', $purchasebillsinfo->id)->get();
 
         $products = Product::select('id', 'name')->get();
@@ -616,7 +613,6 @@ class GrnController extends Controller
             $sub_amount->ledger_id = \App\Models\Client::find($purchasereturn->supplier_id)->ledger_id; //Client ledger
             $sub_amount->amount = $purchasereturn->total_amount;
             $sub_amount->narration = 'Good Receipt Note'; //$request->user_id
-            //dd($sub_amount);
             $sub_amount->update();
 
             // Debitte to Bank or cash account that we are already in
@@ -626,7 +622,6 @@ class GrnController extends Controller
             $cash_amount->org_id = Auth::user()->org_id;
             $cash_amount->dc = 'C';
             $cash_amount->ledger_id = \FinanceHelper::get_ledger_id('PURCHASE_LEDGER_ID'); // Purchase ledger if selected or ledgers from .env
-            // dd($cash_amount);
             $cash_amount->amount = $purchasereturn->total_amount;
             $cash_amount->narration = 'Good Receipt Note';
             $cash_amount->update();
@@ -651,7 +646,6 @@ class GrnController extends Controller
             $sub_amount->ledger_id = \App\Models\Client::find($purchasereturn->supplier_id)->ledger_id; //Client ledger
             $sub_amount->amount = $purchasereturn->total_amount;
             $sub_amount->narration = 'Good Receipt Note'; //$request->user_id
-            //dd($sub_amount);
             $sub_amount->save();
 
             // Debitte to Bank or cash account that we are already in
@@ -662,7 +656,6 @@ class GrnController extends Controller
             $cash_amount->org_id = Auth::user()->org_id;
             $cash_amount->dc = 'C';
             $cash_amount->ledger_id = \FinanceHelper::get_ledger_id('PURCHASE_LEDGER_ID'); // Sales ledger if selected or ledgers from .env
-            // dd($cash_amount);
             $cash_amount->amount = $purchasereturn->total_amount;
             $cash_amount->narration = 'Good Receipt Note';
             $cash_amount->save();

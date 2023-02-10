@@ -13,40 +13,39 @@ class FinanceHelper
     public static function cur_fisc_yr()
     {
         $current_yr = Fiscalyear::where('current_year', '1')
-      ->where('org_id', \Auth::user()->org_id)
-      ->first();
+            ->where('org_id', \Auth::user()->org_id)
+            ->first();
 
         return $current_yr;
     }
+
     public static function get_last_entry_number($entryType)
     {
 
-        $lastEntry = Entry::select('id')->orderBy('id','desc')->first()->id + 1;
+        $lastEntry = Entry::select('id')->orderBy('id', 'desc')->first()->id + 1;
         $entryType = \App\Models\Entrytype::find($entryType);
-        return $entryType->code.'-'.$lastEntry;
+        return $entryType->code . '-' . $lastEntry;
     }
 
 
-     public static function cur_leave_yr()
+    public static function cur_leave_yr()
     {
         $leave_yr = \App\Models\Leaveyear::where('current_year', '1')
-                    ->where('org_id', \Auth::user()->org_id)
-                    ->first();
+            ->where('org_id', \Auth::user()->org_id)
+            ->first();
 
         return $leave_yr;
     }
 
-
     public static function get_ledger_id($name, $org_id = false)
     {
-        if (! $org_id) {
+        if (!$org_id) {
             $org_id = \Auth::user()->org_id;
         }
-        //dd($name, $org_id);
         $name = trim($name);
         $ledger = \App\Models\LedgerSettings::where('org_id', $org_id)
-      ->where(DB::raw("REPLACE(TRIM(ledger_name),'\r\n','')"), $name)
-      ->first();
+            ->where(DB::raw("REPLACE(TRIM(ledger_name),'\r\n','')"), $name)
+            ->first();
         if ($ledger) {
             return $ledger->ledger_id;
         } else {
@@ -54,9 +53,19 @@ class FinanceHelper
         }
     }
 
+    public static function get_group_id($name, $org_id = false)
+    {
+        if (!$org_id) {
+            $org_id = \Auth::user()->org_id;
+        }
+        $group = COAgroups::where([['name', $name], ['org_id', $org_id]])->first();
+        if ($group) return $group->id;
+        else return null;
+    }
+
     public static function getNextCodeLedgers($id, $org_id = false)
     {
-        if (! $org_id) {
+        if (!$org_id) {
             $org_id = \Auth::user()->org_id;
         }
         $group_data = COAgroups::find($id);
@@ -70,47 +79,45 @@ class FinanceHelper
             $new_index += 1;
             $new_index = sprintf('%04d', $new_index);
 
-            return $group_code.'-'.$new_index;
+            return $group_code . '-' . $new_index;
         } else {
-            return $group_code.'-0001';
+            return $group_code . '-0001';
         }
     }
 
     public static function get_entry_type_id($label, $org_id = false)
     {
-        if (! $org_id) {
+        if (!$org_id) {
             $org_id = \Auth::user()->org_id;
         }
 
-        $entrytype = \App\Models\Entrytype::where(DB::raw("REPLACE(TRIM(label),'\r\n','')"), $label)
-//      ->where('org_id', $org_id)
-      ->first();
+        $entrytype = \App\Models\Entrytype::where(DB::raw("REPLACE(TRIM(label),'\r\n','')"), $label)->first();
 
         return $entrytype->id ?? null;
     }
 
     public static function get_entry_type_label($id, $org_id = false)
     {
-        if (! $org_id) {
+        if (!$org_id) {
             $org_id = \Auth::user()->org_id;
         }
 
-$entrytype = \App\Models\Entrytype::where(DB::raw("REPLACE(TRIM(id),'\r\n','')"), $id)
-      ->where('org_id', $org_id)
-      ->first();
+        $entrytype = \App\Models\Entrytype::where(DB::raw("REPLACE(TRIM(id),'\r\n','')"), $id)
+            ->where('org_id', $org_id)
+            ->first();
 
         return $entrytype->label ?? null;
     }
 
     public static function get_entry_type_name($id, $org_id = false)
     {
-        if (! $org_id) {
+        if (!$org_id) {
             $org_id = \Auth::user()->org_id;
         }
 
-$entrytype = \App\Models\Entrytype::where(DB::raw("REPLACE(TRIM(id),'\r\n','')"), $id)
-      ->where('org_id', $org_id)
-      ->first();
+        $entrytype = \App\Models\Entrytype::where(DB::raw("REPLACE(TRIM(id),'\r\n','')"), $id)
+            ->where('org_id', $org_id)
+            ->first();
 
         return $entrytype->name ?? null;
     }
@@ -118,20 +125,20 @@ $entrytype = \App\Models\Entrytype::where(DB::raw("REPLACE(TRIM(id),'\r\n','')")
     public static function ledgerGroupsOptionshtml($id = false, $parents_id = null)
     {
         $groups = \App\Models\COAgroups::orderBy('code', 'asc')
-      ->where('parent_id', $parents_id)
-      ->where('org_id', \Auth::user()->org_id)
-      ->where(function ($query) use ($id) {
-          if ($id) {
-              return $query->where('id', $id);
-          }
-      })
-      ->get();
+            ->where('parent_id', $parents_id)
+            ->where('org_id', \Auth::user()->org_id)
+            ->where(function ($query) use ($id) {
+                if ($id) {
+                    return $query->where('id', $id);
+                }
+            })
+            ->get();
 
         foreach ($groups as $key => $child_group) {
             echo "<optgroup  label='{$child_group->name}'>";
             $ledgers = \App\Models\COALedgers::orderBy('code', 'asc')->where('group_id', $child_group->id)->get();
             foreach ($ledgers as $key => $value) {
-                echo  "<option value = '{$value->id}'>[{$value->code}] {$value->name} </option>";
+                echo "<option value = '{$value->id}'>[{$value->code}] {$value->name} </option>";
             }
             echo '</optgroup>';
             self::ledgerGroupsOptionshtml(false, $child_group->id);
@@ -144,11 +151,11 @@ $entrytype = \App\Models\Entrytype::where(DB::raw("REPLACE(TRIM(id),'\r\n','')")
 
         foreach ($ledgers as $key => $value) {
             $entries = \App\Models\Entryitem::select('entryitems.*')
-        ->where('ledger_id', $value->id)
-        ->leftjoin('entries', 'entries.id', '=', 'entryitems.entry_id')
-        ->where('entries.fiscal_year_id', $fiscal_year)
-        ->groupBy('entryitems.id')
-        ->get();
+                ->where('ledger_id', $value->id)
+                ->leftjoin('entries', 'entries.id', '=', 'entryitems.entry_id')
+                ->where('entries.fiscal_year_id', $fiscal_year)
+                ->groupBy('entryitems.id')
+                ->get();
 
             $totalbalance = 0;
 
@@ -165,15 +172,16 @@ $entrytype = \App\Models\Entrytype::where(DB::raw("REPLACE(TRIM(id),'\r\n','')")
     }
 
     public static function calculateLedgerGroupOpeningBalance(
-    $parent_id,
-    $fiscal_year,
-    $item = [],
-    $dept = 0
-  ) {
+        $parent_id,
+        $fiscal_year,
+        $item = [],
+        $dept = 0
+    )
+    {
         $groups = \App\Models\COAgroups::orderBy('code', 'asc')
-                ->where('parent_id', $parent_id)
-                ->where('org_id',\Auth::user()->org_id)
-                ->get();
+            ->where('parent_id', $parent_id)
+            ->where('org_id', \Auth::user()->org_id)
+            ->get();
 
         if ($dept == 0) {
             $item = self::calculateledgerbalance($parent_id, $fiscal_year, $item);
@@ -188,7 +196,7 @@ $entrytype = \App\Models\Entrytype::where(DB::raw("REPLACE(TRIM(id),'\r\n','')")
                 return $item;
             }
 
-            self::calculateLedgerGroupOpeningBalance($child_group->id,$fiscal_year, $item, $dept);
+            self::calculateLedgerGroupOpeningBalance($child_group->id, $fiscal_year, $item, $dept);
         }
 
         return $item;
@@ -205,145 +213,142 @@ $entrytype = \App\Models\Entrytype::where(DB::raw("REPLACE(TRIM(id),'\r\n','')")
 
     {
 
-    $no = round($number);
-    $decimal = round($number - ($no = floor($number)), 2) * 100;
-    $words = array(
+        $no = round($number);
+        $decimal = round($number - ($no = floor($number)), 2) * 100;
+        $words = array(
 
-        0 => '',
-        1 => 'One',
-        2 => 'Two',
-        3 => 'Three',
-        4 => 'Four',
-        5 => 'Five',
+            0 => '',
+            1 => 'One',
+            2 => 'Two',
+            3 => 'Three',
+            4 => 'Four',
+            5 => 'Five',
 
-        6 => 'Six',
+            6 => 'Six',
 
-        7 => 'Seven',
+            7 => 'Seven',
 
-        8 => 'Eight',
-        9 => 'Nine',
+            8 => 'Eight',
+            9 => 'Nine',
 
-        10 => 'Ten',
+            10 => 'Ten',
 
-        11 => 'Eleven',
+            11 => 'Eleven',
 
-        12 => 'Twelve',
+            12 => 'Twelve',
 
-        13 => 'Thirteen',
+            13 => 'Thirteen',
 
-        14 => 'Fourteen',
+            14 => 'Fourteen',
 
-        15 => 'Fifteen',
+            15 => 'Fifteen',
 
-        16 => 'Sixteen',
+            16 => 'Sixteen',
 
-        17 => 'Seventeen',
+            17 => 'Seventeen',
 
-        18 => 'Eighteen',
+            18 => 'Eighteen',
 
-        19 => 'Nineteen',
+            19 => 'Nineteen',
 
-        20 => 'Twenty',
+            20 => 'Twenty',
 
-        30 => 'Thirty',
-        40 => 'Forty',
-        50 => 'Fifty',
-        60 => 'Sixty',
-        70 => 'Seventy',
-        80 => 'Eighty',
-        90 => 'Ninety');
+            30 => 'Thirty',
+            40 => 'Forty',
+            50 => 'Fifty',
+            60 => 'Sixty',
+            70 => 'Seventy',
+            80 => 'Eighty',
+            90 => 'Ninety');
 
-    $paise = ($decimal) ?  ' and ' .($words[$decimal - $decimal%10]) ." " .($words[$decimal%10]) .' Paisa'  : '';
+        $paise = ($decimal) ? ' and ' . ($words[$decimal - $decimal % 10]) . " " . ($words[$decimal % 10]) . ' Paisa' : '';
 
-    return $paise;
+        return $paise;
 
-}
+    }
 
+    public static function numberRupeeFomatter($number)
 
+    {
 
+        $constnum = $number;
 
-public static function numberRupeeFomatter($number)
+        $no = floor($number);
 
-{
+        $point = round($number - $no, 2) * 100;
 
-   $constnum = $number;
+        $hundred = null;
 
-   $no = floor($number);
+        $digits_1 = strlen($no);
 
-   $point = round($number - $no, 2) * 100;
+        $i = 0;
 
-   $hundred = null;
+        $str = array();
 
-   $digits_1 = strlen($no);
+        $words = array('0' => '', '1' => 'one',
 
-   $i = 0;
+            '2' => 'two',
+            '3' => 'three',
+            '4' => 'four', '5' => 'five', '6' => 'six',
+            '7' => 'seven', '8' => 'eight', '9' => 'nine',
 
-   $str = array();
+            '10' => 'ten', '11' => 'eleven', '12' => 'twelve',
 
-   $words = array('0' => '', '1' => 'one',
+            '13' => 'thirteen', '14' => 'fourteen',
 
-    '2' => 'two',
-    '3' => 'three',
-    '4' => 'four', '5' => 'five', '6' => 'six',
-    '7' => 'seven', '8' => 'eight', '9' => 'nine',
+            '15' => 'fifteen', '16' => 'sixteen',
 
-    '10' => 'ten', '11' => 'eleven', '12' => 'twelve',
+            '17' => 'seventeen',
 
-    '13' => 'thirteen', '14' => 'fourteen',
+            '18' => 'eighteen',
 
-    '15' => 'fifteen', '16' => 'sixteen',
+            '19' => 'nineteen',
 
-    '17' => 'seventeen',
+            '20' => 'twenty',
 
-    '18' => 'eighteen',
+            '30' => 'thirty',
 
-    '19' =>'nineteen',
+            '40' => 'forty',
 
-    '20' => 'twenty',
+            '50' => 'fifty',
+            '60' => 'sixty',
+            '70' => 'seventy',
+            '80' => 'eighty',
+            '90' => 'ninety');
 
-    '30' => 'thirty',
+        $digits = array('', 'hundred', 'thousand', 'lakh', 'crore');
 
-    '40' => 'forty',
+        while ($i < $digits_1) {
 
-    '50' => 'fifty',
-    '60' => 'sixty',
-    '70' => 'seventy',
-    '80' => 'eighty',
-    '90' => 'ninety');
+            $divider = ($i == 2) ? 10 : 100;
+            $number = floor($no % $divider);
+            $no = floor($no / $divider);
+            $i += ($divider == 10) ? 1 : 2;
 
-   $digits = array('', 'hundred', 'thousand', 'lakh', 'crore');
+            if ($number) {
 
-   while ($i < $digits_1) {
+                $plural = (($counter = count($str)) && $number > 9) ? 's' : null;
+                $hundred = ($counter == 1 && $str[0]) ? '' : null;
+                $str [] = ($number < 21) ? $words[$number] .
 
-     $divider = ($i == 2) ? 10 : 100;
-     $number = floor($no % $divider);
-     $no = floor($no / $divider);
-     $i += ($divider == 10) ? 1 : 2;
+                    " " . $digits[$counter] . $plural . " " . $hundred
 
-     if ($number) {
+                    :
 
-        $plural = (($counter = count($str)) && $number > 9) ? 's' : null;
-        $hundred = ($counter == 1 && $str[0]) ? '' : null;
-        $str [] = ($number < 21) ? $words[$number] .
+                    $words[floor($number / 10) * 10]
+                    . " " . $words[$number % 10] . " "
+                    . $digits[$counter] . $plural . " " . $hundred;
 
-            " " . $digits[$counter] . $plural . " " . $hundred
+            } else $str[] = null;
 
-            :
+        }
 
-            $words[floor($number / 10) * 10]
-            . " " . $words[$number % 10] . " "
-            . $digits[$counter] . $plural . " " . $hundred;
+        $str = array_reverse($str);
+        $result = implode('', $str);
+        $points = self::getPaisa($constnum);
 
-     } else $str[] = null;
-
-  }
-
-  $str = array_reverse($str);
-  $result = implode('', $str);
-  $points = self::getPaisa($constnum);
-
-  return $result . ' Rupees' .$points;
-}
+        return $result . ' Rupees' . $points;
+    }
 
 
 }

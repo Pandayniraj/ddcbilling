@@ -35,7 +35,6 @@ class NepalIRDSync extends Model
         if ($err) {
             return 'cURL Error #:'.$err;
         } else {
-            // dd($response, $ird, $data, json_decode($data));
             return $response;
         }
     }
@@ -67,7 +66,6 @@ class NepalIRDSync extends Model
         if ($err) {
             return 'cURL Error #:'.$err;
         } else {
-            // dd($response, $data);
             return $response;
         }
     }

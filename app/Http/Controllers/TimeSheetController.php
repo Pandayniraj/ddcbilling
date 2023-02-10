@@ -44,7 +44,6 @@ class TimeSheetController extends Controller
 
         $projects = \App\Models\Projects::where('enabled', '1')->pluck('name', 'id')->all();
 
-        //dd($projects);
 
         return view('admin.activity.create', compact('projects', 'page_title', 'page_description'));
     }
@@ -52,7 +51,6 @@ class TimeSheetController extends Controller
     public function activitySave(Request $request)
     {
         $attributes = $request->all();
-        //  dd($attributes);
         \App\Models\Activity::create($attributes);
 
         Flash::success('Activity Created');
@@ -63,7 +61,6 @@ class TimeSheetController extends Controller
     public function activityEdit(Request $request, $id)
     {
 
-        //dd($id);
         $page_title = 'Edit Activity';
         $page_description = 'edit  Activities';
         $projects = \App\Models\Projects::where('enabled', '1')->pluck('name', 'id')->all();
@@ -156,7 +153,6 @@ class TimeSheetController extends Controller
             $data[] = $time_groups;
         }
 
-        //dd($data);
 
         return view('admin.timesheet.index', compact('data', 'emp', 'page_title', 'page_description'));
     }
@@ -169,7 +165,6 @@ class TimeSheetController extends Controller
         $users = \App\User::where('enabled', '1')->pluck('username', 'id')->all();
         $activity = \App\Models\Activity::pluck('code', 'id')->all();
 
-        //dd($users);
 
         return view('admin.timesheet.create', compact('users', 'page_title', 'page_description', 'activity'));
     }
@@ -178,7 +173,6 @@ class TimeSheetController extends Controller
     {
         $attributes = $request->all();
         $attributes['org_id'] = \Auth::user()->org_id;
-        // dd($attributes);
         \App\Models\TimeSheet::create($attributes);
         Flash::success('TimeSheet Created');
 
@@ -192,10 +186,8 @@ class TimeSheetController extends Controller
         $users = \App\User::where('enabled', '1')->pluck('username', 'id')->all();
         $activity = \App\Models\Activity::pluck('code', 'id')->all();
 
-        // dd($activity);
         $timesheet = \App\Models\TimeSheet::where('id', $id)->first();
 
-        //dd($timesheet);
 
         return view('admin.timesheet.edit', compact('page_title', 'users', 'page_description', 'activity', 'timesheet'));
     }
@@ -275,7 +267,6 @@ class TimeSheetController extends Controller
 
         $costcenter = \App\Models\CostCenter::orderBy('id', 'desc')->get();
 
-        // dd($timesheets);
 
         return view('admin.costcenter.index', compact('costcenter', 'page_title', 'page_description'));
     }

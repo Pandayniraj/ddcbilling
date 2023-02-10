@@ -195,8 +195,6 @@ class FiscalyearController extends Controller
 
         $FiscalYear = $this->FiscalYear->find($id);
 
-        //dd($FiscalYear);
-
         if (!$FiscalYear->isdeletable()) {
             abort(403);
         }
@@ -205,8 +203,6 @@ class FiscalyearController extends Controller
 
 
         $modal_route = route('admin.fiscalyear.delete', ['fiscalyearId' => $FiscalYear->id]);
-
-        //dd($modal_route);
 
         $modal_body = trans('admin/FiscalYear/dialog.delete-confirm.body', ['id' => $FiscalYear->id, 'name' => $FiscalYear->name]);
 

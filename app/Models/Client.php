@@ -11,7 +11,9 @@ class Client extends Model
      */
     protected $table = 'clients';
 
-    protected $fillable = ['route_id','name', 'location', 'vat', 'phone', 'email', 'website', 'industry', 'stock_symbol', 'type', 'enabled', 'org_id', 'ledger_id', 'notes', 'reminder', 'bank_name', 'bank_branch', 'bank_account', 'relation_type', 'physical_address', 'customer_group','image','parent_distributor','deposit_amount', 'outlet_id'];
+    protected $fillable = ['route_id','name', 'location', 'vat', 'phone', 'email', 'website', 'industry', 'stock_symbol',
+        'type', 'enabled', 'org_id', 'ledger_id', 'notes', 'reminder', 'bank_name', 'bank_branch', 'bank_account',
+        'relation_type', 'physical_address', 'customer_group','image','parent_distributor','deposit_amount', 'outlet_id'];
 
     public function contact()
     {
@@ -21,6 +23,14 @@ class Client extends Model
     public function locations()
     {
         return $this->belongsTo(\App\Models\CityMaster::class, 'location');
+    }
+    public function ledger()
+    {
+        return $this->belongsTo(\App\Models\COALedgers::class, 'ledger_id');
+    }
+    public function getledgerNameAttribute()
+    {
+        return $this->ledger->name??'';
     }
 
     public function groups()
@@ -53,5 +63,5 @@ class Client extends Model
 
         return true;
     }
-   
+
 }

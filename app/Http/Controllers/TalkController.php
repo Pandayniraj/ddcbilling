@@ -94,19 +94,19 @@ class TalkController extends Controller
         return $unseen_message;
     }
     public function index()
-    {   
+    {
         // $pusher = new Pusher($this->PUSHER_KEY, $this->APP_SECRET,
         // $this->APP_ID, ['cluster' => $this->APP_CLUSTER]);
         $page_title = 'Admin | Chat';
-        
-        
+
+
 
         $users = User::where('enabled', '1')->get();
 
         $total_unseen_message = $this->unseen_message();
-        
+
         $threads = $this->talk->threads();
-        
+
         $user_id = null;
 
         foreach ($threads as $key => $inbox) {
@@ -126,14 +126,12 @@ class TalkController extends Controller
         $rcv_user = User::find($user_id);
         $rcv_profile_img = $this->getuserProfilePic($rcv_user);
         $sender_profile_img = $this->getuserProfilePic(Auth::user());
-        //dd($sender_profile_img);
         if (count($messages) > 0) {
             $messages = $messages->sortBy('id');
             $this->ajaxSeenMessage($messages[0]->conversation_id);
         }
         $messages = $messages->values();
-    
-        //dd($messages);
+
         return view('admin.talk.chathistory', compact('messages', 'rcv_user', 'user_id', 'totalMessage', 'threads', 'users', 'receiver', 'sender_profile_img', 'rcv_profile_img', 'page_title','total_unseen_message'));
     }
 
@@ -153,7 +151,7 @@ class TalkController extends Controller
     {
         $messages = collect();
         $conversations = $this->talk->getMessagesByUserId($id);
-        
+
         if ($conversations) {
             $messages = $conversations->messages;
         }
@@ -165,9 +163,7 @@ class TalkController extends Controller
     {
         $page_title = 'Admin|Chat';
         $messages = $this->getUserMessage($id);
-        // dd($messages);
         $totalMessage = count($messages);
-        //dd($totalMessage);
         $messages = $messages->slice(-20); //get latest 20 messages
         $user = User::find($id);
         $receiver = $id;
@@ -181,7 +177,7 @@ class TalkController extends Controller
         $users = User::where('enabled', '1')->get();
         $rcv_user = User::find($id);
         $messages = $messages->values();
-       
+
         $total_unseen_message = $this->unseen_message();
         // return $threads;
         return view('admin.talk.chathistory', compact('messages', 'rcv_user',  'totalMessage', 'threads', 'users', 'receiver', 'sender_profile_img', 'rcv_profile_img', 'page_title','total_unseen_message'));
@@ -206,21 +202,18 @@ class TalkController extends Controller
 
     public function ajaxSendMessage(Request $request)
     {
-        //dd("DOEN");
         $pusher = new Pusher($this->PUSHER_KEY, $this->APP_SECRET,
             $this->APP_ID, ['cluster' => $this->APP_CLUSTER]);
         $rules = [
           'message-data'=>'required',
           '_id'=>'required',
       ];
-        //    dd($request->all());
         $attachment = [
         'attachment'=>$request->attachment,
         'att_type'=>$request->att_type,
         'file_name'=>$request->file_name,
         'extension'=>$request->extension,
       ];
-        //dd($attachment);
         $this->validate($request, $rules);
         $body = $request->input('message-data');
         $userId = $request->input('_id');

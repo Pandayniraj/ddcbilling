@@ -14,11 +14,11 @@ use Flash;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use File;
 
 /**
  * THIS CONTROLLER IS USED AS PRODUCT CONTROLLER
  */
-
 class ProductController extends Controller
 {
     /**
@@ -48,7 +48,8 @@ class ProductController extends Controller
      */
 
 
-    public function downloadExcel($query){
+    public function downloadExcel($query)
+    {
 
 
         $courses = $query->get()->toArray();
@@ -59,50 +60,48 @@ class ProductController extends Controller
 
     }
 
-
-
     public function index()
     {
         Audit::log(Auth::user()->id, trans('admin/courses/general.audit-log.category'), trans('admin/courses/general.audit-log.msg-index'));
-        $outletuser=\App\Models\OutletUser::where('user_id', \Auth::user()->id)->select('outlet_id')->get()->toArray();   
-        $courses = $this->course->select('products.*','product_categories.name as product_categories','pos_outlets.name as outlet_name')->where(function ($q) use ($outletuser){
-            if(!\Auth::user()->hasRole('admins')){
-               $q->whereIn('products.outlet_id', $outletuser);
+        $outletuser = \App\Models\OutletUser::where('user_id', \Auth::user()->id)->select('outlet_id')->get()->toArray();
+        $courses = $this->course->select('products.*', 'product_categories.name as product_categories', 'pos_outlets.name as outlet_name')->where(function ($q) use ($outletuser) {
+            if (!\Auth::user()->hasRole('admins')) {
+                $q->whereIn('products.outlet_id', $outletuser);
             }
-        }) ->where(function ($query) {
+        })->where(function ($query) {
             $terms = \Request::get('term');
             if ($terms)
                 return $query->where('products.name', 'LIKE', '%' . $terms . '%');
         })
-        ->where(function ($q){
-            $q->where('parent_product_id',0);
-            $q->orWhereNull('parent_product_id');
-        })->where(function($query){
+            ->where(function ($q) {
+                $q->where('parent_product_id', 0);
+                $q->orWhereNull('parent_product_id');
+            })->where(function ($query) {
 
-            $type_master_id = \Request::get('product_cat_master');
+                $type_master_id = \Request::get('product_cat_master');
 
-            if($type_master_id){
+                if ($type_master_id) {
 
-                return $query->where('product_type_masters.id',$type_master_id);
-            }
-
-
-        })->where(function($query){
-
-            $product_cat = \Request::get('product_cat');
-
-            if($product_cat){
-
-                return $query->where('product_categories.id',$product_cat);
-            }
+                    return $query->where('product_type_masters.id', $type_master_id);
+                }
 
 
-        })->leftjoin('product_type_masters','products.product_type_id','=','product_type_masters.id')
-        ->leftjoin('pos_outlets','pos_outlets.id','=','products.outlet_id')
-        ->leftjoin('product_categories','products.category_id','=','product_categories.id')
-        ->orderBy('id', 'desc');
+            })->where(function ($query) {
 
-        if(\Request::get('productSearch') == 'excel'){
+                $product_cat = \Request::get('product_cat');
+
+                if ($product_cat) {
+
+                    return $query->where('product_categories.id', $product_cat);
+                }
+
+
+            })->leftjoin('product_type_masters', 'products.product_type_id', '=', 'product_type_masters.id')
+            ->leftjoin('pos_outlets', 'pos_outlets.id', '=', 'products.outlet_id')
+            ->leftjoin('product_categories', 'products.category_id', '=', 'product_categories.id')
+            ->orderBy('id', 'desc');
+
+        if (\Request::get('productSearch') == 'excel') {
 
 
             return $this->downloadExcel($courses);
@@ -115,15 +114,12 @@ class ProductController extends Controller
 
         $page_description = trans('admin/courses/general.page.index.description');
 
-        $producttypeMaster = \App\Models\ProductTypeMaster::pluck('name','id');
+        $producttypeMaster = \App\Models\ProductTypeMaster::pluck('name', 'id');
 
-        $productCategory = \App\Models\ProductCategory::pluck('name','id');
-        //dd($transations);
+        $productCategory = \App\Models\ProductCategory::pluck('name', 'id');
 
-        return view('admin.products.index', compact('courses', 'page_title', 'page_description','producttypeMaster','productCategory'));
+        return view('admin.products.index', compact('courses', 'page_title', 'page_description', 'producttypeMaster', 'productCategory'));
     }
-
-
 
     /**
      * @return \Illuminate\View\View
@@ -155,20 +151,19 @@ class ProductController extends Controller
         $product_unit = \App\Models\ProductsUnit::pluck('name', 'id');
         // $outlets  = \App\Models\PosOutlets::orderBy('id', 'asc')->pluck('name', 'id')->all();
         $outlets = \App\Helpers\TaskHelper::getUserOutlets();
-    
+
         $product_type_masters = \App\Models\ProductTypeMaster::pluck('name', 'id');
         $products = \App\Models\Product::latest()->where('org_id', \Auth::user()->org_id)->pluck('name', 'id')->all();
         $stores = \App\Models\Store::pluck('name', 'id');
         // $menus  = \App\Models\PosMenu::orderBy('id','desc')->select('menu_name','id')->get();
+        if (\Request::ajax()) {
 
-        if(\Request::ajax()){
-
-            return view('admin.products.modals.create', compact('course','perms', 'outlets', 'page_title', 'page_description', 'categories', 'product_unit', 'product_type_masters','stores'));
+            return view('admin.products.modals.create', compact('course', 'perms', 'outlets', 'page_title', 'page_description', 'categories', 'product_unit', 'product_type_masters', 'stores'));
 
 
         }
 
-        return view('admin.products.create', compact('menus','products','course', 'perms', 'outlets', 'page_title', 'page_description', 'categories', 'product_unit', 'product_type_masters','stores'));
+        return view('admin.products.create', compact('products', 'course', 'perms', 'outlets', 'page_title', 'page_description', 'categories', 'product_unit', 'product_type_masters', 'stores'));
     }
 
     /**
@@ -177,18 +172,29 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
+        $rules = [
+            'name'  => 'required|unique:products,name',
+            // 'distributor_price'  => 'required|numeric',
+            // 'retailer_price'  => 'required|numeric',
+            // 'direct_customer_price'  => 'required|numeric',
+            'product_unit'  => 'required|exists:product_units,id',
+            'category_id'  => 'required|exists:product_categories,id',
+            'enabled'  => 'required|in:0,1',
+            'is_vat'  => 'required|in:0,1',
+            // 'store_id'  => 'required|exists:store,id',
+            'staff_quota_frequent'  => 'nullable',
+            'staff_quota'  => 'nullable|gt:-1',
+        ];
         if (\Request::ajax()) {
-            // $validator = \Validator::make($request->all(), [
-            //     'name'  => 'required|unique:products',
-            // ]);
+             $validator = \Validator::make($request->all(), $rules);
             if ($validator->fails()) {
                 return ['error' => $validator->errors()];
             }
         }
-        // $this->validate($request, ['name'  => 'required|unique:products',]);
+        $this->validate($request, $rules);
 
-        $attributes = $request->all();
-
+        $attributes = $request->only(['name', 'distributor_price', 'retailer_price', 'direct_customer_price', 'product_unit', 'category_id', 'enabled',
+            'is_vat', 'store_id', 'staff_quota_frequent', 'staff_quota']);
         $attributes['org_id'] = Auth::user()->org_id;
         $attributes['created_by'] = Auth::user()->id;
         if ($request->file('product_image')) {
@@ -202,8 +208,6 @@ class ProductController extends Controller
             $request->file('product_image')->move($destinationPath, $stamp . '_' . $filename);
             $attributes['product_image'] = $stamp . '_' . $filename;
         }
-
-        // dd($attributes);
 
         Audit::log(Auth::user()->id, trans('admin/courses/general.audit-log.category'), trans('admin/courses/general.audit-log.msg-store', ['name' => $attributes['name']]));
 
@@ -229,32 +233,26 @@ class ProductController extends Controller
         $course = $this->course->find($id);
         $categories = \App\Models\ProductCategory::orderBy('name', 'ASC')->where('org_id', \Auth::user()->org_id)->pluck('name', 'id');
 
-        //dd($categories);
-
-
         Audit::log(Auth::user()->id, trans('admin/courses/general.audit-log.category'), trans('admin/courses/general.audit-log.msg-edit', ['name' => $course->name]));
 
         $page_title = trans('admin/courses/general.page.edit.title'); // "Admin | Course | Edit";
         $page_description = trans('admin/courses/general.page.edit.description', ['name' => $course->name]); // "Editing course";
 
-
         $transations = \App\Models\StockMove::where('product_stock_moves.stock_id', $id)
-        ->leftjoin('products', 'products.id', '=', 'product_stock_moves.stock_id')
-        ->leftjoin('product_location', 'product_location.id', '=', 'product_stock_moves.store_id')
-        ->select('product_stock_moves.*', 'products.name', 'product_location.location_name')
-        ->get();
+            ->leftjoin('products', 'products.id', '=', 'product_stock_moves.stock_id')
+            ->leftjoin('product_location', 'product_location.id', '=', 'product_stock_moves.store_id')
+            ->select('product_stock_moves.*', 'products.name', 'product_location.location_name')
+            ->get();
         $locData = DB::table('store')->get();
-        $loc =  DB::table('store')->get();
+        $loc = DB::table('store')->get();
 
         $loc_name = array();
         foreach ($loc as $value) {
             $loc_name[$value->id] = $value->name;
         }
-
         $loc_name = $loc_name;
 
-
-        if (!$course->isEditable() &&  !$course->canChangePermissions()) {
+        if (!$course->isEditable() && !$course->canChangePermissions()) {
             abort(403);
         }
 
@@ -262,15 +260,16 @@ class ProductController extends Controller
 
         $product_type_masters = \App\Models\ProductTypeMaster::pluck('name', 'id');
         $outlets = \App\Helpers\TaskHelper::getUserOutlets();
-       // $menus = \App\Models\PosMenu::orderBy('id', 'desc')->where('outlet_id', $course->outlet_id)->pluck('menu_name', 'id')->all();
+        // $menus = \App\Models\PosMenu::orderBy('id', 'desc')->where('outlet_id', $course->outlet_id)->pluck('menu_name', 'id')->all();
         $products = \App\Models\Product::latest()->where('org_id', \Auth::user()->org_id)
-        ->where('id','!=',$id)
-        ->pluck('name', 'id')->all();
+            ->where('id', '!=', $id)
+            ->pluck('name', 'id')->all();
 
         $stores = \App\Models\Store::pluck('name', 'id');
-       // $menus  = \App\Models\PosMenu::orderBy('id','desc')->select('menu_name','id')->get();
+        // $menus  = \App\Models\PosMenu::orderBy('id','desc')->select('menu_name','id')->get();
 
-        return view('admin.products.edit', compact('products','course', 'product_unit', 'outlets', 'page_title', 'locData', 'loc_name', 'page_description', 'transations', 'categories', 'product_type_masters','stores'));
+        return view('admin.products.edit', compact('products', 'course', 'product_unit', 'outlets',
+            'page_title', 'locData', 'loc_name', 'page_description', 'transations', 'categories', 'product_type_masters', 'stores'));
     }
 
     /**
@@ -280,32 +279,48 @@ class ProductController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $this->validate($request, array('name'          => 'required|unique:products,name,' . $id,));
+        $rules = [
+            'name'  => 'required|unique:products,name,' . $id,
+            // 'distributor_price'  => 'required|numeric',
+            // 'retailer_price'  => 'required|numeric',
+            // 'direct_customer_price'  => 'required|numeric',
+            'product_unit'  => 'required|exists:product_units,id',
+            'category_id'  => 'required|exists:product_categories,id',
+            'enabled'  => 'required|in:0,1',
+            'is_vat'  => 'required|in:0,1',
+            // 'store_id'  => 'required|exists:store,id',
+            'staff_quota_frequent'  => 'nullable',
+            'staff_quota'  => 'nullable|gt:-1',
+        ];
+        $request->validate($rules);
         $course = $this->course->find($id);
 
         Audit::log(Auth::user()->id, trans('admin/courses/general.audit-log.category'), trans('admin/courses/general.audit-log.msg-update', ['name' => $course->name]));
 
         $attributes = $request->all();
         $attributes['org_id'] = \Auth::user()->org_id;
-        $attributes['created_by']=\Auth::user()->id;
+        $attributes['created_by'] = \Auth::user()->id;
 
         $lastedUpdated = $course->updated_by ? $course->updated_by : '{}';
-        $lastedUpdated = json_decode($lastedUpdated,true);
+        $lastedUpdated = json_decode($lastedUpdated, true);
 
         $lastedUpdated [] = [
-            'user_id'=>Auth::user()->id,
-            'date'=>date('Y-m-d H:i:s'),
-            'price'=>$request->price,
-            'name'=>$request->name
+            'user_id' => Auth::user()->id,
+            'date' => date('Y-m-d H:i:s'),
+            'price' => $request->price,
+            'name' => $request->name
         ];
 
         $lastedUpdated = json_encode($lastedUpdated);
 
         $attributes['updated_by'] = $lastedUpdated;
 
-        // dd($request->file('product_image'));
-
         if ($request->file('product_image')) {
+            $image_path = public_path()."/products/".$course->product_image;
+            if(File::exists($image_path)) {
+                File::delete($image_path);
+            }
+
             $stamp = time();
             $destinationPath = public_path() . '/products/';
             $file = \Request::file('product_image');
@@ -349,7 +364,7 @@ class ProductController extends Controller
     /**
      * Delete Confirm
      *
-     * @param   int   $id
+     * @param int $id
      * @return  View
      */
     public function getModalDelete($id)
@@ -500,33 +515,31 @@ class ProductController extends Controller
 
         $productcategory_id = \Request::get('productcategory_id');
 
-        // dd($productcategory_id);
         $categories = \App\Models\ProductCategory::where('enabled', '1')->pluck('id')->all();
 
 
         $products = \App\Models\Product::select('id', 'name')
+            ->where(function ($query) use ($categories, $productcategory_id, $term) {
+                if ($categories && !$productcategory_id) {
+                    return $query->where('name', 'LIKE', '%' . $term . '%')->whereIn('category_id', $categories);
+                }
+            })
+            ->where(function ($query) use ($menu_id, $term) {
+                if (!$menu_id) {
+                    return $query->where('name', 'LIKE', '%' . $term . '%');
+                }
+            })
+            ->where(function ($query) {
 
-        ->where(function ($query)  use ($categories, $productcategory_id, $term) {
-            if ($categories && !$productcategory_id) {
-                return $query->where('name', 'LIKE', '%' . $term . '%')->whereIn('category_id', $categories);
-            }
-        })
-        ->where(function ($query)  use ($menu_id, $term) {
-            if (!$menu_id) {
-                return $query->where('name', 'LIKE', '%' . $term . '%');
-            }
-        })
-        ->where(function($query){
+                return $query->whereNull('is_raw_material')
+                    ->orWhere('is_raw_material', '!=', '1');
 
-            return $query->whereNull('is_raw_material')
-            ->orWhere('is_raw_material','!=','1');
-
-        })
-        ->where('outlet_id',$outlet_id)
-        ->where('enabled', '1')
-        ->groupBy('name')
-        ->take(15)
-        ->get();
+            })
+            ->where('outlet_id', $outlet_id)
+            ->where('enabled', '1')
+            ->groupBy('name')
+            ->take(15)
+            ->get();
         $return_array = array();
 
         foreach ($products as $v) {
@@ -543,14 +556,10 @@ class ProductController extends Controller
         $term = strtolower(\Request::get('term'));
 
         $products = \App\Models\Article::select('id', 'code', 'description')
-        ->where('code', 'LIKE', '%' . $term . '%')
-        ->orWhere('description', 'LIKE', '%' . $term . '%')
-        ->groupBy('description')
-        ->take(5)->get();
-
-        //dd($products);
-
-
+            ->where('code', 'LIKE', '%' . $term . '%')
+            ->orWhere('description', 'LIKE', '%' . $term . '%')
+            ->groupBy('description')
+            ->take(5)->get();
 
 
         $return_array = array();
@@ -560,24 +569,23 @@ class ProductController extends Controller
             $return_array[] = array('value' => $v->description, 'id' => $v->id,);
         }
 
-        // dd($return_array);
 
         return \Response::json($return_array);
     }
+
     public function stocks_by_location()
     {
         $page_title = 'Stock Report';
         $page_description = 'counts';
         $outletuser = \App\Models\OutletUser::where('user_id', \Auth::user()->id)->select('outlet_id')->get()->toArray();
-       
-        if(\Auth::user()->hasRole('admins')){
+
+        if (\Auth::user()->hasRole('admins')) {
             $stores = \App\Models\PosOutlets::pluck('name', 'id')->all();
-    }else{
-        $stores = \App\Models\PosOutlets::whereIn('id', $outletuser)->pluck('name', 'id')->all();
-    }
-    $products = \App\Models\Product::pluck('name', 'id')->all();
-        // dd($store);
-        return view('admin.products.stocksbylocation', compact('page_title', 'page_description','stores','products'));
+        } else {
+            $stores = \App\Models\PosOutlets::whereIn('id', $outletuser)->pluck('name', 'id')->all();
+        }
+        $products = \App\Models\Product::pluck('name', 'id')->all();
+        return view('admin.products.stocksbylocation', compact('page_title', 'page_description', 'stores', 'products'));
     }
 
     public function stocks_by_location_post(Request $request)
@@ -587,33 +595,35 @@ class ProductController extends Controller
         $current_store = $request->store_id;
         $current_product = $request->product_id;
 
-        $transations =\App\Models\StockMove::
+        $transations = \App\Models\StockMove::
         leftjoin('products', 'products.id', '=', 'product_stock_moves.stock_id')
-        ->leftjoin('pos_outlets', 'pos_outlets.id', '=', 'product_stock_moves.store_id')
-        ->select('product_stock_moves.*', 'products.name as pname', 'pos_outlets.name')
-        ->orderBy('product_stock_moves.tran_date', 'DESC')
-        ->where(function ($query) use($current_store) {
-            if($current_store!='' && $current_store!=null)
-            $query->where('product_stock_moves.store_id', $current_store);
-        })
-        ->where(function ($query) use($current_product) {
-            if($current_product!='' && $current_product!=null)
-            $query->where('product_stock_moves.stock_id', $current_product);
+            ->leftjoin('pos_outlets', 'pos_outlets.id', '=', 'product_stock_moves.store_id')
+            ->select('product_stock_moves.*', 'products.name as pname', 'pos_outlets.name')
+            ->orderBy('product_stock_moves.tran_date', 'DESC')
+            ->where(function ($query) use ($current_store) {
+                if ($current_store != '' && $current_store != null)
+                    $query->where('product_stock_moves.store_id', $current_store);
+            })
+            ->where(function ($query) use ($current_product) {
+                if ($current_product != '' && $current_product != null)
+                    $query->where('product_stock_moves.stock_id', $current_product);
 
-        })
-        ->get();
+            })
+            ->get();
 
         $stores = \App\Models\PosOutlets::pluck('name', 'id')->all();
         $products = \App\Models\Product::pluck('name', 'id')->all();
-        // dd($store);
-        return view('admin.products.stocksbylocation', compact('page_title', 'page_description', 'transations', 'stores','products', 'current_store','current_product'));
+        return view('admin.products.stocksbylocation', compact('page_title', 'page_description', 'transations', 'stores', 'products', 'current_store', 'current_product'));
     }
-    public function delete_stockmoves_product($id){
-        $item=StockMove::where('id',$id)->delete();
+
+    public function delete_stockmoves_product($id)
+    {
+        $item = StockMove::where('id', $id)->delete();
         Flash::success('Stock Entry Delete Successfully');
 
         return redirect('/admin/product/stocks_count');
     }
+
     public function stocks_count(Request $request)
     {
         $page_title = 'Stock Feeds';
@@ -622,42 +632,39 @@ class ProductController extends Controller
         $todaydate = date('Y-m-d');
         $yesterdaydate = date('Y-m-d', strtotime($todaydate . ' -1 day'));
 
-        $startdate = $request->startdate?$request->startdate:$yesterdaydate;
-        $enddate = $request->enddate?$request->enddate:$todaydate;
-        $trans_type = $request['trans_type']?$request['trans_type']:'';
-        // dd($trans_type);
+        $startdate = $request->startdate ? $request->startdate : $yesterdaydate;
+        $enddate = $request->enddate ? $request->enddate : $todaydate;
+        $trans_type = $request['trans_type'] ? $request['trans_type'] : '';
 
         $transations = \App\Models\StockMove::select('product_stock_moves.*', 'products.name', 'pos_outlets.name as storename', 'products.id as pid')
-        ->leftjoin('products', 'products.id', '=', 'product_stock_moves.stock_id')
-        ->leftjoin('pos_outlets', 'pos_outlets.id', '=', 'product_stock_moves.store_id')
-        ->when($startdate&&$enddate,function ($q) use ($enddate,$startdate) {
-            $q->whereBetween('product_stock_moves.tran_date',array($startdate,$enddate));
-        })
-        ->when($trans_type,function ($q) use ($trans_type) {
-            $q->where('product_stock_moves.trans_type',$trans_type);
-        })
-        ->orderBy('product_stock_moves.tran_date', 'DESC')
-        ->paginate(40);
-        // dd($request->export);
-        // dd($transations);
-
-        if ($request->export){
-
-            $transations = \App\Models\StockMove::select('product_stock_moves.*', 'products.name', 'pos_outlets.name as storename', 'products.id as pid')
             ->leftjoin('products', 'products.id', '=', 'product_stock_moves.stock_id')
             ->leftjoin('pos_outlets', 'pos_outlets.id', '=', 'product_stock_moves.store_id')
-            ->when($startdate&&$enddate,function ($q) use ($enddate,$startdate) {
-                $q->whereBetween('product_stock_moves.tran_date',array($startdate,$enddate));
+            ->when($startdate && $enddate, function ($q) use ($enddate, $startdate) {
+                $q->whereBetween('product_stock_moves.tran_date', array($startdate, $enddate));
             })
-            ->when($trans_type,function ($q) use ($trans_type) {
-                $q->where('product_stock_moves.trans_type',$trans_type);
+            ->when($trans_type, function ($q) use ($trans_type) {
+                $q->where('product_stock_moves.trans_type', $trans_type);
             })
             ->orderBy('product_stock_moves.tran_date', 'DESC')
-            ->get();
-            return \Excel::download(new \App\Exports\StockFeedExport($transations,'Stock Feed Count',
-                $startdate,$enddate), "stock_count_view".date('d M Y').".xls");
+            ->paginate(40);
+
+        if ($request->export) {
+
+            $transations = \App\Models\StockMove::select('product_stock_moves.*', 'products.name', 'pos_outlets.name as storename', 'products.id as pid')
+                ->leftjoin('products', 'products.id', '=', 'product_stock_moves.stock_id')
+                ->leftjoin('pos_outlets', 'pos_outlets.id', '=', 'product_stock_moves.store_id')
+                ->when($startdate && $enddate, function ($q) use ($enddate, $startdate) {
+                    $q->whereBetween('product_stock_moves.tran_date', array($startdate, $enddate));
+                })
+                ->when($trans_type, function ($q) use ($trans_type) {
+                    $q->where('product_stock_moves.trans_type', $trans_type);
+                })
+                ->orderBy('product_stock_moves.tran_date', 'DESC')
+                ->get();
+            return \Excel::download(new \App\Exports\StockFeedExport($transations, 'Stock Feed Count',
+                $startdate, $enddate), "stock_count_view" . date('d M Y') . ".xls");
         }
-        return view('admin.products.stockscount', compact('page_title', 'page_description', 'transations','startdate','enddate','trans_type'));
+        return view('admin.products.stockscount', compact('page_title', 'page_description', 'transations', 'startdate', 'enddate', 'trans_type'));
     }
 
     public function stockentry_detail($id)
@@ -667,12 +674,12 @@ class ProductController extends Controller
 
         $transations = DB::table('product_stock_moves')
             // ->where('product_stock_moves.stock_id',$id)
-        ->leftjoin('products', 'products.id', '=', 'product_stock_moves.stock_id')
-        ->leftjoin('pos_outlets', 'pos_outlets.id', '=', 'product_stock_moves.store_id')
-        ->select('product_stock_moves.*', 'products.name', 'pos_outlets.name as storename', 'products.id as pid')
-        ->orderBy('product_stock_moves.tran_date', 'DESC')
-        ->where('master_id', $id)
-        ->paginate(40);
+            ->leftjoin('products', 'products.id', '=', 'product_stock_moves.stock_id')
+            ->leftjoin('pos_outlets', 'pos_outlets.id', '=', 'product_stock_moves.store_id')
+            ->select('product_stock_moves.*', 'products.name', 'pos_outlets.name as storename', 'products.id as pid')
+            ->orderBy('product_stock_moves.tran_date', 'DESC')
+            ->where('master_id', $id)
+            ->paginate(40);
 
         return view('admin.products.stockentries_detail', compact('page_title', 'page_description', 'transations'));
     }
@@ -683,7 +690,7 @@ class ProductController extends Controller
         $page_description = 'feed';
 
         $transations = \App\Models\StockMaster::orderBy('tran_date', 'DESC')
-        ->paginate(40);
+            ->paginate(40);
 
         return view('admin.products.stockentries', compact('page_title', 'page_description', 'transations'));
     }
@@ -694,67 +701,67 @@ class ProductController extends Controller
 
         $page_title = 'Stock Adjustment';
         $page_description = 'Add stock or remove stocks fr example damaged or others';
-        $current_fiscalyear=Fiscalyear::where('current_year',1)->where('org_id',Auth::user()->org_id)->first();
-        $reason=$request->reason?$request->reason:'';
-        $startdate=$request->startdate?$request->startdate:$current_fiscalyear->start_date;
-        $enddate=$request->enddate?$request->enddate:$current_fiscalyear->end_date;
-        $store=$request->store?$request->store:'';
-        $outletuser= \App\Models\OutletUser::where('user_id', \Auth::user()->id)->select('outlet_id')->get()->toArray();
+        $current_fiscalyear = Fiscalyear::where('current_year', 1)->where('org_id', Auth::user()->org_id)->first();
+        $reason = $request->reason ? $request->reason : '';
+        $startdate = $request->startdate ? $request->startdate : $current_fiscalyear->start_date;
+        $enddate = $request->enddate ? $request->enddate : $current_fiscalyear->end_date;
+        $store = $request->store ? $request->store : '';
+        $outletuser = \App\Models\OutletUser::where('user_id', \Auth::user()->id)->select('outlet_id')->get()->toArray();
         $stockadjustment = \App\Models\StockAdjustment::orderBy('id', 'desc')
-                            ->when($reason, function ($q) use ($reason) {
-                                $q->where('reason', $reason);
-                            })
-                            ->when($startdate && $enddate, function ($q) use ($startdate, $enddate) {
-                                $q->where('transaction_date', '>=', $startdate);
-                                $q->where('transaction_date', '<=', $enddate);
-                            })
-                            ->when($store, function ($q) use ($store) {
-                                $q->where('store_id', $store);
-                            })
-                            ->with('detail')
-                            ->get();
-            if(\Auth::user()->hasRole('admins')){
-                $stores = \App\Models\PosOutlets::select('name', 'id')->get();
-            }else{
-                $stores = \App\Models\PosOutlets::whereIn('id', $outletuser)->select('name', 'id')->get();
-            }
-        $reasons  = \App\Models\AdjustmentReason::select('name', 'id')->get();
+            ->when($reason, function ($q) use ($reason) {
+                $q->where('reason', $reason);
+            })
+            ->when($startdate && $enddate, function ($q) use ($startdate, $enddate) {
+                $q->where('transaction_date', '>=', $startdate);
+                $q->where('transaction_date', '<=', $enddate);
+            })
+            ->when($store, function ($q) use ($store) {
+                $q->where('store_id', $store);
+            })
+            ->with('detail')
+            ->get();
+        if (\Auth::user()->hasRole('admins')) {
+            $stores = \App\Models\PosOutlets::select('name', 'id')->get();
+        } else {
+            $stores = \App\Models\PosOutlets::whereIn('id', $outletuser)->select('name', 'id')->get();
+        }
+        $reasons = \App\Models\AdjustmentReason::select('name', 'id')->get();
 
         return view('admin.products.adjust.adjust', compact('page_title', 'page_description', 'stockadjustment', 'stores', 'reasons'));
     }
 
 
-     public function stock_adjustment_create()
+    public function stock_adjustment_create()
     {
 
 
         $page_title = 'Stock Adjustment Create';
         $page_description = 'Add stock or remove stocks fr example damaged or others';
-        $outletuser= \App\Models\OutletUser::where('user_id', \Auth::user()->id)->select('outlet_id')->get()->toArray();
+        $outletuser = \App\Models\OutletUser::where('user_id', \Auth::user()->id)->select('outlet_id')->get()->toArray();
         $stores = \App\Models\Store::pluck('name', 'id')->all();
-        
+
 
         $account_ledgers = \App\Models\COALedgers::where('group_id', env('COST_OF_GOODS_SOLD'))->pluck('name', 'id')->all();
 
         $units = \App\Models\ProductsUnit::select('id', 'name', 'symbol')->get();
         $products = \App\Models\Product::where('enabled', '1')
-        ->where(function ($q){
-            $q->where('parent_product_id',0);
-            $q->orWhereNull('parent_product_id');
-        })
-        ->get();
-        $reasons  = \App\Models\AdjustmentReason::pluck('name', 'id')->all();
-        if(\Auth::user()->hasRole('admins')){
+            ->where(function ($q) {
+                $q->where('parent_product_id', 0);
+                $q->orWhereNull('parent_product_id');
+            })
+            ->get();
+        $reasons = \App\Models\AdjustmentReason::pluck('name', 'id')->all();
+        if (\Auth::user()->hasRole('admins')) {
             $costcenter = \App\Models\PosOutlets::pluck('name', 'id')->all();
 
-        }else{
-            $costcenter = \App\Models\PosOutlets::whereIn('id', $outletuser)->pluck('name', 'id')->all();   
+        } else {
+            $costcenter = \App\Models\PosOutlets::whereIn('id', $outletuser)->pluck('name', 'id')->all();
         }
         $users = \App\User::pluck('username', 'id')->all();
         $departments = \App\Models\Department::pluck('deptname', 'departments_id')->all();
 
 
-        return view('admin.products.adjust.create', compact('page_title', 'page_description', 'stores', 'account_ledgers', 'units', 'products', 'reasons','costcenter','users','departments'));
+        return view('admin.products.adjust.create', compact('page_title', 'page_description', 'stores', 'account_ledgers', 'units', 'products', 'reasons', 'costcenter', 'users', 'departments'));
     }
 
     public function stock_adjustment_store(Request $request)
@@ -777,15 +784,15 @@ class ProductController extends Controller
         $units = $request->units;
 
 
-        $total_qty=0;
-        foreach ($quantity as $qty){
-            $total_qty+=$qty;
+        $total_qty = 0;
+        foreach ($quantity as $qty) {
+            $total_qty += $qty;
         }
         $stockmaster = new \App\Models\StockMaster();
         $stockmaster->stock_entry_id = 1;
         $stockmaster->tran_date = $request->transaction_date;
         $stockmaster->modules = "Stock Adjustments";
-        $stockmaster->comment =  " From Stock Adjustment";
+        $stockmaster->comment = " From Stock Adjustment";
         $stockmaster->reason_id = $stock_adjustment->comments;
         $stockmaster->total_value = $stock_adjustment->total_amount;
         $stockmaster->total_qty = $total_qty;
@@ -821,7 +828,6 @@ class ProductController extends Controller
                 $detail->save();
 
 
-
                 if ($request_reason) {
 
                     $stockMove = new StockMove();
@@ -834,14 +840,14 @@ class ProductController extends Controller
 
                     $stockMove->trans_type = $request_reason->trans_type;
                     $stockMove->reference = $request_reason->name . '_' . $stock_adjustment->id;
-                    $stockMove->order_reference =  $stock_adjustment->id;
-                    $stockMove->location=$request->store_id;
+                    $stockMove->order_reference = $stock_adjustment->id;
+                    $stockMove->location = $request->store_id;
                     if ($request_reason->reason_type == 'positive') {
 
-                        $stockMove->qty =  $quantity[$key]  * \StockHelper::getUnitPrice($detail->unit);
+                        $stockMove->qty = $quantity[$key] * \StockHelper::getUnitPrice($detail->unit);
                     } else {
 
-                        $stockMove->qty = '-' . $quantity[$key]  * \StockHelper::getUnitPrice($detail->unit);
+                        $stockMove->qty = '-' . $quantity[$key] * \StockHelper::getUnitPrice($detail->unit);
                     }
 
 
@@ -865,7 +871,7 @@ class ProductController extends Controller
 
     private function updateEntries($adj_id)
     {
-        $stock_adjustment =  \App\Models\StockAdjustment::find($adj_id);
+        $stock_adjustment = \App\Models\StockAdjustment::find($adj_id);
 
         $totalAmountBeforeTax = $stock_adjustment->total_amount;
         if ($stock_adjustment->entry_id && $stock_adjustment->entry_id != '0') {
@@ -881,13 +887,12 @@ class ProductController extends Controller
             $attributes['cr_total'] = $totalAmountBeforeTax;
             $attributes['source'] = 'AUTO_ADJUSTMENT';
             $attributes['currency'] = 'NPR';
-            $attributes['notes'] = "ADJUSTMENT ID No # ". $adj_id;
+            $attributes['notes'] = "ADJUSTMENT ID No # " . $adj_id;
             $entry = \App\Models\Entry::find($stock_adjustment->entry_id);
             $entry->update($attributes);
 
-            Entryitem::where('entry_id',$entry->id)->delete();
+            Entryitem::where('entry_id', $entry->id)->delete();
         } else {
-            // dd( \App\Models\Client::find($purchaseorder->supplier_id));
             //create the new entry items
             $attributes['entrytype_id'] = '16'; //Journal
             $attributes['tag_id'] = '2'; //Adjustment
@@ -900,7 +905,7 @@ class ProductController extends Controller
             $attributes['source'] = 'AUTO_ADJUSTMENT';
             $attributes['fiscal_year_id'] = \FinanceHelper::cur_fisc_yr()->id;
             $attributes['currency'] = 'NPR';
-            $attributes['notes'] = "Adjustment ID No # ". $stock_adjustment->id;
+            $attributes['notes'] = "Adjustment ID No # " . $stock_adjustment->id;
             $type = \App\Models\Entrytype::find(5);
             $attributes['number'] = \TaskHelper::generateId($type);
 
@@ -908,21 +913,20 @@ class ProductController extends Controller
         }
 
         // Debitte to Bank or cash account that we are already in
-        $order_product_type  = \App\Models\StockAdjustmentDetail::where('adjustment_id', $stock_adjustment->id)
-        ->select('products.product_type_id')
-        ->leftJoin('products','products.id','=','stock_adjustment_details.product_id')
-        ->distinct('product_type_id')->get();
+        $order_product_type = \App\Models\StockAdjustmentDetail::where('adjustment_id', $stock_adjustment->id)
+            ->select('products.product_type_id')
+            ->leftJoin('products', 'products.id', '=', 'stock_adjustment_details.product_id')
+            ->distinct('product_type_id')->get();
         foreach ($order_product_type as $opt) {
             if ($opt->product_type_id) {
 
                 $purchase_ledger_id = \App\Models\ProductTypeMaster::find($opt->product_type_id)->purchase_ledger_id;
                 $cogs_ledger_id = \App\Models\ProductTypeMaster::find($opt->product_type_id)->cogs_ledger_id;
                 $product_type_total_amount = \App\Models\StockAdjustmentDetail::where('adjustment_id', $stock_adjustment->id)
-                ->whereHas('product',function ($q) use ($opt) {
-                    $q->where('product_type_id', $opt->product_type_id);
-                })
-                ->sum(\DB::raw('total'));
-//                    dd($product_type_total_amount);
+                    ->whereHas('product', function ($q) use ($opt) {
+                        $q->where('product_type_id', $opt->product_type_id);
+                    })
+                    ->sum(\DB::raw('total'));
 
                 $sub_amount = new \App\Models\Entryitem();
                 $sub_amount->entry_id = $entry->id;
@@ -955,35 +959,33 @@ class ProductController extends Controller
 
     public function stock_adjustment_edit($id)
     {
-        // dd("check");
         $page_title = 'Stock Adjustment Edit';
         $page_description = 'Add stock or remove stocks fr example damaged or others';
 
         $stock_adjustment = \App\Models\StockAdjustment::find($id);
 
         $stock_adjustment_details = \App\Models\StockAdjustmentDetail::where('adjustment_id', $stock_adjustment->id)->get();
-        //dd($stock_adjustment_details);
 
         //$stores = \App\Models\Store::pluck('name', 'id')->all();
-        $outletuser=\App\Models\OutletUser::where('user_id', \Auth::user()->id)->select('outlet_id')->get()->toArray();
+        $outletuser = \App\Models\OutletUser::where('user_id', \Auth::user()->id)->select('outlet_id')->get()->toArray();
         $account_ledgers = \App\Models\COALedgers::where('group_id', env('COST_OF_GOODS_SOLD'))->pluck('name', 'id')->all();
 
         $units = \App\Models\ProductsUnit::select('id', 'name', 'symbol')->get();
         $products = \App\Models\Product::where('enabled', '1')
-        ->where(function ($q){
-            $q->where('parent_product_id',0);
-            $q->orWhereNull('parent_product_id');
-        })->get();
+            ->where(function ($q) {
+                $q->where('parent_product_id', 0);
+                $q->orWhereNull('parent_product_id');
+            })->get();
 
-        $reasons  = \App\Models\AdjustmentReason::pluck('name', 'id')->all();
-        if(\Auth::user()->hasRole('admins')){
+        $reasons = \App\Models\AdjustmentReason::pluck('name', 'id')->all();
+        if (\Auth::user()->hasRole('admins')) {
             $costcenter = \App\Models\PosOutlets::pluck('name', 'id')->all();
-        }else{
+        } else {
             $costcenter = \App\Models\PosOutlets::whereIn('id', $outletuser)->pluck('name', 'id')->all();
         }
         $users = \App\User::pluck('username', 'id')->all();
         $departments = \App\Models\Department::pluck('deptname', 'departments_id')->all();
-        return view('admin.products.adjust.edit', compact('departments','users','costcenter','page_title', 'page_description', 'account_ledgers', 'units', 'products', 'stock_adjustment', 'stock_adjustment_details', 'reasons'));
+        return view('admin.products.adjust.edit', compact('departments', 'users', 'costcenter', 'page_title', 'page_description', 'account_ledgers', 'units', 'products', 'stock_adjustment', 'stock_adjustment_details', 'reasons'));
     }
 
     public function stock_adjustment_update(Request $request, $id)
@@ -1018,17 +1020,16 @@ class ProductController extends Controller
         $units = $request->units;
 
 
-
         \App\Models\StockAdjustmentDetail::where('adjustment_id', $id)->delete();
-        $total_qty=0;
-        foreach ($quantity as $qty){
-            $total_qty+=$qty;
+        $total_qty = 0;
+        foreach ($quantity as $qty) {
+            $total_qty += $qty;
         }
 
         $stockmaster_attr['stock_entry_id'] = 1;
         $stockmaster_attr['tran_date'] = $request->transaction_date;
         $stockmaster_attr['modules'] = "Stock Adjustments";
-        $stockmaster_attr['comment'] =  " From Stock Adjustment";
+        $stockmaster_attr['comment'] = " From Stock Adjustment";
         $stockmaster_attr['total_value'] = $stock_adjustment->total_amount;
         $stockmaster_attr['total_qty'] = $total_qty;
         $stockmaster_attr['store_id'] = $request->store_id;
@@ -1036,12 +1037,11 @@ class ProductController extends Controller
         $stockmaster_attr['module_id'] = $stock_adjustment->id;
         $stockmaster_attr['active'] = 1;
 
-        $stockmaster=\App\Models\StockMaster::where('modules','Stock Adjustments')
-        ->where('module_id',$id)->first();
-//        dd($stock_adjustment);
+        $stockmaster = \App\Models\StockMaster::where('modules', 'Stock Adjustments')
+            ->where('module_id', $id)->first();
         $stockmaster->update($stockmaster_attr);
 
-        StockMove::where('master_id',$stockmaster->id)->delete();
+        StockMove::where('master_id', $stockmaster->id)->delete();
 
         $request_reason = \App\Models\AdjustmentReason::find($request->reason);
 
@@ -1060,7 +1060,6 @@ class ProductController extends Controller
                 $detail->save();
 
 
-
                 if ($request_reason) {
 
                     $stockMove = new StockMove();
@@ -1073,14 +1072,14 @@ class ProductController extends Controller
 
                     $stockMove->trans_type = $request_reason->trans_type;
                     $stockMove->reference = $request_reason->name . '_' . $stock_adjustment->id;
-                    $stockMove->order_reference =  $stock_adjustment->id;
+                    $stockMove->order_reference = $stock_adjustment->id;
 
                     if ($request_reason->reason_type == 'positive') {
 
-                        $stockMove->qty =  $quantity[$key]  * \StockHelper::getUnitPrice($detail->unit);
+                        $stockMove->qty = $quantity[$key] * \StockHelper::getUnitPrice($detail->unit);
                     } else {
 
-                        $stockMove->qty = '-' . $quantity[$key]  * \StockHelper::getUnitPrice($detail->unit);
+                        $stockMove->qty = '-' . $quantity[$key] * \StockHelper::getUnitPrice($detail->unit);
                     }
 
 
@@ -1125,12 +1124,12 @@ class ProductController extends Controller
 
                     $stockMove->trans_type = $request_reason->trans_type;
                     $stockMove->reference = $request_reason->name . '_' . $id;
-                    $stockMove->order_reference =  $id;
+                    $stockMove->order_reference = $id;
 
                     if ($request_reason->reason_type == 'positive') {
-                        $stockMove->qty = $quantity_new[$key]  * \StockHelper::getUnitPrice($detail->unit);
+                        $stockMove->qty = $quantity_new[$key] * \StockHelper::getUnitPrice($detail->unit);
                     } else {
-                        $stockMove->qty = '-' . $quantity_new[$key]  * \StockHelper::getUnitPrice($detail->unit);
+                        $stockMove->qty = '-' . $quantity_new[$key] * \StockHelper::getUnitPrice($detail->unit);
                     }
 
 
@@ -1162,20 +1161,20 @@ class ProductController extends Controller
 
 
         $adjdetails = StockAdjustmentDetail::where('adjustment_id', $id)->get();
-        $stockmaster=\App\Models\StockMaster::where('modules','Stock Adjustments')->where('module_id',$id)->delete();
+        $stockmaster = \App\Models\StockMaster::where('modules', 'Stock Adjustments')->where('module_id', $id)->delete();
 
 
         foreach ($adjdetails as $pd) {
 
-            $stockmove =  \App\Models\StockMove::where('stock_id', $pd->product_id)->where('order_no', $id)->where('trans_type', $old_trans_type)->where('reference', $old_reason_name . '_' . $id)->delete();
+            $stockmove = \App\Models\StockMove::where('stock_id', $pd->product_id)->where('order_no', $id)->where('trans_type', $old_trans_type)->where('reference', $old_reason_name . '_' . $id)->delete();
         }
 
 
         \App\Models\StockAdjustmentDetail::where('adjustment_id', $id)->delete();
         $stock_adjustment = \App\Models\StockAdjustment::find($id);
 
-        if($stock_adjustment->entry_id!=null){
-            Entryitem::where('entry_id',$stock_adjustment->entry_id)->delete();
+        if ($stock_adjustment->entry_id != null) {
+            Entryitem::where('entry_id', $stock_adjustment->entry_id)->delete();
             Entry::find($stock_adjustment->entry_id)->delete();
         }
         $stock_adjustment->delete();
@@ -1186,21 +1185,14 @@ class ProductController extends Controller
 
         return redirect('/admin/product/stock_adjustment');
     }
+
     public function stock_adjustment_getModalDelete($id)
     {
         $error = null;
-
-
-
         $modal_title = 'Want to delete Stock Adjustment';
-
         $stock_adjustment = \App\Models\StockAdjustment::find($id);
-
         $stock_adjustment_details = \App\Models\StockAdjustmentDetail::where('adjustment_id', $stock_adjustment->id)->get();
-
-
         $modal_route = route('admin.products.stock_adjustment.delete', array('id' => $stock_adjustment->id));
-
         $modal_body = "Are you Sure to Delete This?";
 
         return view('modal_confirmation', compact('error', 'modal_route', 'modal_title', 'modal_body'));
@@ -1212,7 +1204,6 @@ class ProductController extends Controller
 //
 //        $purchaseorder = \App\Models\StockAdjustment::find($orderId);
 //
-//        //dd($purchaseorder);
 //
 //        $reason = \App\Models\AdjustmentReason::find($purchaseorder->reason);
 //
@@ -1241,7 +1232,6 @@ class ProductController extends Controller
 //                $sub_amount->ledger_id = env('ADJUSTMENT_INVENTORY'); //Inventory ledger
 //                $sub_amount->amount =  $purchaseorder->total_amount;
 //                $sub_amount->narration = $reason->name; //$request->user_id
-//                //dd($sub_amount);
 //                $sub_amount->update();
 //
 //                // Debitte to Bank or cash account that we are already in
@@ -1251,7 +1241,6 @@ class ProductController extends Controller
 //                $cash_amount->org_id = \Auth::user()->org_id;
 //                $cash_amount->dc = 'D';
 //                $cash_amount->ledger_id = $purchaseorder->ledgers_id; // Purchase ledger if selected or ledgers from .env
-//                // dd($cash_amount);
 //                $cash_amount->amount   =  $purchaseorder->total_amount;
 //                $cash_amount->narration = $reason->name;
 //                $cash_amount->update();
@@ -1265,7 +1254,6 @@ class ProductController extends Controller
 //                $sub_amount->ledger_id = env('ADJUSTMENT_INVENTORY'); //Inventory ledger
 //                $sub_amount->amount =  $purchaseorder->total_amount;
 //                $sub_amount->narration = $reason->name; //$request->user_id
-//                //dd($sub_amount);
 //                $sub_amount->update();
 //
 //                // Debitte to Bank or cash account that we are already in
@@ -1275,7 +1263,6 @@ class ProductController extends Controller
 //                $cash_amount->org_id = \Auth::user()->org_id;
 //                $cash_amount->dc = 'C';
 //                $cash_amount->ledger_id =  $purchaseorder->ledgers_id; // Purchase ledger if selected or ledgers from .env
-//                // dd($cash_amount);
 //                $cash_amount->amount   =  $purchaseorder->total_amount;
 //                $cash_amount->narration = $reason->name;
 //                $cash_amount->update();
@@ -1304,7 +1291,6 @@ class ProductController extends Controller
 //                $sub_amount->ledger_id = env('ADJUSTMENT_INVENTORY'); //Client ledger
 //                $sub_amount->amount =  $purchaseorder->total_amount;
 //                $sub_amount->narration = $reason->name; //$request->user_id
-//                //dd($sub_amount);
 //                $sub_amount->save();
 //
 //                // Debitte to Bank or cash account that we are already in
@@ -1315,7 +1301,6 @@ class ProductController extends Controller
 //                $cash_amount->org_id = \Auth::user()->org_id;
 //                $cash_amount->dc = 'D';
 //                $cash_amount->ledger_id =  $purchaseorder->ledgers_id; // Puchase ledger if selected or ledgers from .env
-//                // dd($cash_amount);
 //                $cash_amount->amount   =   $purchaseorder->total_amount;
 //                $cash_amount->narration =  $reason->name;
 //                $cash_amount->save();
@@ -1330,7 +1315,6 @@ class ProductController extends Controller
 //                $sub_amount->ledger_id =  env('ADJUSTMENT_INVENTORY'); //Client ledger
 //                $sub_amount->amount =  $purchaseorder->total_amount;
 //                $sub_amount->narration = $reason->name; //$request->user_id
-//                //dd($sub_amount);
 //                $sub_amount->save();
 //
 //                // Debitte to Bank or cash account that we are already in
@@ -1341,7 +1325,6 @@ class ProductController extends Controller
 //                $cash_amount->org_id = \Auth::user()->org_id;
 //                $cash_amount->dc = 'C';
 //                $cash_amount->ledger_id = $purchaseorder->ledgers_id; // Puchase ledger if selected or ledgers from .env
-//                // dd($cash_amount);
 //                $cash_amount->amount   =   $purchaseorder->total_amount;
 //                $cash_amount->narration =  $reason->name;
 //                $cash_amount->save();
@@ -1355,16 +1338,8 @@ class ProductController extends Controller
 
     public function ajaxGetMenu(Request $request)
     {
-
-        if ($request->outlet_id != '') {
-
-            $menus = \App\Models\PosMenu::orderBy('id', 'desc')->where('outlet_id', $request->outlet_id)->get();
-        } else {
-
-            $menus = \App\Models\PosMenu::orderBy('id', 'desc')->get();
-        }
-
-        // dd($menus);
+        if ($request->outlet_id != '') $menus = \App\Models\PosMenu::orderBy('id', 'desc')->where('outlet_id', $request->outlet_id)->get();
+        else $menus = \App\Models\PosMenu::orderBy('id', 'desc')->get();
 
         $data = '<option value="">Select Menu...</option>';
 
@@ -1377,13 +1352,14 @@ class ProductController extends Controller
     }
 
 
-    public function transExcel($id,$type){
+    public function transExcel($id, $type)
+    {
         $transations = DB::table('product_stock_moves')
-        ->where('product_stock_moves.stock_id', $id)
-        ->leftjoin('products', 'products.id', '=', 'product_stock_moves.stock_id')
-        ->leftjoin('location', 'location.id', '=', 'product_stock_moves.store_id')
-        ->select('product_stock_moves.*', 'products.name', 'location.location_name')
-        ->get();
+            ->where('product_stock_moves.stock_id', $id)
+            ->leftjoin('products', 'products.id', '=', 'product_stock_moves.stock_id')
+            ->leftjoin('location', 'location.id', '=', 'product_stock_moves.store_id')
+            ->select('product_stock_moves.*', 'products.name', 'location.location_name')
+            ->get();
 
         $product = $this->course->find($id);
         $transData = [];
@@ -1398,202 +1374,169 @@ class ProductController extends Controller
         // ];
 
         foreach ($transations as $key => $result) {
-            if($result->trans_type == PURCHINVOICE){
+            if ($result->trans_type == PURCHINVOICE) {
 
                 $purchtype = 'Purchase';
 
-            }elseif($result->trans_type == SALESINVOICE){
+            } elseif ($result->trans_type == SALESINVOICE) {
 
                 $purchtype = 'Sale';
 
-            }elseif($result->trans_type == STOCKMOVEIN) {
+            } elseif ($result->trans_type == STOCKMOVEIN) {
 
-               $purchtype = 'Transfer';
+                $purchtype = 'Transfer';
 
-           }elseif ($result->trans_type == STOCKMOVEOUT) {
+            } elseif ($result->trans_type == STOCKMOVEOUT) {
 
-               $purchtype = 'Transfer';
+                $purchtype = 'Transfer';
 
-           }
-           elseif ($result->trans_type == OPENINGSTOCK) {
+            } elseif ($result->trans_type == OPENINGSTOCK) {
 
-               $purchtype = 'Opening Stock';
+                $purchtype = 'Opening Stock';
 
-           }
+            }
 
-           if($result->qty > 0){
-            $StockIn +=$result->qty;
-        }else{
-            $StockOut +=$result->qty;
+            if ($result->qty > 0) {
+                $StockIn += $result->qty;
+            } else {
+                $StockOut += $result->qty;
+            }
+
+            $tdata [] = [
+
+                'TransactionType' => $purchtype,
+                'Date' => $result->tran_date,
+                'Location' => $result->location_name,
+                'Quantity In' => ($result->qty > 0) ? $result->qty : '-',
+                'Quantity Out' => ($result->qty < 0) ? str_ireplace('-', '', $result->qty) : '-',
+                'Quantity On Hand(closing)' => $sum += $result->qty
+
+
+            ];
+
+
         }
 
+
         $tdata [] = [
+            'TransactionType' => '',
+            'Date' => '',
+            'Location' => 'Total',
+            'Quantity In' => $StockIn,
+            'Quantity Out' => str_ireplace('-', '', $StockOut),
+            'Quantity On Hand(closing)' => $StockIn + $StockOut,
+        ];
 
-            'TransactionType'=>$purchtype,
-            'Date'=>$result->tran_date,
-            'Location'=>$result->location_name,
-            'Quantity In'=>($result->qty > 0) ? $result->qty : '-',
-            'Quantity Out'=>($result->qty < 0) ? str_ireplace('-','',$result->qty) : '-',
-            'Quantity On Hand(closing)'=> $sum += $result->qty
-
+        $products = [
+            'Product Name', $product->name
 
         ];
 
 
+        return \Excel::download(new \App\Exports\ExcelExport($tdata, true, $products), "products_trans.{$type}");
+
     }
 
 
-    $tdata [] = [
-        'TransactionType'=>'',
-        'Date'=>'',
-        'Location'=>'Total',
-        'Quantity In'=>$StockIn,
-        'Quantity Out'=>str_ireplace('-','',$StockOut),
-        'Quantity On Hand(closing)'=>$StockIn+$StockOut,
-    ];
+    public function product_statement(Request $request)
+    {
+        $page_title = 'Product Statement';
+        $page_description = 'Search product to find stock ledger statement';
+        $products = \App\Models\Product::orderBy('ordernum')->where('enabled', '1')
+            ->where('org_id', Auth::user()->org_id)->orderBy('name', 'ASC')
+            ->pluck('name', 'id');
+        $current_product = $request->product_id;
 
-    $products = [
-        'Product Name',$product->name
+        $transations = \App\Models\StockMove::where(function ($query) use ($current_product) {
+            return $query->where('stock_id', $current_product);
+        })->where(function ($query) {
+            $start_date = \Request::get('start_date');
+            $end_date = \Request::get('end_date');
+            if ($start_date && $end_date) return $query->whereBetween('tran_date', [$start_date, $end_date]);
+        })->orderBy('id');
 
-    ];
+        $isExcel = false;
+        if ($request->submit && $request->submit == 'excel') {
+            $transations = $transations->get();
+            $view = view('admin.products.product-statement', compact('transations', 'isExcel'));
+            return \Excel::download(new \App\Exports\ExcelExportFromView($view), 'product_statement.xlsx');
+        }
+        $transations = $transations->paginate(50);
+        $isExcel = false;
+        return view('admin.products.statement', compact('transations', 'page_description', 'page_title', 'products', 'current_product', 'transations', 'isExcel'));
+    }
 
-        // dd($tdata);
-
-    return \Excel::download(new \App\Exports\ExcelExport($tdata,true,$products), "products_trans.{$type}");
-
-}
-
-
-public function product_statement(Request $request){
-
-    $page_title = 'Product Statement';
-    $page_description = 'Search product to find stock ledger statement';
-
-    $products = \App\Models\Product::orderBy('ordernum')->where('enabled', '1')
-    ->where('org_id', Auth::user()->org_id)->orderBy('name', 'ASC')
-    ->pluck('name', 'id');
-
-    $current_product = $request->product_id;
-
-
-
-    $transations = \App\Models\StockMove::where(function($query) use ($current_product){
-
-        return $query->where('stock_id',$current_product);
-    })->where(function($query){
-
-        $start_date = \Request::get('start_date');
-        $end_date = \Request::get('end_date');
-
-        if($start_date && $end_date){
-
-            return $query->whereBetween('tran_date',[$start_date,$end_date]);
+    public function multipledelete(Request $request)
+    {
+        $ids = $request->chkCourse;
+        Audit::log(Auth::user()->id, trans('admin/courses/general.audit-log.category'), trans('admin/courses/general.audit-log.msg-destroy', ['name' => 'Deleted multiple products']));
+        try {
+            $this->course->whereIn('id', $ids)->delete();
+            \App\Models\ProductModel::whereIn('product_id', $ids)->delete();
+            \App\Models\ProductSerialNumber::whereIn('product_id', $ids)->delete();
+            Flash::success(trans('admin/courses/general.status.deleted'));
 
 
+        } catch (\Exception $e) {
+
+            Flash::error("The selected Products Are Related With Invoice");
         }
 
 
-
-    })
-
-    ->orderBy('id');
-
-    $isExcel = false;
-    if($request->submit && $request->submit == 'excel' ){
-        $transations = $transations->get();
-        $view = view('admin.products.product-statement',compact('transations','isExcel'));
-        return \Excel::download(new \App\Exports\ExcelExportFromView($view), 'product_statement.xlsx');
-
+        return redirect('/admin/products');
     }
-    $transations = $transations->paginate(50);
 
-        // ->paginate(50);
+    public function stockLedger(Request $request)
+    {
 
-    $isExcel = false;
+        $page_title = 'Product Stock Ledger';
+        $page_description = 'Search product to find stock ledger statement';
 
+        $products = \App\Models\Product::orderBy('ordernum')->where('enabled', '1')
+            ->where('org_id', Auth::user()->org_id)->orderBy('name', 'ASC')
+            ->pluck('name', 'id');
 
-    return view('admin.products.statement', compact('transations','page_description','page_title','products','current_product','transations','isExcel'));
-
-}
-
-public function multipledelete(Request $request){
-
-   $ids = $request->chkCourse;
-   Audit::log(Auth::user()->id, trans('admin/courses/general.audit-log.category'), trans('admin/courses/general.audit-log.msg-destroy', ['name' => 'Deleted multiple products' ]));
-   try{
-
-    $this->course->whereIn('id',$ids)->delete();
-    \App\Models\ProductModel::whereIn('product_id', $ids)->delete();
-    \App\Models\ProductSerialNumber::whereIn('product_id', $ids)->delete();
-    Flash::success(trans('admin/courses/general.status.deleted'));
+        $current_product = $request->product_id;
 
 
-}catch(\Exception $e){
+        $transations = \App\Models\StockMove::where(function ($query) use ($current_product) {
 
-    Flash::error("The selected Products Are Related With Invoice");
-}
+            return $query->where('stock_id', $current_product);
+        })->where(function ($query) {
 
+            $start_date = \Request::get('start_date');
+            $end_date = \Request::get('end_date');
 
+            if ($start_date && $end_date) {
 
-return redirect('/admin/products');
-}
-
-public function stockLedger(Request $request){
-
-    $page_title = 'Product Stock Ledger';
-    $page_description = 'Search product to find stock ledger statement';
-
-    $products = \App\Models\Product::orderBy('ordernum')->where('enabled', '1')
-    ->where('org_id', Auth::user()->org_id)->orderBy('name', 'ASC')
-    ->pluck('name', 'id');
-
-    $current_product = $request->product_id;
+                return $query->whereDate('tran_date', '>=', $start_date)->whereDate('tran_date', '<=', $end_date);
 
 
+            }
 
-    $transations = \App\Models\StockMove::where(function($query) use ($current_product){
 
-        return $query->where('stock_id',$current_product);
-    })->where(function($query){
+        })
+            ->orderBy('id');
 
-        $start_date = \Request::get('start_date');
-        $end_date = \Request::get('end_date');
-
-        if($start_date && $end_date){
-
-            return $query->whereDate('tran_date','>=',$start_date)->whereDate('tran_date','<=',$end_date);
-
+        $isExcel = false;
+        if ($request->submit && $request->submit == 'excel') {
+            $transations = $transations->get();
+            $view = view('admin.products.product-statement', compact('transations', 'isExcel'));
+            return \Excel::download(new \App\Exports\ExcelExportFromView($view), 'product_statement.xlsx');
 
         }
-
-
-
-    })
-
-    ->orderBy('id');
-
-    $isExcel = false;
-    if($request->submit && $request->submit == 'excel' ){
-        $transations = $transations->get();
-        $view = view('admin.products.product-statement',compact('transations','isExcel'));
-        return \Excel::download(new \App\Exports\ExcelExportFromView($view), 'product_statement.xlsx');
-
-    }
-    $transations = $transations->paginate(50);
+        $transations = $transations->paginate(50);
 
         // ->paginate(50);
 
-    $isExcel = false;
+        $isExcel = false;
 
 
+        return view('admin.products.stock-ledger', compact('transations', 'page_description', 'page_title', 'products', 'current_product', 'transations', 'isExcel'));
 
-        // dd('');
+    }
 
-    return view('admin.products.stock-ledger', compact('transations','page_description','page_title','products','current_product','transations','isExcel'));
-
-}
-
-public function stocksOverview()
+    public function stocksOverview()
     {
         $page_title = 'Store Overview';
         $page_description = 'Export Store Overview Report';
@@ -1618,108 +1561,106 @@ public function stocksOverview()
             $date = $cal->nep_to_eng($enddate[0], $enddate[1], $enddate[2]);
             $enddate = $date['year'] . '-' . $date['month'] . '-' . $date['date'];
 
-        } elseif(\Request::get('start_date') != '' && \Request::get('end_date') != '') {
+        } elseif (\Request::get('start_date') != '' && \Request::get('end_date') != '') {
             $startdate = \Request::get('start_date');
             $enddate = \Request::get('end_date');
-        }else{
-            $fyc=\App\Models\Fiscalyear::where('fiscal_year',$fiscal_year)->first();
+        } else {
+            $fyc = \App\Models\Fiscalyear::where('fiscal_year', $fiscal_year)->first();
             $startdate = $fyc->start_date;
-            $enddate =$fyc->end_date;
+            $enddate = $fyc->end_date;
         }
 
         $prefix = '';
         if ($fiscal_year != $current_fiscal->fiscal_year) {
             $prefix = Fiscalyear::where('fiscal_year', $fiscal_year)->first()->numeric_fiscal_year . '_';
         }
-        $categories=\App\Models\ProductCategory::where('org_id',1)->pluck('name','id')->all();
-        // dd($categories);
+        $categories = \App\Models\ProductCategory::where('org_id', 1)->pluck('name', 'id')->all();
 
-        $productCategorylists= request()->category_id ? [request()->category_id] :\App\Models\ProductCategory::where('org_id',1)->pluck('id');
-        $filter_category_name= request()->category_id ?\App\Models\ProductCategory::find( request()->category_id)->name : null;
-        $productlistwithgrn= \App\Models\Product::select('products.id','products.name','products.category_id')
-        ->whereIn('category_id',$productCategorylists)
-        // ->rightJoin('grn_details','grn_details.product_id','=','products.id')
-        //
-        ->get();
-        $current_store=\Request::get('outlet_id')?\Request::get('outlet_id'):3;
-        $outlet_name=\App\Models\PosOutlets::find($current_store)->name;
+        $productCategorylists = request()->category_id ? [request()->category_id] : \App\Models\ProductCategory::where('org_id', 1)->pluck('id');
+        $filter_category_name = request()->category_id ? \App\Models\ProductCategory::find(request()->category_id)->name : null;
+        $productlistwithgrn = \App\Models\Product::select('products.id', 'products.name', 'products.category_id')
+            ->whereIn('category_id', $productCategorylists)
+            // ->rightJoin('grn_details','grn_details.product_id','=','products.id')
+            //
+            ->get();
+        $current_store = \Request::get('outlet_id') ? \Request::get('outlet_id') : 3;
+        $outlet_name = \App\Models\PosOutlets::find($current_store)->name;
 //anamol
-        $dataarray=$productlistwithgrn->groupby('category_id');
-        foreach($dataarray as $category_id=>$products){
-            $category_name=\App\Models\ProductCategory::find($category_id)->name;
-            foreach($products as $product){
-                $opening_detail=\App\Models\StockAdjustmentDetail::select(DB::raw("SUM(qty) as quantity,SUM(total) as total, AVG(price) as rate"))
-                ->where('product_id',$product->id)
-                ->whereIn('adjustment_id',\App\Models\StockAdjustment::where('reason',5)->where('store_id',$current_store)
-                    ->when($startdate && $enddate, function ($q) use($startdate,$enddate) {
-                        return $q->wherebetween('transaction_date',[$startdate,$enddate]);
-                    })->pluck('id'))//opening stock only
-               ->first();
-                $records[$category_name][$product->name]['opening']=$opening_detail;
+        $dataarray = $productlistwithgrn->groupby('category_id');
+        foreach ($dataarray as $category_id => $products) {
+            $category_name = \App\Models\ProductCategory::find($category_id)->name;
+            foreach ($products as $product) {
+                $opening_detail = \App\Models\StockAdjustmentDetail::select(DB::raw("SUM(qty) as quantity,SUM(total) as total, AVG(price) as rate"))
+                    ->where('product_id', $product->id)
+                    ->whereIn('adjustment_id', \App\Models\StockAdjustment::where('reason', 5)->where('store_id', $current_store)
+                        ->when($startdate && $enddate, function ($q) use ($startdate, $enddate) {
+                            return $q->wherebetween('transaction_date', [$startdate, $enddate]);
+                        })->pluck('id'))//opening stock only
+                    ->first();
+                $records[$category_name][$product->name]['opening'] = $opening_detail;
 
-                $purchase_receipt=\App\Models\PurchaseOrderDetail::select(DB::raw("SUM(quantity_recieved) as quantity, SUM(total) as total,AVG(unit_price) as rate"))
-                ->where('product_id',$product->id)
-                ->whereIn('order_no',\App\Models\PurchaseOrder::where('into_stock_location',$current_store)
-                    ->when($startdate && $enddate, function ($q) use($startdate,$enddate) {
-                        return $q->wherebetween('bill_date',[$startdate,$enddate]);
-                    })->pluck('id'))//opening stock only
-               ->first();
-                $records[$category_name][$product->name]['receipt']=$purchase_receipt;
+                $purchase_receipt = \App\Models\PurchaseOrderDetail::select(DB::raw("SUM(quantity_recieved) as quantity, SUM(total) as total,AVG(unit_price) as rate"))
+                    ->where('product_id', $product->id)
+                    ->whereIn('order_no', \App\Models\PurchaseOrder::where('into_stock_location', $current_store)
+                        ->when($startdate && $enddate, function ($q) use ($startdate, $enddate) {
+                            return $q->wherebetween('bill_date', [$startdate, $enddate]);
+                        })->pluck('id'))//opening stock only
+                    ->first();
+                $records[$category_name][$product->name]['receipt'] = $purchase_receipt;
 
-                $receipt_return=\App\Models\SupplierReturnDetail::select(DB::raw("SUM(return_quantity) as quantity, SUM(return_total) as total,AVG(return_price) as rate"))
-                ->where('product_id',$product->id)
-                ->whereIn('supplier_return_id',\App\Models\SupplierReturn::where('into_stock_location',$current_store)
-                ->when($startdate && $enddate, function ($q) use($startdate,$enddate) {
-                    return $q->wherebetween('return_date',[$startdate,$enddate]);
-                })->pluck('id'))//opening stock only
-           ->first();
-                $records[$category_name][$product->name]['receipt_return']=$receipt_return;
+                $receipt_return = \App\Models\SupplierReturnDetail::select(DB::raw("SUM(return_quantity) as quantity, SUM(return_total) as total,AVG(return_price) as rate"))
+                    ->where('product_id', $product->id)
+                    ->whereIn('supplier_return_id', \App\Models\SupplierReturn::where('into_stock_location', $current_store)
+                        ->when($startdate && $enddate, function ($q) use ($startdate, $enddate) {
+                            return $q->wherebetween('return_date', [$startdate, $enddate]);
+                        })->pluck('id'))//opening stock only
+                    ->first();
+                $records[$category_name][$product->name]['receipt_return'] = $receipt_return;
 
-                $issue=\App\Models\InvoiceDetail::select(DB::raw("SUM(quantity) as quantity,SUM(total) as total, AVG(price) as rate"))
-                ->where('product_id',$product->id)
-                ->whereIn('invoice_id',\App\Models\Invoice::where('outlet_id',$current_store)
-                    ->when($startdate && $enddate, function ($q) use($startdate,$enddate) {
-                        return $q->wherebetween('bill_date',[$startdate,$enddate]);
-                    })->pluck('id'))
-               ->first();
-                $records[$category_name][$product->name]['issue']=$issue;
+                $issue = \App\Models\InvoiceDetail::select(DB::raw("SUM(quantity) as quantity,SUM(total) as total, AVG(price) as rate"))
+                    ->where('product_id', $product->id)
+                    ->whereIn('invoice_id', \App\Models\Invoice::where('outlet_id', $current_store)
+                        ->when($startdate && $enddate, function ($q) use ($startdate, $enddate) {
+                            return $q->wherebetween('bill_date', [$startdate, $enddate]);
+                        })->pluck('id'))
+                    ->first();
+                $records[$category_name][$product->name]['issue'] = $issue;
 
-                $invoice_ids = \App\Models\Invoice::select( 'invoice.*')
-                ->leftjoin('invoice_meta', 'invoice.id', '=', 'invoice_meta.invoice_id')
-                ->when($startdate && $enddate, function ($q) use($startdate,$enddate) {
-                    return $q->wherebetween('invoice.bill_date',[$startdate,$enddate]);
-                })
-                ->where('outlet_id',$current_store)
-                ->where('invoice.org_id', \Auth::user()->org_id)
-                ->where('invoice_meta.is_bill_active', 0)
-                ->pluck('invoice.id');
+                $invoice_ids = \App\Models\Invoice::select('invoice.*')
+                    ->leftjoin('invoice_meta', 'invoice.id', '=', 'invoice_meta.invoice_id')
+                    ->when($startdate && $enddate, function ($q) use ($startdate, $enddate) {
+                        return $q->wherebetween('invoice.bill_date', [$startdate, $enddate]);
+                    })
+                    ->where('outlet_id', $current_store)
+                    ->where('invoice.org_id', \Auth::user()->org_id)
+                    ->where('invoice_meta.is_bill_active', 0)
+                    ->pluck('invoice.id');
 
-                $issue_return=\App\Models\InvoiceDetail::select(DB::raw("SUM(quantity) as quantity,SUM(total) as total, AVG(price) as rate"))
-                ->where('product_id',$product->id)
-                ->whereIn('invoice_id',$invoice_ids)
-               ->first();
-                $records[$category_name][$product->name]['issue_return']=$issue_return;
+                $issue_return = \App\Models\InvoiceDetail::select(DB::raw("SUM(quantity) as quantity,SUM(total) as total, AVG(price) as rate"))
+                    ->where('product_id', $product->id)
+                    ->whereIn('invoice_id', $invoice_ids)
+                    ->first();
+                $records[$category_name][$product->name]['issue_return'] = $issue_return;
 
-                $adjustment=\App\Models\StockAdjustmentDetail::select(DB::raw("SUM(qty) as quantity,SUM(total) as total, AVG(price) as rate"))
-                ->where('product_id',$product->id)
-                ->whereIn('adjustment_id',\App\Models\StockAdjustment::where('reason','!=',5)->where('store_id',$current_store)
-                    ->when($startdate && $enddate, function ($q) use($startdate,$enddate) {
-                        return $q->wherebetween('transaction_date',[$startdate,$enddate]);
-                    })->pluck('id'))//opening stock only
-               ->first();
-                $records[$category_name][$product->name]['adjustment']=$adjustment;
+                $adjustment = \App\Models\StockAdjustmentDetail::select(DB::raw("SUM(qty) as quantity,SUM(total) as total, AVG(price) as rate"))
+                    ->where('product_id', $product->id)
+                    ->whereIn('adjustment_id', \App\Models\StockAdjustment::where('reason', '!=', 5)->where('store_id', $current_store)
+                        ->when($startdate && $enddate, function ($q) use ($startdate, $enddate) {
+                            return $q->wherebetween('transaction_date', [$startdate, $enddate]);
+                        })->pluck('id'))//opening stock only
+                    ->first();
+                $records[$category_name][$product->name]['adjustment'] = $adjustment;
             }
         }
-        // dd($records);
         if ($op == 'excel') {
 
             $date = date('Y-m-d');
             $title = 'Store Overview Report';
-            return \Excel::download(new \App\Exports\StoreOverviewExcelExport($title,$records,$fiscal_year,$startdate,$enddate,$outlet_name,$filter_category_name), "store_overview_{$date}.xls");
+            return \Excel::download(new \App\Exports\StoreOverviewExcelExport($title, $records, $fiscal_year, $startdate, $enddate, $outlet_name, $filter_category_name), "store_overview_{$date}.xls");
 
         }
         $title = 'Store Overview Report';
-        return view('admin.products.storeoverview', compact('outlet_name','page_description', 'page_title', 'outlets', 'allFiscalYear', 'fiscal_year','records','title','startdate','enddate','categories','filter_category_name'));
+        return view('admin.products.storeoverview', compact('outlet_name', 'page_description', 'page_title', 'outlets', 'allFiscalYear', 'fiscal_year', 'records', 'title', 'startdate', 'enddate', 'categories', 'filter_category_name'));
     }
 
 }

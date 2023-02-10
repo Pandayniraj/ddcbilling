@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class InvoicePayment extends Model
 {
@@ -14,7 +15,9 @@ class InvoicePayment extends Model
     /**
      * @var array
      */
-    protected $fillable = ['date', 'invoice_id', 'return_id', 'purchase_id', 'reference_no', 'transaction_id', 'paid_by', 'cheque_no', 'cc_no', 'cc_holder', 'cc_month', 'cc_year', 'cc_type', 'amount', 'currency', 'attachment', 'type', 'note', 'pos_paid', 'pos_balance', 'approval_code', 'created_by'];
+    protected $fillable = ['date', 'invoice_id', 'return_id', 'purchase_id', 'reference_no', 'transaction_id', 'paid_by',
+        'cheque_no', 'cc_no', 'cc_holder', 'cc_month', 'cc_year', 'cc_type', 'amount', 'currency', 'attachment', 'type',
+        'note', 'pos_paid', 'pos_balance', 'approval_code', 'created_by'];
 
     /**
      * @return bool
@@ -52,13 +55,12 @@ class InvoicePayment extends Model
         return $this->belongsTo(\App\Models\Paymentmethod::class, 'paid_by');
     }
 
-    public function sale()
-    {
-        return $this->belongsTo(\App\Models\Orders::class, 'sale_id');
-    }
-
     public function purchase()
     {
         return $this->belongsTo(\App\Models\PurchaseOrder::class, 'purchase_id');
+    }
+    public function invoice() : BelongsTo
+    {
+        return $this->belongsTo(Invoice::class, 'invoice_id');
     }
 }

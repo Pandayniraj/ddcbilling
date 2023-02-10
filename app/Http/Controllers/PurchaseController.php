@@ -174,7 +174,6 @@ class PurchaseController extends Controller
         $suppliers = Client::where('relation_type','supplier')->pluck('name','id')->all();
         $currency = \App\Models\Country::whereEnabled('1')->pluck('currency_name','currency_code as id')->all();
 
-       // dd($currency);
         return view('admin.purchase.index', compact('orders','currency', 'page_title', 'page_description','suppliers'));
     }
 
@@ -188,9 +187,7 @@ class PurchaseController extends Controller
         $page_title = 'Purchase';
         $page_description = 'View Purchase';
         $orderDetails = PurchaseOrderDetail::where('order_no', $ord->id)->get();
-        //dd($orderDetails);
         $imagepath = \Auth::user()->organization->logo;
-        // dd($imagepath);
 
         return view('admin.purchase.show', compact('ord', 'imagepath', 'page_title', 'page_description', 'orderDetails'));
     }
@@ -238,7 +235,6 @@ class PurchaseController extends Controller
         $fiscal_years = \App\Models\Fiscalyear::pluck('fiscal_year as name', 'id')->all();
         //$currency = \DB::select("`select * from countries order by -display_order DESC`");
         $currency = \App\Models\Country::select('*')->whereEnabled('1')->orderByDesc('id')->get();
-        //dd($currency);
         $ledger_all=\app\Models\COALedgers::pluck('name','id');
         return view('admin.purchase.create', compact('page_title', 'productlocation', 'users', 'order_count', 'page_description', 'order', 'orderDetail', 'products', 'clients', 'prod_unit', 'projects', 'paid_through', 'fiscal_years','currency','ledger_all'));
     }
@@ -248,7 +244,6 @@ class PurchaseController extends Controller
 
         if (\Auth::user()->hasRole('admins')) {
             $outlets = \App\Models\PosOutlets::get();
-            // dd($outlets);
         } else {
             $outletusers = \App\Models\OutletUser::where('user_id', \Auth::user()->id)->get()->pluck('outlet_id');
             $outlets = \App\Models\PosOutlets::whereIn('id', $outletusers)
@@ -259,8 +254,6 @@ class PurchaseController extends Controller
 
         return $outlets;
     }
-
-
 
     private function convertdate($date)
     {
@@ -274,9 +267,7 @@ class PurchaseController extends Controller
 
     public function store(Request $request)
     {
-
         $order_attributes = $request->all();
-// dd($order_attributes);
         if ($request->datetype == 'nep') {
             $order_attributes['bill_date'] = $this->convertdate($order_attributes['bill_date']);
             $order_attributes['due_date'] = $this->convertdate($order_attributes['due_date']);
@@ -408,7 +399,7 @@ class PurchaseController extends Controller
         $debit_account = $request->debit_account;
         $credit_account = $request->credit_account;
         $amount = $request->amount;
-        $method = $request->method;
+        $method = @$request->method??'';
         $description = $request->description;
         foreach ($cost_type as $key=>$item){
             if ($item != '') {
@@ -417,7 +408,7 @@ class PurchaseController extends Controller
                 $importpurchase->cost_type=$cost_type[$key];
                 $importpurchase->product_id=$cost_product_id[$key];
                 $importpurchase->amount=$amount[$key];
-                $importpurchase->method=$method[$key];
+                $importpurchase->method=@$method[$key]??'';
                 $importpurchase->debit_account_ledger_id=$debit_account[$key];
                 $importpurchase->credit_account_ledger_id=$credit_account[$key];
                 $importpurchase->description=$description[$key];
@@ -490,7 +481,6 @@ class PurchaseController extends Controller
         }
 
         // $this->ConfirmPurchase($purchaseorder,true);
-        //dd("DO");
 
         return redirect('/admin/purchase?type=' . $type);
     }
@@ -523,7 +513,6 @@ class PurchaseController extends Controller
         $page_description = 'Edit Purchase';
         $order = PurchaseOrder::where('id', $id)->first();
         $orderDetails = PurchaseOrderDetail::where('order_no', $id)->get();
-//        dd($orderDetails);
 
         if (\Request::get('type') == 'assets') {
             $products = Product::select('id', 'name','product_code')->where('is_fixed_assets', '1')->get();
@@ -575,7 +564,6 @@ class PurchaseController extends Controller
                 $fiscal_year = \App\Models\Fiscalyear::findOrFail($request->fiscal_year);
                 $order_attributes['fiscal_year'] = $fiscal_year->fiscal_year;
                 $order_attributes['fiscal_year_id'] = $fiscal_year->id;
-                //dd($order_attributes);
             }
 
             if ($request->datetype == 'nep') {
@@ -597,7 +585,6 @@ class PurchaseController extends Controller
             foreach ($purchasedetails as $pd) {
                 $stockmove = StockMove::where('trans_type', PURCHINVOICE)->where('stock_id', $pd->product_id)->where('reference', 'store_in_' . $purchaseorder->id)->delete();
             }
-            //dd($stockmove);
 
             $purchasedetails = PurchaseOrderDetail::where('order_no', $purchaseorder->id)->delete();
 
@@ -610,7 +597,6 @@ class PurchaseController extends Controller
             $tax = $request->tax_type;
             $tax_amount = $request->tax_amount;
             $total = $request->total;
-            // dd($request->order_id);
 
             foreach ($product_id as $key => $value) {
                 if ($value != '') {
@@ -702,7 +688,6 @@ class PurchaseController extends Controller
                     $detail->total = $total_custom[$key];
                     $detail->is_inventory = 0;
                     //$detail->date = date('Y-m-d H:i:s');
-                    //  dd($detail);
 
                     $detail->save();
                 }
@@ -710,7 +695,6 @@ class PurchaseController extends Controller
 
             if ($request->product_id_new != null) {
 
-                // dd($request->description_new);
                 $product_id_new = $request->product_id_new;
                 $ticket_new = $request->ticket_new;
                 $price_new = $request->price_new;
@@ -748,7 +732,6 @@ class PurchaseController extends Controller
                     $detail->is_inventory = 1;
                     //$detail->date = date('Y-m-d H:i:s');
 
-                    // dd($detail);
                     $detail->save();
 
                     // stockMove information
@@ -817,7 +800,7 @@ class PurchaseController extends Controller
             $debit_account = $request->debit_account;
             $credit_account = $request->credit_account;
             $amount = $request->amount;
-            $method = $request->method;
+            $method = @$request->method??'';
             $description = $request->description;
             foreach ($cost_type as $key=>$item){
                 if ($item != '') {
@@ -826,7 +809,7 @@ class PurchaseController extends Controller
                     $importpurchase->cost_type=$cost_type[$key];
                     $importpurchase->product_id=$cost_product_id[$key];
                     $importpurchase->amount=$amount[$key];
-                    $importpurchase->method=$method[$key];
+                    $importpurchase->method=@$method[$key]??'';
                     $importpurchase->debit_account_ledger_id=$debit_account[$key];
                     $importpurchase->credit_account_ledger_id=$credit_account[$key];
                     $importpurchase->description=$description[$key];
@@ -944,7 +927,6 @@ class PurchaseController extends Controller
     {
         $ord = $this->purchaseorder->find($id);
         $orderDetails = PurchaseOrderDetail::where('order_no', $id)->get();
-        //dd($orderDetails);
         $imagepath = \Auth::user()->organization->logo;
 
         return view('admin.purchase.print', compact('ord', 'imagepath', 'orderDetails'));
@@ -1073,7 +1055,6 @@ class PurchaseController extends Controller
                         ->whereNotNull('purchase_id')->get()->groupBy('purchase_id');
 
         $purchaseToPay = PurchaseOrder::whereIn('payment_status',['Pending','Partial'])
-
                 ->orWhereNull('payment_status')
                 ->get();
 
@@ -1101,7 +1082,6 @@ class PurchaseController extends Controller
         } else {
             $confirm_purchase = $this->purchaseorder->find($id);
         }
-        //dd($confirm_purchase);
         if (!$confirm_purchase->ledger_id) {
             Flash::warning('Please select the legder id');
 
@@ -1307,7 +1287,6 @@ class PurchaseController extends Controller
         } catch (\Exception $e) {
         }
 
-        //dd("OK");
     }
 
     private function updateEntries($orderId)
@@ -1344,7 +1323,6 @@ class PurchaseController extends Controller
             $sub_amount->ledger_id = \App\Models\Client::find($purchaseorder->supplier_id)->ledger_id; //Client ledger
             $sub_amount->amount = $purchaseorder->total;
             $sub_amount->narration = 'Amount to pay to supplier'; //$request->user_id
-            //dd($sub_amount);
             $sub_amount->update();
 
             // Debitte to Bank or cash account that we are already in
@@ -1438,7 +1416,6 @@ class PurchaseController extends Controller
             $sub_amount->ledger_id = \App\Models\Client::find($purchaseorder->supplier_id)->ledger_id; //Client ledger
             $sub_amount->amount = $purchaseorder->total;
             $sub_amount->narration = 'Amount to pay to supplier'; //$request->user_id
-            //dd($sub_amount);
             $sub_amount->save();
 
             // Debitte to Bank or cash account that we are already in

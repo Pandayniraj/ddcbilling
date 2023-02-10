@@ -545,6 +545,7 @@ Route::group(['middleware' =>  ['iptracker' , 'authorize']], function () {
 
         Route::get('pos-outlets/{id}/confirm-delete/adduser', ['as' => 'admin.hotel.pos-outlets.confirm-delete.adduser', 'uses' => 'PosOutletsController@getModalDeleteUser']);
         Route::get('pos-outlet/{id}/delete/adduser', ['as' => 'admin.pos-outlets.adduser.delete', 'uses' => 'PosOutletsController@destroyUser']);
+        Route::post('ajax-request/get-pos-outlet', ['as' => 'admin.project.get-outlet', 'uses' => 'PosOutletsController@getOutlet']);
 
 
      //BiometricController
@@ -1066,6 +1067,17 @@ Route::group(['middleware' =>  ['iptracker' , 'authorize']], function () {
         Route::get('products/{courseId}/delete', ['as' => 'admin.products.delete',           'uses' => 'ProductController@destroy']);
         Route::get('products/{courseId}/enable', ['as' => 'admin.products.enable',           'uses' => 'ProductController@enable']);
         Route::get('products/{courseId}/disable', ['as' => 'admin.products.disable',          'uses' => 'ProductController@disable']);
+
+        // Product Pricing
+        Route::get('product-pricing/{id}', ['as' => 'admin.product-pricing.index', 'uses' => 'ProductPriceController@index']);
+        Route::get('product-pricing/{id}/create', ['as' => 'admin.product-pricing.create', 'uses' => 'ProductPriceController@create']);
+        Route::post('product-pricing/{id}', ['as' => 'admin.product-pricing.store', 'uses' => 'ProductPriceController@store']);
+        // Route::get('product-pricing/{id}', ['as' => 'admin.product-pricing.show', 'uses' => 'ProductPriceController@show']);
+        Route::patch('update-product-pricing/{id}', ['as' => 'admin.product-pricing.update', 'uses' => 'ProductPriceController@update']);
+        Route::get('destroy-product-pricing/{id}', ['as' => 'admin.product-pricing.destroy', 'uses' => 'ProductPriceController@destroy']);
+        Route::get('product-pricing/{id}/edit', ['as' => 'admin.product-pricing.edit', 'uses' => 'ProductPriceController@edit']);
+        Route::get('product-pricing/{id}/confirm-delete', ['as' => 'admin.product-pricing.confirm-delete', 'uses' => 'ProductPriceController@getModalDelete']);
+        Route::post('validate-product-pricing', ['as' => 'admin.product-pricing.validate-request', 'uses' => 'ProductPriceController@validateRequest']);
 
         Route::get('product/stocks_count', ['as' => 'admin.products.stocks_count', 'uses' => 'ProductController@stocks_count']);
         Route::get('product/stocks_overview', ['as' => 'admin.product.stocks_overview',  'uses' => 'ProductController@stocksOverview']);
@@ -2144,8 +2156,10 @@ Route::group(['middleware' =>  ['iptracker' , 'authorize']], function () {
         Route::get('stock/edit',['as'=>'admin.stock.stockedit', 'uses'=>'StockController@stockedit']);
         Route::get('stock/destory',['as'=>'admin.stock.delete_stock_detail', 'uses'=>'StockController@delete_stock_detail']);
 
-
-
+        // Stock return
+        Route::get('stock/return/{id}', ['as' => 'admin.stock.return',   'uses' => 'StockController@return']);
+        Route::post('stock/save_return', ['as' => 'admin.stock.save_return',   'uses' => 'StockController@saveReturn']);
+        Route::post('stock/get-opening-stock-price', ['as' => 'admin.stock.get-opening-stock-price',   'uses' => 'StockController@getOpeningStockPrice']);
 
         Route::get('stock/category', ['as' => 'admin.stock.category',   'uses' => 'StockController@category']);
         Route::post('stock/save_category', ['as' => 'admin.stock.save_category',   'uses' => 'StockController@saveCategory']);
@@ -2183,14 +2197,6 @@ Route::group(['middleware' =>  ['iptracker' , 'authorize']], function () {
         Route::post('stock/report', ['as' => 'admin.stock.report_list',   'uses' => 'StockController@reportList']);
         Route::get('stock/printAssign/{start_date}/{end_date}', ['as' => 'admin.stock.printUserAssignByDate',  'uses' => 'StockController@printUserAssignBydate']);
         Route::get('stock/generateAssignPdf/{start_date}/{end_date}', ['as' => 'admin.stock.generateUserAssignPdfByDate',   'uses' => 'StockController@generateUserAssignPdfByDate']);
-
-        // assets return
-
-        Route::get('stock/return', ['as' => 'admin.stock.return',   'uses' => 'StockController@return']);
-        Route::post('stock/save_return', ['as' => 'admin.stock.save_return',   'uses' => 'StockController@saveReturn']);
-        Route::get('stock/delete_return_stock/{return_item_id}', ['as' => 'admin.stock.return_item_id',   'uses' => 'StockController@deleteReturn']);
-        Route::get('stock/printReturn', ['as' => 'admin.stock.printReturn',  'uses' => 'StockController@printReturn']);
-        Route::get('stock/generateReturnPdf', ['as' => 'admin.stock.generateReturnPdf',   'uses' => 'StockController@generateReturnPdf']);
 
         // For Project Task
         Route::get('project_tasks', ['as' => 'admin.project_task.index',           'uses' => 'ProjectTaskController@index']);
@@ -2577,6 +2583,9 @@ Route::group(['middleware' =>  ['iptracker' , 'authorize']], function () {
         Route::get('reports/download-transaction-reports', ['as' => 'admin.reports.download-transactionreports', 'uses' => 'InvoiceController@downloadTransactionReports']);
         Route::get('reports/transactiondetailreports', ['as' => 'admin.reports.customerwisedetailreports', 'uses' => 'InvoiceController@customerwisedetailreports']);
         Route::get('reports/product/ledger/report', ['as' => 'admin.reports.product_ledger_report', 'uses' => 'InvoiceController@productledgerreport']);
+
+        Route::get('reports/sales-invoice-detail-report', ['as' => 'admin.reports.sales-invoice-detail', 'uses' => 'InvoiceController@salesInvoiceDetail']);
+
         //Credit Note
 
         Route::get('credit_note/orders/show/{ordId}', ['as' => 'admin.credit_note.show', 'uses' => 'InvoiceController@showcreditnote']);
@@ -2626,6 +2635,7 @@ Route::group(['middleware' =>  ['iptracker' , 'authorize']], function () {
         Route::post('campaigns/bulk-mail/{id}', ['as' => 'admin.campaigns.pstbulk-mail', 'uses' => 'CampaignsController@postbulkmail']);
         Route::get('invoice/edit/{id}', ['as' => 'admin.invoice.edit', 'uses' => 'InvoiceController@edit']);
         Route::post('invoice/edit/{id}', ['as' => 'admin.invoice.update', 'uses' => 'InvoiceController@update']);
+        Route::post('invoice-check-unpaid-bill/{clientId}', ['uses' => 'InvoiceController@checkUnpaid']);
 
         // Supplier return
         Route::get('supplierreturn', ['as' => 'admin.supplierreturn.index', 'uses' => 'SupplierReturnController@index']);

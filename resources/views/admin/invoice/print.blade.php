@@ -13,161 +13,171 @@ scratch. This page gets rid of all links and provides the needed markup only.
     <!-- Tell the browser to be responsive to screen width -->
     <meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'>
     <!-- Set a meta reference to the CSRF token for use in AJAX request -->
-    <meta name="csrf-token" content="{{ csrf_token() }}" />
+    <meta name="csrf-token" content="{{ csrf_token() }}"/>
     <!-- Bootstrap 3.3.4 -->
-    <link href="{{ asset("/bower_components/admin-lte/bootstrap/css/bootstrap.min.css") }}" rel="stylesheet" type="text/css" />
+    <link href="{{ asset("/bower_components/admin-lte/bootstrap/css/bootstrap.min.css") }}" rel="stylesheet"
+          type="text/css"/>
     <!-- Font Awesome Icons 4.7.0 -->
-    <link href="{{ asset("/bower_components/admin-lte/font-awesome/css/all.css") }}" rel="stylesheet" type="text/css" />
+    <link href="{{ asset("/bower_components/admin-lte/font-awesome/css/all.css") }}" rel="stylesheet" type="text/css"/>
     <!-- Ionicons 2.0.1 -->
-    <link href="{{ asset("/bower_components/admin-lte/ionicons/css/ionicons.min.css") }}" rel="stylesheet" type="text/css" />
+    <link href="{{ asset("/bower_components/admin-lte/ionicons/css/ionicons.min.css") }}" rel="stylesheet"
+          type="text/css"/>
     <!-- Theme style -->
-    <link href="{{ asset("/bower_components/admin-lte/dist/css/AdminLTE.min.css") }}" rel="stylesheet" type="text/css" />
+    <link href="{{ asset("/bower_components/admin-lte/dist/css/AdminLTE.min.css") }}" rel="stylesheet" type="text/css"/>
 
     <!-- Application CSS-->
 
 
-<style type="text/css">
-body {
-    padding-top: 0.3cm !important;
-}
-    @media print {
-   body {
-      -webkit-print-color-adjust: exact;
-   }
-}
+    <style type="text/css">
+        body {
+            padding-top: 0.3cm !important;
+        }
 
-.vendorListHeading th {
-   background-color: #1a4567 !important;
-   color: white !important;
-}
+        @media print {
+            body {
+                -webkit-print-color-adjust: exact;
+            }
+        }
 
-table{
-    border: 1px solid dotted !important;
-    font-size: 12px !important;
-}
+        .vendorListHeading th {
+            background-color: #1a4567 !important;
+            color: white !important;
+        }
 
-td{
-  border: 1px dotted #999 !important;
- 
-}
+        table {
+            border: 1px solid dotted !important;
+            font-size: 12px !important;
+        }
 
-th{
-  border: 1px dotted #999 !important;
-}
+        td {
+            border: 1px dotted #999 !important;
 
-.invoice-col{
-      /border: 1px dotted #1a4567 !important;/
-      font-size: 13px !important;
-      margin-bottom: -20px !important;
-}
+        }
 
- @page {
-    size: auto;
-    margin: 0;
-  }
+        th {
+            border: 1px dotted #999 !important;
+        }
 
-  body{
-    padding-left: 1.3cm;
-    padding-right: 1.3cm;
-    padding-top: 1.3cm;
-  }
+        .invoice-col {
+        / border: 1 px dotted #1a4567 !important;
+        / font-size: 13 px !important;
+            margin-bottom: -20px !important;
+        }
 
-  @media print {
-    .pagebreak { page-break-before: always; }
-    .footer{
-      position: fixed;
-      bottom: 0;
-      margin-bottom: 10px;
-    } /* page-break-after works, as well */
-}
-.page-header {
-    border-bottom: none;
-}
-.table>tbody>tr>td, .table>tbody>tr>th, .table>tfoot>tr>td, .table>tfoot>tr>th, .table>thead>tr>td, .table>thead>tr>th {
-    padding: 2px !important;
-}
-label {
-    margin-bottom: 0px !important;
-}
-.page-header {
-    margin: -25px 0 20px 0 !important;
-}
+        @page {
+            size: auto;
+            margin: 0;
+        }
 
-.invoice {
-    padding: 15px !important;
-    margin: 0px !important;
-}
-</style>
+        body {
+            padding-left: 1.3cm;
+            padding-right: 1.3cm;
+            padding-top: 1.3cm;
+        }
+
+        @media print {
+            .pagebreak {
+                page-break-before: always;
+            }
+
+            .footer {
+                position: fixed;
+                bottom: 0;
+                margin-bottom: 10px;
+            }
+
+            /* page-break-after works, as well */
+        }
+
+        .page-header {
+            border-bottom: none;
+        }
+
+        .table > tbody > tr > td, .table > tbody > tr > th, .table > tfoot > tr > td, .table > tfoot > tr > th, .table > thead > tr > td, .table > thead > tr > th {
+            padding: 2px !important;
+        }
+
+        label {
+            margin-bottom: 0px !important;
+        }
+
+        .page-header {
+            margin: -25px 0 20px 0 !important;
+        }
+
+        .invoice {
+            padding: 15px !important;
+            margin: 0px !important;
+        }
+    </style>
 </head>
 
 
 <body onload="window.print();" cz-shortcut-listen="true" class="skin-blue sidebar-mini">
 
-    <?php
+<?php
 
-        $loop = $print_no > 0 ? 1: 3;
+$loop = $print_no > 0 ? 1 : 3;
 
-     ?>
-     <?php
-     function getPaisa($number)
-    {
-        $no = round($number);
-        $decimal = round($number - ($no = floor($number)), 2) * 100;
-        $words = array(
-            0 => '',
-            1 => 'One',
-            2 => 'Two',
-            3 => 'Three',
-            4 => 'Four',
-            5 => 'Five',
-            6 => 'Six',
-            7 => 'Seven',
-            8 => 'Eight',
-            9 => 'Nine',
-            10 => 'Ten',
-            11 => 'Eleven',
-            12 => 'Twelve',
-            13 => 'Thirteen',
-            14 => 'Fourteen',
-            15 => 'Fifteen',
-            16 => 'Sixteen',
-            17 => 'Seventeen',
-            18 => 'Eighteen',
-            19 => 'Nineteen',
-            20 => 'Twenty',
-            30 => 'Thirty',
-            40 => 'Forty',
-            50 => 'Fifty',
-            60 => 'Sixty',
-            70 => 'Seventy',
-            80 => 'Eighty',
-            90 => 'Ninety');
-        $paise = ($decimal) ?  ' and ' .($words[$decimal - $decimal%10]) ." " .($words[$decimal%10]) .' Paisa'  : '';
-        return $paise;
-    }
-
-
+?>
+<?php
+function getPaisa($number)
+{
+    $no = round($number);
+    $decimal = round($number - ($no = floor($number)), 2) * 100;
+    $words = array(
+        0 => '',
+        1 => 'One',
+        2 => 'Two',
+        3 => 'Three',
+        4 => 'Four',
+        5 => 'Five',
+        6 => 'Six',
+        7 => 'Seven',
+        8 => 'Eight',
+        9 => 'Nine',
+        10 => 'Ten',
+        11 => 'Eleven',
+        12 => 'Twelve',
+        13 => 'Thirteen',
+        14 => 'Fourteen',
+        15 => 'Fifteen',
+        16 => 'Sixteen',
+        17 => 'Seventeen',
+        18 => 'Eighteen',
+        19 => 'Nineteen',
+        20 => 'Twenty',
+        30 => 'Thirty',
+        40 => 'Forty',
+        50 => 'Fifty',
+        60 => 'Sixty',
+        70 => 'Seventy',
+        80 => 'Eighty',
+        90 => 'Ninety');
+    $paise = ($decimal) ? ' and ' . ($words[$decimal - $decimal % 10]) . " " . ($words[$decimal % 10]) . ' Paisa' : '';
+    return $paise;
+}
 
 
-    function numberFomatter($number)
 
-    {
 
-        $constnum = $number;
+function numberFomatter($number)
+{
+    $constnum = $number;
 
-       $no = floor($number);
+    $no = floor($number);
 
-       $point = round($number - $no, 2) * 100;
+    $point = round($number - $no, 2) * 100;
 
-       $hundred = null;
+    $hundred = null;
 
-       $digits_1 = strlen($no);
+    $digits_1 = strlen($no);
 
-       $i = 0;
+    $i = 0;
 
-       $str = array();
+    $str = array();
 
-       $words = array('0' => '', '1' => 'one',
+    $words = array('0' => '', '1' => 'one',
 
         '2' => 'two',
 
@@ -187,7 +197,7 @@ label {
 
         '18' => 'eighteen',
 
-        '19' =>'nineteen',
+        '19' => 'nineteen',
 
         '20' => 'twenty',
 
@@ -205,19 +215,19 @@ label {
 
         '90' => 'ninety');
 
-       $digits = array('', 'hundred', 'thousand', 'lakh', 'crore');
+    $digits = array('', 'hundred', 'thousand', 'lakh', 'crore');
 
-       while ($i < $digits_1) {
+    while ($i < $digits_1) {
 
-         $divider = ($i == 2) ? 10 : 100;
+        $divider = ($i == 2) ? 10 : 100;
 
-         $number = floor($no % $divider);
+        $number = floor($no % $divider);
 
-         $no = floor($no / $divider);
+        $no = floor($no / $divider);
 
-         $i += ($divider == 10) ? 1 : 2;
+        $i += ($divider == 10) ? 1 : 2;
 
-         if ($number) {
+        if ($number) {
 
             $plural = (($counter = count($str)) && $number > 9) ? 's' : null;
 
@@ -235,27 +245,29 @@ label {
 
                 . $digits[$counter] . $plural . " " . $hundred;
 
-         } else $str[] = null;
+        } else $str[] = null;
 
-      }
-
-      $str = array_reverse($str);
-
-      $result = implode('', $str);
-
-      $points =getPaisa($constnum);
-
-      return $result . ' Rupees' .$points;
     }
 
+    $str = array_reverse($str);
 
-     ?>
+    $result = implode('', $str);
 
-    <div class='wrapper'>
+    $points = getPaisa($constnum);
+
+    return $result . ' Rupees' . $points;
+}
 
 
-        @foreach(range(1,$loop) as $key)
-        @if($key >= 2) <div class="pagebreak"> </div>@endif
+?>
+
+<div class='wrapper'>
+
+
+    @foreach(range(1,$loop) as $key)
+        @if($key >= 2)
+            <div class="pagebreak"></div>
+        @endif
         <section class="invoice">
             <!-- title row -->
             <div class="row">
@@ -264,26 +276,29 @@ label {
                         <div class="col-xs-4">
                             <img src="{{ '/org/'.auth()->user()->organization->logo }}">
 
-                          </div>
-                          <address>
+                        </div>
+                        <address>
                             @php
                                 $outlet_code=\App\Models\PosOutlets::where('id',$ord->outlet_id)->first();
                             @endphp
-                        <div class="col-xs-7"  style="text-align: center;">
+                            <div class="col-xs-7" style="text-align: center;">
                          <span> <h4 style="margin-bottom: -7px;">Dairy Development Corporation</h4>
                           <h5 style="margin-bottom: -7px;">{{ $outlet_code->name??'' }} Pan:{{ \Auth::user()->organization->vat_id }}</h5>
                           <h5 style="margin-bottom: -7px;">{{ \Auth::user()->organization->email }} / {{ $outlet_code->email??'' }}</h5>
                           <h5 style="margin-bottom: -7px;">{{ $outlet_code->phone }}</h5>
-                          <h5 style="margin-bottom: -8px;">@if($print_no == 0 && $key <= 1) TAX Invoice
-                            @else Invoice @endif</h5></span>
-                            <h5>@if($print_no > 0)
-                            <b> Copy of original {{ $print_no }}</b>
-                            @endif</h5>
-                        </div>
-                        <div class="col-xs-1">
-                           
-                        </div>
-                        <hr/>
+                          <h5 style="margin-bottom: -8px;">@if($print_no == 0 && $key <= 1)
+                                  TAX Invoice
+                              @else
+                                  Invoice
+                              @endif</h5></span>
+                                <h5>@if($print_no > 0)
+                                        <b> Copy of original {{ $print_no }}</b>
+                                    @endif</h5>
+                            </div>
+                            <div class="col-xs-1">
+
+                            </div>
+                            <hr/>
                     </h2>
 
                 </div>
@@ -292,14 +307,15 @@ label {
             <!-- info row -->
             <div class="row invoice-info">
                 <div class="col-xs-4 invoice-col">
-                        {{-- <span style="font-size: 15px; font-weight: bold" > {{$outlet_code->short_name}} </span><br> --}}
-                        <strong> Customer:</strong><span style="white-space: nowrap;">{{ $ord->client->name }}</span>
-                        <strong style="white-space: nowrap;"> Customer Address:</strong><span style="white-space: nowrap;">{{ $ord->client->physical_address??'' }}</span><br>
-                        <strong> Customer contact:</strong>{{ $ord->client->phone??'' }}<br>
-                        <strong> Customer pan/vat:</strong>{{ $ord->client->vat??'' }}<br>
-                        <strong style="white-space: nowrap;"> Customer email:</strong>{{ $ord->client->email??'' }}<br>
-                        <strong style="white-space: nowrap;"> Customer PO no:</strong><br>
-                        
+                    {{-- <span style="font-size: 15px; font-weight: bold" > {{$outlet_code->short_name}} </span><br> --}}
+                    <strong> Customer:</strong><span style="white-space: nowrap;">{{ $ord->client->name }}</span>
+                    <strong style="white-space: nowrap;"> Customer Address:</strong><span
+                        style="white-space: nowrap;">{{ $ord->client->physical_address??'' }}</span><br>
+                    <strong> Customer contact:</strong>{{ $ord->client->phone??'' }}<br>
+                    <strong> Customer pan/vat:</strong>{{ $ord->client->vat??'' }}<br>
+                    <strong style="white-space: nowrap;"> Customer email:</strong>{{ $ord->client->email??'' }}<br>
+                    <strong style="white-space: nowrap;"> Customer PO no:</strong><br>
+
                     </span></p>
                 </div>
                 <div class="col-xs-4"></div>
@@ -307,14 +323,15 @@ label {
                 <!-- /.col -->
                 <div class="col-xs-4 invoice-col">
                     <p>
-                        <Strong>Invoice No:</Strong>{{$outlet_code->short_name}}/{{$ord->fiscal_year}}/00{{ $ord->bill_no }}<br>
+                        <Strong>Invoice No:</Strong>{{$outlet_code->short_name}}/{{$ord->fiscal_year}}
+                        /00{{ $ord->bill_no }}<br>
                         <strong>Printed Date:</strong><span>{{ date('Y-m-d') }}<br><strong>Invoice Date:</strong><span>{{ $ord->bill_date??'' }}<br>
-                        <strong>Due Date:</strong><span>{{ $ord->due_date??'' }}<br>    
+                        <strong>Due Date:</strong><span>{{ $ord->due_date??'' }}<br>
                         <strong> Mode of Payment:</strong>{{ $ord->bill_type }}<br></span></p>
 
                 </div>
                 <!-- /.col -->
-          
+
             </div>
             <!-- /.row -->
             <br/>
@@ -324,32 +341,32 @@ label {
                     <table class="table table-striped">
 
                         <thead class="bg-gray">
-                            <tr class="">
-                                <th>S.No</th>
-                                <th>Particulars</th>
-                                <th style="text-align: center">Unit</th>
-                                <th style="text-align: center">Quantity</th>
-                                <th style="text-align: center">Rate</th>
-                                <th style="text-align: center">Amount</th>
-                            </tr>
+                        <tr class="">
+                            <th>S.No</th>
+                            <th>Particulars</th>
+                            <th style="text-align: center">Unit</th>
+                            <th style="text-align: center">Quantity</th>
+                            <th style="text-align: center">Rate</th>
+                            <th style="text-align: center">Amount</th>
+                        </tr>
                         </thead>
                         <tbody>
-                            @foreach($orderDetails as $odk => $odv)
+                        @foreach($orderDetails as $odk => $odv)
                             <tr>
                                 <td>{{$odk+1}}</td>
                                 @if($odv->is_inventory == 1)
-                                <td>{{ $odv->product->name }}</td>
+                                    <td>{{ $odv->product->name }}</td>
                                 @elseif($odv->is_inventory == 0)
-                                <td>{{ $odv->description }}</td>
+                                    <td>{{ $odv->description }}</td>
                                 @endif
                                 <td style="text-align: center">{{ $odv->units->symbol }}</td>
                                 <td style="text-align: center">{{ number_format($odv->quantity,2) }}</td>
                                 <td style="text-align: right">{{ number_format($odv->price,2) }}</td>
-                                <td style="text-align: right;">  
+                                <td style="text-align: right;">
                                     {{ number_format($odv->total-$odv->tax_amount,2) }}
                                 </td>
                             </tr>
-                            @endforeach
+                        @endforeach
 
                         </tbody>
                     </table>
@@ -360,21 +377,21 @@ label {
             <div class="row">
                 <!-- accepted payments column -->
                 <div class="col-xs-6" style="font-size: 11px !important; margin-top: -17px;">
-                  <div class="tabl-border" style="border: 1px dotted #999 !important; margin-top: 6px;">
-                    <table style="width:100%;margin-top: -4px;">
-                        <tr style="height: 73px;" >
-                          <fieldset><label style="margin-left: 6px; margin-top: 3px;">Remarks</label></fieldset>
-                        </tr>
-                        
-                    </table>
-                  </div>
+                    <div class="tabl-border" style="border: 1px dotted #999 !important; margin-top: 6px;">
+                        <table style="width:100%;margin-top: -4px;">
+                            <tr style="height: 73px;">
+                                <fieldset><label style="margin-left: 6px; margin-top: 3px;">Remarks</label></fieldset>
+                            </tr>
+
+                        </table>
+                    </div>
                     <table style="margin-top: 2px; width:100%;">
                         <tr style="height: 42px">
-                            <th style="padding-left: 6px;">In Words: 
-                            <?php
-                                echo numberFomatter($ord->total_amount);
-                              ?>
-                              </th>
+                            <th style="padding-left: 6px;">In Words:
+                                    <?php
+                                    echo numberFomatter($ord->total_amount);
+                                    ?>
+                            </th>
                         </tr>
                     </table>
                     <br/>
@@ -384,37 +401,38 @@ label {
                     <div class="table-responsive">
                         <table class="table">
                             <tbody class="ttl-body">
-                                <tr style="padding:0px; margin:0px;">
-                                    <td style="width:62%">SubTotal:</td>
-                                    <td style="text-align: right;">{{ number_format($ord->total_amount-$ord->tax_amount,2) }}</td>
-                                </tr>
-                                <tr style="padding:0px; margin:0px;">
-                                    <th style="width:30%">Discount:</th>
-                                    <td style="text-align: right;">{{ number_format($ord->discount_amount,2) }}</td>
-                                </tr>
-                                <tr style="padding:0px; margin:0px;">
-                                    <th style="width:30%">Non Taxable Amt:</th>
-                                    @if($ord->total_amount-$ord->taxable_amount-$ord->tax_amount >= 1)
-                                    <td style="text-align: right;">{{ number_format($ord->total_amount-$ord->taxable_amount-$ord->tax_amount,2) }}</td> 
-                                    @else<td style="text-align: right;"> 0.00</td>
-                                    @endif
-                                </tr>
+                            <tr style="padding:0px; margin:0px;">
+                                <td style="width:62%">SubTotal:</td>
+                                <td style="text-align: right;">{{ number_format($ord->total_amount-$ord->tax_amount,2) }}</td>
+                            </tr>
+                            <tr style="padding:0px; margin:0px;">
+                                <th style="width:30%">Discount:</th>
+                                <td style="text-align: right;">{{ number_format($ord->discount_amount,2) }}</td>
+                            </tr>
+                            <tr style="padding:0px; margin:0px;">
+                                <th style="width:30%">Non Taxable Amt:</th>
+                                @if($ord->total_amount-$ord->taxable_amount-$ord->tax_amount >= 1)
+                                    <td style="text-align: right;">{{ number_format($ord->total_amount-$ord->taxable_amount-$ord->tax_amount,2) }}</td>
+                                @else
+                                    <td style="text-align: right;"> 0.00</td>
+                                @endif
+                            </tr>
 
-                                <tr style="padding:0px; margin:0px;">
-                                    <th style="width:30%">Taxable Amt:</th>
-                                    <td style="text-align: right;">{{ number_format($ord->taxable_amount,2) }}</td>
-                                </tr>
-                                <tr style="padding:0px; margin:0px;">
-                                    <th style="width:30%">Vat Amount:</th>
+                            <tr style="padding:0px; margin:0px;">
+                                <th style="width:30%">Taxable Amt:</th>
+                                <td style="text-align: right;">{{ number_format($ord->taxable_amount,2) }}</td>
+                            </tr>
+                            <tr style="padding:0px; margin:0px;">
+                                <th style="width:30%">Vat Amount:</th>
                                 <td style="text-align: right;">{{number_format($ord->tax_amount,2) }}</td>
-                                </tr>
-                                <tr style="padding:0px; margin:0px;">
-                                    <th style="width:30%">NPR Total:</th>
-                                    <td style="text-align: right;">{{ number_format($ord->total_amount,2) }}</td>
-                                </tr>
+                            </tr>
+                            <tr style="padding:0px; margin:0px;">
+                                <th style="width:30%">NPR Total:</th>
+                                <td style="text-align: right;">{{ number_format($ord->total_amount,2) }}</td>
+                            </tr>
                             </tbody>
                         </table>
-                     
+
 
                     </div>
                 </div>
@@ -422,12 +440,15 @@ label {
             </div>
             <br>
             <div class="row">
-            <div class="col-xs-12">
-            <p style="margin-bottom:-2px;"><b>Bank Account Detail For Electronic Payment</b></p>
-            <li>{{ $ord->outlet->bank_ac_name_one??'' }},{{ $ord->outlet->bank_account_one??'' }},{{ $ord->outlet->bank_name_one??'' }} </li>
-                <li>{{ $ord->outlet->bank_ac_name_two??'' }},{{ $ord->outlet->bank_account_two??'' }},{{ $ord->outlet->bank_name_two??'' }}</li>    
-            </div>    
-            </div><br>
+                <div class="col-xs-12">
+                    <p style="margin-bottom:-2px;"><b>Bank Account Detail For Electronic Payment</b></p>
+                    <li>{{ $ord->outlet->bank_ac_name_one??'' }},{{ $ord->outlet->bank_account_one??'' }}
+                        ,{{ $ord->outlet->bank_name_one??'' }} </li>
+                    <li>{{ $ord->outlet->bank_ac_name_two??'' }},{{ $ord->outlet->bank_account_two??'' }}
+                        ,{{ $ord->outlet->bank_name_two??'' }}</li>
+                </div>
+            </div>
+            <br>
             <div class="row footer" style="margin-top: 160px;">
                 <div class="col-xs-4">
                     _______________________<span style="text-indent: 10px;">
@@ -440,13 +461,13 @@ label {
                 <div class="col-xs-4">
                     _______________________<br><span style="text-indent: 10px;"><b>For, Dairy Development Corp.</b><br>
                         &nbsp;&nbsp;Authorised Signatory</span>
-                </div> 
+                </div>
             </div>
-            
+
 
         </section>
 
-        @endforeach
+    @endforeach
 
-    </div><!-- /.col -->
+</div><!-- /.col -->
 </body>

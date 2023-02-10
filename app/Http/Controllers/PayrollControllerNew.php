@@ -70,12 +70,10 @@ class PayrollControllerNew extends Controller
         if ($selected_date) {
 
             $chosen_date = explode('-', $selected_date);
-            // dd($chosen_date);
             $date = date_create('1943-4-13');
             foreach ($this->nepali_dates as $index => $d) {
                 if ($d[0] < $chosen_date[0]) {
                     date_add($date, date_interval_create_from_date_string($d[13]." days"));
-//                    dd($date);
                 } else {
                     foreach ($d as $index_month => $m) {
                         if ($index_month > 0 && $index_month <= $chosen_date[1]) {
@@ -165,7 +163,6 @@ class PayrollControllerNew extends Controller
         $attendance = $request->attendance;
         if($payroll)
         {
-//            dd($request->all());
             foreach($user_ids as $index=>$user)
             {
                 $attributesDetials['user_id'] = $user;
@@ -339,8 +336,6 @@ class PayrollControllerNew extends Controller
     {
         $payroll_detail_id = \Request::get('payroll_detail_id');
         $slip = \App\Models\PayrollDetails::with(['payroll','paidAllowances','user'])->where('id',$payroll_detail_id)->first();
-
-       // dd($slip);
 
         $pdf = \PDF::loadview('admin.payslip.pdf', compact('slip'));
         $file = 'payslip'.$slip->payroll->date.'.pdf';

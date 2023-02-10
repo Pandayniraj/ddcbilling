@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Product extends Model
 {
@@ -14,7 +15,10 @@ class Product extends Model
     /**
      * @var array
      */
-    protected $fillable = ['name', 'cost', 'distributor_price','created_by', 'retailer_price', 'boothman_price', 'direct_customer_price','price', 'enabled', 'public', 'category_id', 'org_id', 'ordernum', 'alert_qty', 'product_code', 'sku', 'product_unit', 'product_image', 'ledger_id','outlet_id','is_fixed_assets','type','is_vat'];
+    protected $fillable = ['name', 'cost', 'distributor_price','created_by', 'retailer_price', 'boothman_price',
+        'direct_customer_price','price', 'enabled', 'public', 'category_id', 'org_id', 'ordernum', 'alert_qty',
+        'product_code', 'sku', 'product_unit', 'product_image', 'ledger_id','outlet_id','is_fixed_assets','type',
+        'is_vat', 'staff_quota_frequent', 'staff_quota'];
 
     public function category()
     {
@@ -33,6 +37,11 @@ class Product extends Model
     public function purchase_international()
     {
         return $this->hasOne(\App\Models\ProductInternationPurchase::class,'product_id');
+    }
+
+    public function productPrices(): HasMany
+    {
+        return $this->hasMany(ProductPrice::class, 'product_id');
     }
 
     /**

@@ -897,7 +897,6 @@ class COAController extends Controller
         $ledgers_data = collect();
         $parent = COAgroups::find($parentId);
         $ledgers_data = $ledger_table->where('group_id', $parentId)->where('org_id', \Auth::user()->org_id)->get();
-        // dd($parent);
         $subcategories = COAgroups::where('parent_id', $parent->id)->where('org_id', \Auth::user()->org_id)->get();
 
         foreach ($subcategories as $subcategory) {

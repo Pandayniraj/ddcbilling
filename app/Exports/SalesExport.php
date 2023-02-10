@@ -24,6 +24,6 @@ class SalesExport implements FromView ,ShouldAutoSize
 
     public function view(): View
     {
-    	return view('admin.sales-book.salesexport',['data'=>$this->data,'excel_name'=>$this->excel_name]);
+    	return view('admin.sales-book.export.salesexport',['data'=>$this->data,'excel_name'=>$this->excel_name]);
     }
 }

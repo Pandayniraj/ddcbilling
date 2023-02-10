@@ -19,9 +19,7 @@
         <div class="row">
             <div class="col-md-6">
                 <div class="panel panel-custom">
-
                     <div class="panel-heading">
-
                         <div class="row">
                             <div class="col-md-12">
                                 <label>Fiscal Year</label>
@@ -42,7 +40,7 @@
                             <div class="col-md-12">
                                 <label>Outlet </label>
                                 <div class="form-group">
-                                    <select class="form-control searchable" name="outlet_id" required="">
+                                    <select class="form-control searchable" name="outlet_id" required>
                                         <option value="">--Select Outlet--</option>
                                         @foreach($outlets as $o)
                                             <option value="{{$o->id}}">{{$o->name}} #({{$o->outlet_code}} ({{$o->id}}
@@ -78,13 +76,13 @@
                             <div class="col-md-6">
                                 <label>Bill Amount</label>
                                 <div class="form-group">
-                                    <input type="text" class="form-control" required id='total_amount' disabled="">
+                                    <input type="text" class="form-control" required id='total_amount' disabled>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <label>Bill Date</label>
                                 <div class="form-group">
-                                    <input type="text" class="form-control" required id='bill_date' disabled="">
+                                    <input type="text" class="form-control" required id='bill_date' disabled>
                                 </div>
                             </div>
                         </div>
@@ -94,7 +92,7 @@
                                 <label>Credit Note No</label>
                                 <div class="form-group">
                                     <input type="text" name="credit_note_no" class="form-control"
-                                           value="{{$credit_note_no}}" required readonly="">
+                                           value="{{$credit_note_no}}" required readonly>
                                 </div>
                             </div>
                         </div>

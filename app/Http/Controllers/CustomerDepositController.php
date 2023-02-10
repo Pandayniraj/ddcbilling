@@ -63,7 +63,6 @@ class CustomerDepositController extends Controller
         $attributes['closing'] =(float)(\App\Models\CustomerDeposit::where('client_id',$request->id)->latest()->first()->closing??0) + (float)$request->amount;
 
         \App\Models\CustomerDeposit::create($attributes);
-        // dd($attributes);
 
         Flash::success('Customer Deposit Added Successfully');
         return redirect(url('/admin/customerdeposits/index?id='.$request->id));

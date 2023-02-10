@@ -56,8 +56,6 @@ class BOMController extends Controller
     {
         $attributes = $request->all();
 
-        // dd($attributes);
-
         $attributes['org_id'] = Auth::user()->org_id;
         $attributes['user_id'] = Auth::user()->id;
 
@@ -67,7 +65,6 @@ class BOMController extends Controller
 
         $attributes['product'] = \App\Models\Product::where('name', $request->product)->first()->id;
 
-        //dd($attributes);
 
         $billofmaterials = \App\Models\BillOfMaterials::create($attributes);
 
@@ -185,7 +182,6 @@ class BOMController extends Controller
     public function destroy($id)
     {
 
-        //dd($id);
         $ord = \App\Models\BillOfMaterials::find($id);
 
         \App\Models\BillOfMaterials::find($id)->delete();
@@ -199,7 +195,6 @@ class BOMController extends Controller
     public function getModalDelete($id)
     {
 
-        //dd($id);
         $error = null;
 
         $ord = \App\Models\BillOfMaterials::find($id);
@@ -221,16 +216,15 @@ class BOMController extends Controller
         $quantity = \Request::get('quantity');
         $wastage_qty = \Request::get('wastage_qty');
 
-        //dd($wastage_qty);
 
         $product = \App\Models\Product::where('name', $component_product)->first();
 
         $total_amount = ($quantity + $wastage_qty) * $product->cost;
 
-        $data = '<tr>  
+        $data = '<tr>
                 <td>
                 <input type="text" class="form-control" name="product_name"  value="'.$product->name.'" readonly>
-                  <input type="hidden"  name="product_id[]" value="'.$product->id.'" required="required" readonly>   
+                  <input type="hidden"  name="product_id[]" value="'.$product->id.'" required="required" readonly>
                 </td>
                 <td>
                     <input type="text" class="form-control " placeholder="Unit" value="'.$product->unitname->name.'" required="required" readonly>
@@ -241,7 +235,7 @@ class BOMController extends Controller
                 <td>
                     <input type="number" class="form-control quantity" name="quantity[]" placeholder="Quantity"  value="'.$quantity.'" required="required" >
                 </td>
-               
+
 
                 <td>
                     <input type="number" class="form-control wastage_quantity" name="wastage_qty[]" placeholder="Wastage Quantity"  value="'.$wastage_qty.'" required="required" >

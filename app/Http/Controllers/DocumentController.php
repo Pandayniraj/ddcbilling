@@ -55,11 +55,11 @@ class DocumentController extends Controller
                 $sharedWithme =  \App\Models\Folder::find(\Request::get('folder'));
                 $sharedUser = json_decode($sharedWithme->shared_user);
                 if(is_array($shared_user)){
-                  return $query->where('folder_id', \Request::get('folder'))->whereIn('documents.user_id',$sharedUser)->orWhere('documents.user_id',\Auth::user()->id);  
+                  return $query->where('folder_id', \Request::get('folder'))->whereIn('documents.user_id',$sharedUser)->orWhere('documents.user_id',\Auth::user()->id);
                 }else{
                      return $query->where('folder_id', \Request::get('folder'));
                 }
-                
+
             }
         })->where(function ($query) {
             if (\Request::get('category')) {
@@ -87,7 +87,7 @@ class DocumentController extends Controller
 
         $page_description = trans('admin/documents/general.page.index.description');
 
-       
+
 
 
         $auth_id = \Auth::user()->id;
@@ -95,15 +95,15 @@ class DocumentController extends Controller
         $allFolders = Folder::where('org_id', \Auth::user()->org_id)->get();
 
         if(!Auth::user()->hasRole('admins')){
-        
+
         $folders = [];
 
         foreach ($allFolders as $key => $value) {
-            
+
             $shared_user = json_decode($value->shared_user);
 
             if(in_array($auth_id,$shared_user) || $value->user_id == $auth_id  ){
-               
+
                 $folders [] = $value;
             }
         }
@@ -111,10 +111,10 @@ class DocumentController extends Controller
         }else{
 
             $folders = $allFolders;
-        
+
         }
 
-  
+
 
 
         return view('admin.documents.index', compact('documents', 'page_title', 'page_description', 'folders', 'category'));
@@ -191,7 +191,6 @@ class DocumentController extends Controller
         $attributes['user_id'] = \Auth::user()->id;
         $stamp = time();
         $file = $request->file('file_name');
-        //dd($file);
         if ($file) {
             $destinationPath = public_path() . '/documents/';
             $filename = $file->getClientOriginalName();
@@ -289,7 +288,6 @@ class DocumentController extends Controller
 
             $stamp = time();
             $file = $request->file('file_name');
-            //dd($file);
             $destinationPath = public_path() . '/documents/';
             $filename = $file->getClientOriginalName();
             $request->file('file_name')->move($destinationPath, $stamp . '_' . $filename);

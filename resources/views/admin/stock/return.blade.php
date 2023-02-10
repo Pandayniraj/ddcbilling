@@ -1,246 +1,98 @@
 @extends('layouts.master')
+
+@section('head_extra')
+    @include('partials._head_extra_select2_css')
+@endsection
+
 @section('content')
 
-<style>
-    .required {
-        color: red;
-    }
+    <section class="content-header" style="margin-top: -35px; margin-bottom: 20px">
+        <h1>
+            Edit Stock
+            <small>{!! $page_description ?? "edit stock details" !!}</small>
+        </h1>
+        {!! MenuBuilder::renderBreadcrumbTrail(null, 'root', false)  !!}
+    </section>
 
-    .panel-custom .panel-heading {
-        border-bottom: 2px solid #1797be;
-    }
+    <div class='row'>
+        <div class='col-md-12'>
+            <div class="box box-header">
+                <div class="content">
 
-    .panel-custom .panel-heading {
-        margin-bottom: 10px;
-    }
+                    {!! Form::open( ['route'=>'admin.stock.save_return', 'class' => 'form-horizontal', 'id' => 'form_edit_client','files'=>'true'] ) !!}
+                    <div class="col-sm-6">
+                        <label class="control-label">Outlets</label>
+                        {!! Form::select('store_id',[''=>'Select Outlets']+$stores, $newstock->store_id ?? null, ['class'=>'form-control']) !!}
+                    </div>
+                    <div class="col-sm-6 ">
+                        <label class="control-label"> Recevice From Store Date</label>
+                        <input type="date" name="date" class="form-control datepicker date-toggle-nep-eng"
+                               value="{{$newstock->date}}">
+                    </div>
 
-    .select2-container--bootstrap .select2-results__group {
-        font-size: 15px !important;
-        padding: 6px 3px !important;
-    }
-
-    .select2-container--bootstrap .select2-results__option .select2-results__option {
-        color: #777 !important;
-    }
-
-</style>
-<link href="{{ asset("/bower_components/admin-lte/plugins/datatables/jquery.dataTables.min.css") }}" rel="stylesheet" type="text/css" />
-
-<div class="row">
-    <div class="col-sm-12">
-
-        <div class="nav-tabs-custom">
-            <div class="nav nav-tabs">
-                <ul class="nav nav-tabs">
-                    <li @if(!\Request::segment(4)) class="active" @endif><a href="#all_stocks_assign" data-toggle="tab" aria-expanded="true">Return Stock List</a>
-                    </li>
-                    <li @if(\Request::segment(4)) class="active" @endif><a href="#new_stock_assign" data-toggle="tab" aria-expanded="false">Return Stock</a>
-                    </li>
-                    <li>
-                        <div class="pull-right hidden-print">
-                            <a href="/admin/stock/generateReturnPdf" class="btn btn-primary btn-xs" data-toggle="tooltip" data-placement="top" title="" data-original-title="PDF" target="_blank"><span><i class="fa fa-file-pdf-o"></i></span></a>
-                            <a href="/admin/stock/printReturn" class="btn btn-danger btn-xs" data-toggle="tooltip" data-placement="top" title="" data-original-title="Print"><span><i class="fa fa-print"></i></span></a>
+                    {{-- <div class="form-group">
+                        <label for="inputEmail3" class="col-sm-4 control-label" style="text-transform: capitalize;">
+                            Recevice From Store Date
+                        </label>
+                        <div>
+                            {!! Form::date('date',$newstock->date, null, ['class' => 'form-control', 'readonly'=>'readonly']) !!}
                         </div>
-                    </li>
-                </ul>
-            </div>
-            <div class="tab-content bg-white">
-
-                <div class="tab-pane @if(!\Request::segment(4)) active @endif" id="all_stocks_assign" style="position: relative;">
-                    <table class="table table-striped DataTables " id="DataTables" cellspacing="0" width="100%">
-                        <thead>
-                            <tr>
-                                <th class="col-sm-1">SL</th>
-                                <th>Item Name</th>
-                                <th>Project</th>
-                                <th>Stock Category</th>
-                                <th>Return Quantity</th>
-                                <th>Return User</th>
-                                <th>Return Date</th>
-                                <th class="col-sm-1 hidden-print">Action</th>
-                            </tr>
-                        </thead>
+                    </div> --}}
+                    <input type="hidden" name="stock_id" value="{{$newstock->id}}">
+                    <table class="table table-bordered">
+                        <tr>
+                            <th>S.N</th>
+                            <th>Product Name</th>
+                            <th>Buy Quantity</th>
+                            <th>Return Quantity</th>
+                            <th>Opening Stock</th>
+                            <th>Remarks</th>
+                        </tr>
                         <tbody>
-                            @foreach($returns as $ak => $av)
+                        @foreach ($stock_entries as $id=>$stock)
+                            @php
+                                $key=$stock->stock_id;
+                            @endphp
                             <tr>
-                                <td>{{ $ak+1 }}</td>
-                                <?php $assign_stock = StockHelper::getStock($av->stock_id); ?>
-                                <td>{{ $assign_stock->item_name }}</td>
-                                <td>{{ $av->project->name }}</td>
-                                <td>{{ StockHelper::getCatSubCat($assign_stock->stock_sub_category_id) }}</td>
-                                <td>{{ $av->return_inventory }}</td>
-                                <?php $user = $av->user; ?>
-                                <td>{{ $user->first_name.' '.$user->last_name }}</td>
-                                <td>{{ $av->return_date }}</td>
-                                <td class="hidden-print">
-                                    <a href="/admin/stock/delete_return_stock/{{ $av->return_item_id }}" class="btn btn-danger btn-xs" title="Delete" data-toggle="tooltip" data-placement="top" onclick="return confirm('You are about to delete a record. This cannot be undone. Are you sure?');"><i class="fa fa-trash"></i></a>
-                                </td>
+                                <td>{{$loop->index+1}}</td>
+                                <td>{{$stock->product_details->name}}</td>
+                                <td><input type="number" id="quantity" name="quantity[{{$key}}]" value="{{$stock->buy_qty}}" readonly></td>
+                                <td><input type="number" id="return_quantity" name="return_quantity[{{$key}}]" max="{{$stock->return_qty}}" placeholder="Previuos return {{$stock->return_qty}}"></td>
+                                <td><input type="number" id="opening-stock" name="opening_stock[{{$key}}]" readonly value="{{$stock->opening_stock}}"></td>
+                                <td><input type="text" id="remarks" name="remarks[{{$key}}]" value="{{$stock->remarks}}"></td>
                             </tr>
-                            @endforeach
+                        @endforeach
                         </tbody>
                     </table>
+                    <div class="form-group">
+                        {!! Form::button( trans('general.button.update'), ['class' => 'btn btn-primary', 'id' => 'btn-submit-edit'] ) !!}
+                        <a href="/admin/addstock/list" class="btn btn-default"> Cancel</a>
+                    </div>
+                    {!! Form::close() !!}
                 </div>
-
-                <div class="tab-pane @if(\Request::segment(4)) active @endif" id="new_stock_assign" style="position: relative;">
-                    <form role="form" data-parsley-validate="" enctype="multipart/form-data" action="/admin/stock/save_return" method="post" class="form-horizontal form-groups-bordered">
-                        {{ csrf_field() }}
-                        <div class="form-group ">
-                            <label class="control-label col-sm-3">Stock Category<span class="required">*</span></label>
-                            <div class="col-sm-5">
-                                <select name="stock_sub_category_id" id="stock_sub_category_id" style="width: 100%" class="form-control select_box" required>
-                                    <option value="">Select Stock Category</option>
-                                    @foreach($categories as $sck => $scv)
-                                    <optgroup label="{{ $scv->stock_category }}">
-                                        @foreach(StockHelper::getSubCategories($scv->stock_category_id) as $sk => $sv)
-                                        <option value="{{ $sv->stock_sub_category_id }}">{{ $sv->stock_sub_category }}</option>
-                                        @endforeach
-                                    </optgroup>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="form-group ">
-                            <label class="control-label col-sm-3">Project<span class="required">*</span></label>
-                            <div class="col-sm-5">
-                                <select name="project_id" style="width: 100%" class="form-control select_box" required>
-                                    @foreach($projectslist as $projects)
-                                    <option value="{{$projects->id}}" @if( isset($stock) && $stock->project_id == $projects->id) selected="selected" @endif>{{$projects->name}}</option>
-
-                                    @endforeach
-
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="field-1" class="col-sm-3 control-label">Item Name<span class="required">*</span></label>
-
-                            <div class="col-sm-5">
-                                <select required class="form-control" name="stock_id" id="stock_id" required>
-                                    <option value="">Select Item Name</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="form-group ">
-                            <label class="control-label col-sm-3">Employee Name<span class="required">*</span></label>
-                            <div class="col-sm-5">
-                                <select name="user_id" id="user_id" style="width: 100%" class="form-control select_box" required>
-                                    <option value="">Select Employee</option>
-                                    @foreach($users as $uk => $uv)
-                                    <option value="{{ $uv->id }}">{{ $uv->first_name.' '.$uv->last_name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="field-1" class="col-sm-3 control-label">Return Quantity<span class="required">*</span></label>
-
-                            <div class="col-sm-5">
-                                <input required type="number" data-parsley-type="number" name="return_inventory" id="assign_inventory" placeholder="" class="form-control" value="Enter Assign Quantity" min="1" max="10">
-                            </div>
-                            <div class="col-sm-3" id="assign_qty_div" style="display: none;">
-
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="field-1" class="control-label col-sm-3 ">Return Date<span class="required">*</span></label>
-                            <div class="col-sm-5">
-                                <div class="input-group">
-                                    <input required="" type="text" class="form-control datepicker" name="return_date" value="Enter Return Date" data-format="yyyy/mm/dd" data-parsley-id="6">
-                                    <div class="input-group-addon">
-                                        <a href="#"><i class="fa fa-calendar"></i></a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="field-1" class="col-sm-3 control-label"></label>
-                            <div class="col-sm-5">
-                                <button type="submit" id="sbtn" class="btn btn-primary">Save</button>
-                            </div>
-                        </div>
-
-
-                    </form>
-                </div>
-
             </div>
         </div>
     </div>
-</div>
-
 @endsection
 
-
-<!-- Optional bottom section for modals etc... -->
 @section('body_bottom')
-
-<!-- SELECT2-->
-<link rel="stylesheet" href="{{ asset("/bower_components/admin-lte/select2/css/select2.css") }}">
-<link rel="stylesheet" href="{{ asset("/bower_components/admin-lte/select2/css/select2-bootstrap.css") }}">
-<script src="{{ asset("/bower_components/admin-lte/select2/js/select2.js") }}"></script>
-
-<script type="text/javascript">
-    $(function() {
-        $('.datepicker').datetimepicker({
-            //inline: true,
-            format: 'YYYY-MM-DD'
-            , sideBySide: true
+    <!-- form submit -->
+    @include('partials._date-toggle')
+    @include('partials._body_bottom_submit_client_edit_form_js')
+    <script>
+        $(function () {
+            $('.date-toggle-nep-eng').nepalidatetoggle();
+            $('.datepicker').datetimepicker({
+                //inline: true,
+                format: 'YYYY-MM-DD',
+                sideBySide: true,
+                allowInputToggle: true
+            });
         });
 
-        $('.select_box').select2({
-            theme: 'bootstrap'
-        , });
-
-
-        $('[data-toggle="tooltip"]').tooltip();
-
-        $('#stock_sub_category_id').on('change', function() {
-            $('#assign_qty_div').css('display', 'none');
-            if ($(this).val() != '') {
-                $.ajax({
-                    url: "/admin/stock/getStockBySubCategory"
-                    , data: {
-                        stock_sub_category_id: $(this).val()
-                    }
-                    , dataType: "json"
-                    , success: function(data) {
-                        var result = data.data;
-                        $('#stock_id').html(result);
-                    }
-                });
-            } else {
-                $('#stock_id').html('<option value="">Select Item Name</option>');
-            }
+        $(document).ready(function () {
+            $("#nep-eng-date-toogle").val('nep');
+            $("#nep-eng-date-toogle").trigger('change');
         });
-
-        $('#stock_id').on('change', function() {
-            $('#assign_qty_div').css('display', 'none');
-            var total_stock = $('option:selected', this).attr('data-stock');
-            if ($(this).val() != '') {
-                $.ajax({
-                    url: "/admin/stock/getStockQuantity"
-                    , data: {
-                        stock_id: $(this).val()
-                    }
-                    , dataType: "json"
-                    , success: function(data) {
-                        var result = data.data;
-                        var in_stock = total_stock - result;
-                        $('#assign_qty_div').html('(' + in_stock + ' items reamin in stock.)');
-                        $('#assign_qty_div').css('display', 'block');
-                        $('#assign_inventory').attr('max', in_stock);
-                    }
-                });
-            }
-        });
-
-    });
-
-</script>
+    </script>
 @endsection

@@ -89,8 +89,6 @@ class ClientsController extends Controller
             $page_title = "Staff";
             $page_description = "List of Staff";
         }
-        // dd(\Request::get('terms'));
-        // dd('index');
         // $outlet= \App\Models\PosOutlets::pluck('name', 'id')->all();
         $outletuser= \App\Models\OutletUser::where('user_id', \Auth::user()->id)->select('outlet_id')->get()->toArray();
         $clients = Client::where('org_id', \Auth::user()->org_id)
@@ -114,7 +112,6 @@ class ClientsController extends Controller
 
         $groups = \App\Models\CustomerGroup::where('org_id', \Auth::user()->org_id)
                 ->get();
-            // dd($clients);
         return view('admin.clients.customers', compact('clients', 'page_title', 'page_description', 'groups'));
     }
 
@@ -282,11 +279,10 @@ class ClientsController extends Controller
         $this->validate($request, [
             'name'      => 'required',
             'phone'     => 'min:4|max:255',
-            'email'     => 'email', 
+            'email'     => 'email',
         ]);
 
             $attributes = $request->all();
-        // dd($attributes);
         if ($request->relation_type == 'distributor') {
             $accounting_type = $request->types ?? env('CLIENT_DISTRIBUTOR_SERVICES_LEDGER_GROUP');
         }
@@ -317,7 +313,6 @@ class ClientsController extends Controller
         // }
 
         $attributes['type'] = (\App\Models\COAgroups::find((int)$accounting_type))->name;
-        // dd($attributes,$accounting_type);
         $attributes['org_id'] = \Auth::user()->org_id;
 
         if (!isset($attributes['enabled'])) {
@@ -331,7 +326,6 @@ class ClientsController extends Controller
             $doc_name='/clientsimage/'.$doc_name;
             $attributes['image']=$doc_name;
         }
-// dd($attributes);
         $client = $this->client->create($attributes);
         if ($accounting_type) { // dont`t create ledger if accounting type is null
             $full_name = $client->name;
@@ -347,10 +341,10 @@ class ClientsController extends Controller
             $deposit['client_id'] = $client->id;
             $deposit['amount'] =$request->deposit_amount;
             $deposit['closing'] =(float)(\App\Models\CustomerDeposit::where('client_id',$client->id)->latest()->first()->closing??0) + (float)$request->deposit_amount;
-    
+
             \App\Models\CustomerDeposit::create($deposit);
         }
-      
+
 
         Audit::log(Auth::user()->id, trans('admin/clients/general.audit-log.category'), trans('admin/clients/general.audit-log.msg-store', ['name' => $attributes['name']]));
         // if($request->ajax()){
@@ -448,7 +442,6 @@ class ClientsController extends Controller
         if (!isset($attributes['enabled'])) {
             $attributes['enabled'] = 0;
         }
-        // dd($attributes);
         $clients = $this->client->find($id);
         if ($clients->isEditable()) {
             $clients->update($attributes);
@@ -461,7 +454,6 @@ class ClientsController extends Controller
     }
     public function get_bank_deposit($id){
         $customer=\App\Models\CustomerDeposit::where('client_id',$id)->latest()->first();
-        // dd($customer);
         $data['deposit_amount']=$customer->closing??"0";
         $data['credit_limit']=$customer->closing??"0";
         $data['remaining_amount']=$customer->closing??"0";
@@ -726,7 +718,6 @@ class ClientsController extends Controller
     {
         $temp_contact = \App\Models\Client::find($request->client_id);
 
-        //dd($temp_contact);
 
         if ($temp_contact) {
             return ['data' => $temp_contact];

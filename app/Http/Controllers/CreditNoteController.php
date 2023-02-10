@@ -121,11 +121,9 @@ class CreditNoteController extends Controller
         $order_attributes['is_bill_active'] = 1;
         $order_attributes['fiscal_year_id'] = $ckfiscalyear->id;
 
-        //dd($order_attributes);
         $creditnote = \App\Models\CreditNote::create($order_attributes);
 
         $product_id = $request->product_id;
-        //dd($product_ids);
         $price = $request->price;
         $quantity = $request->quantity;
         $tax = $request->tax;
@@ -195,7 +193,6 @@ class CreditNoteController extends Controller
 
                 $detail->date = date('Y-m-d H:i:s');
                 $detail->is_inventory = 0;
-                //  dd($detail);
                 $detail->save();
             }
         }
@@ -240,9 +237,7 @@ class CreditNoteController extends Controller
             'customer_id' => 'required',
         ]);
 
-        //dd($request->all());
         $creditnote = CreditNote::find($id);
-        //dd($order);
         if ($creditnote->isEditable()) {
             $order_attributes = $request->all();
 
@@ -252,7 +247,6 @@ class CreditNoteController extends Controller
             $order_attributes['tax_amount'] = $request->taxable_tax;
             $order_attributes['total_amount'] = $request->final_total;
 
-            //dd($order_attributes);
 
             $creditnote->update($order_attributes);
 
@@ -330,14 +324,12 @@ class CreditNoteController extends Controller
 
                     $detail->date = date('Y-m-d H:i:s');
                     $detail->is_inventory = 0;
-                    //  dd($detail);
                     $detail->save();
                 }
             }
 
             if ($request->product_id_new != null) {
 
-        // dd($request->description_new);
                 $product_id_new = $request->product_id_new;
                 $ticket_new = $request->ticket_new;
                 $price_new = $request->price_new;
@@ -475,7 +467,6 @@ class CreditNoteController extends Controller
     {
         $ord = $this->creditnote->find($id);
         $orderDetails = CreditNoteDetail::where('credit_note_id', $id)->get();
-        //dd($orderDetails);
         $imagepath = Auth::user()->organization->logo;
         // $print_no = \App\Models\Invoiceprint::where('invoice_id',$id)->count();
         // $attributes = new \App\Models\Invoiceprint();
@@ -558,7 +549,6 @@ class CreditNoteController extends Controller
     public function postOrdertoInvoice(Request $request, $id)
     {
 
-        //dd($id);
         $order = \App\Models\Orders::find($id);
         $orderdetails = OrderDetail::where('order_id', $order->order_id)->get();
         $ckfiscalyear = \App\Models\Fiscalyear::where('current_year', '1')
@@ -573,7 +563,6 @@ class CreditNoteController extends Controller
                     ->orderBy('bill_no', 'desc')
                     ->first();
         $bill_no = $bill_no->bill_no + 1;
-        //dd($orderdetails);
         $invoice = new Invoice();
 
         $invoice->bill_no = $bill_no;
@@ -600,7 +589,6 @@ class CreditNoteController extends Controller
         $invoice->customer_pan = $order->customer_pan;
         $invoice->discount_percent = $order->discount_percent;
 
-        //dd($invoice);
         $invoice->save();
 
         foreach ($orderdetails as $orderdetail) {
@@ -622,7 +610,7 @@ class CreditNoteController extends Controller
         $order->update([
              'status'  => 'Invoiced',
           ]);
-    
+
         $entrytype_id = \FinanceHelper::get_entry_type_id('journal');
         $entry = \App\Models\Entry::create([
             'tag_id'=>env('SALES_TAG_ID'),
@@ -662,7 +650,6 @@ class CreditNoteController extends Controller
 
         if ($creditnote->entry_id && $creditnote->entry_id != '0') { //update the ledgers
 
-            // dd($creditnote);
             $attributes['entrytype_id'] = \FinanceHelper::get_entry_type_id('creditnote'); //Credit Notes
             $attributes['tag_id'] = '3'; //Credit Memos
             $attributes['user_id'] = Auth::user()->id;
@@ -684,7 +671,6 @@ class CreditNoteController extends Controller
             $sub_amount->ledger_id = \App\Models\Client::find($creditnote->client_id)->ledger_id; //Client ledger
             $sub_amount->amount = $creditnote->total_amount;
             $sub_amount->narration = 'Credit Note'; //$request->user_id
-            //dd($sub_amount);
             $sub_amount->update();
 
             // Debitte to Bank or cash account that we are already in
@@ -694,7 +680,6 @@ class CreditNoteController extends Controller
             $cash_amount->org_id = \Auth::user()->org_id;
             $cash_amount->dc = 'C';
             $cash_amount->ledger_id = \FinanceHelper::get_ledger_id('SALES_TAX_LEDGER'); // Purchase ledger if selected or ledgers from .env
-            // dd($cash_amount);
             $cash_amount->amount = $creditnote->tax_amount;
             $cash_amount->narration = 'Credit Note';
             $cash_amount->update();
@@ -706,13 +691,11 @@ class CreditNoteController extends Controller
             $cash_amount->org_id = \Auth::user()->org_id;
             $cash_amount->dc = 'D';
             $cash_amount->ledger_id = \FinanceHelper::get_ledger_id('SALES_LEDGER_ID'); // Purchase ledger if selected or ledgers from .env
-            // dd($cash_amount);
             $cash_amount->amount = $creditnote->taxable_amount;
             $cash_amount->narration = 'Credit Note';
             $cash_amount->update();
         } else {
 
-            //dd(\App\Models\Client::find($creditnote->client_id)->ledger_id);
 
             //create the new entry items
             $attributes['entrytype_id'] = \FinanceHelper::get_entry_type_id('creditnote'); //Credit Notes
@@ -736,7 +719,6 @@ class CreditNoteController extends Controller
             $sub_amount->ledger_id = \App\Models\Client::find($creditnote->client_id)->ledger_id; //Client ledger
             $sub_amount->amount = $creditnote->total_amount;
             $sub_amount->narration = 'Credit Note'; //$request->user_id
-            //dd($sub_amount);
             $sub_amount->save();
 
             // Debitte to Bank or cash account that we are already in
@@ -746,7 +728,6 @@ class CreditNoteController extends Controller
             $cash_amount->org_id = \Auth::user()->org_id;
             $cash_amount->dc = 'D';
             $cash_amount->ledger_id = \FinanceHelper::get_ledger_id('SALES_TAX_LEDGER'); // Purchase ledger if selected or ledgers from .env
-            // dd($cash_amount);
             $cash_amount->amount = $creditnote->tax_amount;
             $cash_amount->narration = 'Credit Note';
             $cash_amount->save();
@@ -759,7 +740,6 @@ class CreditNoteController extends Controller
             $cash_amount->org_id = \Auth::user()->org_id;
             $cash_amount->dc = 'D';
             $cash_amount->ledger_id = \FinanceHelper::get_ledger_id('SALES_LEDGER_ID'); // Sales ledger if selected or ledgers from .env
-            // dd($cash_amount);
             $cash_amount->amount = $creditnote->taxable_amount;
             $cash_amount->narration = 'Credit Note';
             $cash_amount->save();
@@ -794,7 +774,6 @@ class CreditNoteController extends Controller
             $customer_name = \App\Models\Client::find($invoiceinfo->client_id)->name;
         }
 
-        // dd($customer_name);
         $invoicedetailinfo = \App\Models\OrderDetail::where('order_id', $invoiceinfo->id)->get();
 
         $products = Product::select('id', 'name')->get();
@@ -804,12 +783,12 @@ class CreditNoteController extends Controller
             if ($idi->is_inventory == 1) {
                 $name = \App\Models\Product::find($idi->product_id)->name;
 
-                $data .= '<tr>  
+                $data .= '<tr>
                                 <td>
                                 <input type="text" class="form-control product_id" name="product"  value="'.$name.'" readonly>
                                   <input type="hidden"  name="product_id[]" value="'.$idi->product_id.'" required="required" readonly>
-                                
-                                   
+
+
                                 </td>
                                 <td>
                                     <input type="text" class="form-control invoice_price" name="price[]" placeholder="Fare" value="'.$idi->price.'" required="required" readonly>
@@ -817,7 +796,7 @@ class CreditNoteController extends Controller
                                 <td>
                                     <input type="number" class="form-control invoice_quantity" name="quantity[]" placeholder="Quantity" min="1" value="'.$idi->quantity.'" required="required" readonly>
                                 </td>
-                               
+
 
                                 <td>
                                     <input type="number" class="form-control returnable" name="returnable[]" placeholder="Returnable" min="1" value="'.$idi->quantity.'" required="required" readonly>
@@ -846,11 +825,11 @@ class CreditNoteController extends Controller
                                 <td>
                                   <input type="text" class="form-control product" name="custom_items_name[]" value="'.$idi->description.'" placeholder="Product" readonly>
                                 </td>
-                                 
+
                                 <td>
                                     <input type="text" class="form-control invoice_price" name="custom_items_price[]" placeholder="Price" value="'.$idi->price.'" required="required" readonly>
                                 </td>
-                               
+
                                 <td>
                                     <input type="number" class="form-control invoice_quantity" name="custom_items_qty[]" placeholder="Quantity" min="1" value="'.$idi->quantity.'" required="required" readonly>
                                 </td>
@@ -870,7 +849,7 @@ class CreditNoteController extends Controller
                                  <input type="number" class="form-control total" name="custom_credit_total[]" placeholder="Total" value="'.$idi->total.'" readonly="readonly" >
                                  </td>
 
-                                 
+
                                 <td>
                                     <input type="text" class="form-control reason" name="custom_reason[]" placeholder="Reason" value="" style="float:left; width:80%;">
                                     <a href="javascript::void(1);" style="width: 10%;">

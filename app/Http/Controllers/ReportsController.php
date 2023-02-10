@@ -81,7 +81,6 @@ class ReportsController extends Controller
                     ->where('leads.created_at', '>=', date('Y-m-d 00:01'))
                     ->where('leads.created_at', '<=', date('Y-m-d 23:59'))
                     ->get();
-        //dd($data);
         $pdf = \PDF::loadView('pdf.leadsToday', compact('data'));
         $file = 'Report_daily_sales_CRM_'.date('_Y_m_d').'.pdf';
 
@@ -115,7 +114,6 @@ class ReportsController extends Controller
                         ->whereBetween('created_at', [$start_date, $end_date])
                         ->where('enabled', '1')
                         ->where('status_id', $status_id)->get();
-        //dd($start_date);
 
         $pdf = \PDF::loadView('pdf.reportLeadStatus', compact('data', 'start_date', 'end_date'));
         $file = 'Report_leads_by_status_CRM_'.date('_Y_m_d').'.pdf';
@@ -148,7 +146,6 @@ class ReportsController extends Controller
                     ->whereBetween('leads.created_at', [$start_date, $end_date])
                     ->get();
 
-       // dd($data);
 
         $pdf = \PDF::loadView('pdf.reportLeadConverted', compact('data', 'start_date', 'end_date'));
         $file = 'Report_leads_converted_CRM_'.date('_Y_m_d').'.pdf';
@@ -166,7 +163,6 @@ class ReportsController extends Controller
                     ->where('created_at', '>=', date('Y-m-d 00:01'))
                     ->where('created_at', '<=', date('Y-m-d 23:59'))
                     ->get();
-        //dd($data);
         $pdf = \PDF::loadView('pdf.todaysActivities', compact('data'));
         $file = 'Report_todays_activities_CRM_'.date('_Y_m_d').'.pdf';
 
@@ -184,7 +180,6 @@ class ReportsController extends Controller
                     ->where('created_at', '>=', date('Y-m-d 00:01'))
                     ->where('created_at', '<=', date('Y-m-d 23:59'))
                     ->get();
-        //dd($data);
         $pdf = \PDF::loadView('pdf.todaysCallActivities', compact('data'));
         $file = 'Report_todays_call_activities_CRM_'.date('_Y_m_d').'.pdf';
 
@@ -200,7 +195,6 @@ class ReportsController extends Controller
         $data = Contact::select('client_id', 'salutation', 'full_name', 'email_1', 'phone', 'landline', 'city')
                     ->where('enabled', '1')
                     ->get();
-        //dd($data);
         $pdf = \PDF::loadView('pdf.allContacts', compact('data'));
         $file = 'Report_All_Contacts_CRM_'.date('_Y_m_d').'.pdf';
 
@@ -216,7 +210,6 @@ class ReportsController extends Controller
         $data = Client::select('name', 'location', 'email', 'phone', 'industry')
                     ->where('enabled', '1')
                     ->get();
-        //dd($data);
         $pdf = \PDF::loadView('pdf.allClients', compact('data'));
         $file = 'Report_All_Clients_CRM_'.date('_Y_m_d').'.pdf';
 
@@ -388,7 +381,6 @@ class ReportsController extends Controller
 
     //      }
 
-    //      dd($data);
 
     //     return \Excel::create('monthly_payroll_report('.$month.')', function($excel) use ($data) {
     //       $excel->sheet('mySheet', function($sheet) use ($data)

@@ -99,8 +99,6 @@ class KnowledgecatController extends Controller
             $attributes['enabled'] = 0;
         }
 
-        //dd($attributes);
-
         $knowledge = $this->knowledgecat->create($attributes);
 
         Audit::log(Auth::user()->id, trans('admin/knowledge/general.audit-log.category'), trans('admin/knowledge/general.audit-log.msg-store', ['name' => 'subject created']));

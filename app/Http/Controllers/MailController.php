@@ -96,7 +96,6 @@ class MailController extends Controller
                         } else {
                             $fields = '';
                         }
-                        //dd($request->all());
                         // $mail = 0;
 
                         // if ($contacts == null || $contacts->count() == '0') {
@@ -191,7 +190,6 @@ class MailController extends Controller
             File::Delete('uploads/'.$file);
         }
         $pdf->save('uploads/'.$file);
-        //dd($file);
 
         Audit::log(Auth::user()->id, trans('admin/mails/general.audit-log.category'), trans('admin/mails/general.audit-log.msg-store', ['name' => $attributes['mail_from']]));
 
@@ -250,11 +248,9 @@ class MailController extends Controller
                     'message' => $request['message'],
                     ];
 
-        //dd($attributes);
 
         $Lead = \App\Models\Orders::find($leadId);
 
-        //dd($Lead);
 
         //$pdf = App::make('dompdf.wrapper');
         // $pdf = \PDF::loadHTML($request['message']);
@@ -270,7 +266,6 @@ class MailController extends Controller
             File::Delete('uploads/'.$file);
         }
         $pdf->save('uploads/'.$file);
-        //dd($file);
 
         Audit::log(Auth::user()->id, trans('admin/mails/general.audit-log.category'), trans('admin/mails/general.audit-log.msg-store', ['name' => $attributes['mail_from']]));
 
@@ -537,7 +532,7 @@ class MailController extends Controller
                         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
                         <h4>Mail Detail</h4>
                      </div>
-                     <div class="modal-body"> 
+                     <div class="modal-body">
                         <div style="background:#fff; padding:10px;">
                             <div class="pad-10 header">
                                 <div><i class="lbl">From: </i> <i id="email_from">'.$mail->mail_from.'</i></div>
@@ -545,7 +540,7 @@ class MailController extends Controller
                                 <div><i class="lbl">Date: </i>'.$mail->created_at->format('Y-m-d H:i:s').'</div>
                             </div>
                             <div><hr style="margin-bottom:10px; border:1px solid #000;"><strong>Body: </strong><br/>
-                                '.$mail->message.'<br/>'.$attached.'                    
+                                '.$mail->message.'<br/>'.$attached.'
                             </div>
                        </div>
                     </div>
@@ -563,7 +558,7 @@ class MailController extends Controller
     public function getOfferLetterModalMail($taskId)
     {
         $error = null;
-       
+
         $Lead = $this->lead->find($taskId);
 
         if (! $Lead->user->email) {
@@ -594,7 +589,6 @@ class MailController extends Controller
                         'message'   =>  $request['message'],
                     ];
 
-        //dd($request['mail_to']);
 
         $Lead = $this->lead->find($leadId);
         //$pdf = App::make('dompdf.wrapper');
@@ -913,7 +907,7 @@ class MailController extends Controller
             $destinationPath = public_path().'/sent_attachments/';
             $filename = $file->getClientOriginalName();
 
-            
+
             $request->file('attachment')->move($destinationPath, $stamp.$filename);
             $data2['attachment'] =  $stamp.$filename;
 
@@ -922,7 +916,6 @@ class MailController extends Controller
             }
 
 
-        // dd($request->all());
         $data2['title'] = $request['title'];
         $data2['subject'] = $request['subject'];
         $data2['message'] = $request['message'];
@@ -931,9 +924,9 @@ class MailController extends Controller
         $data2['created_at'] = \Carbon\Carbon::now();
         $file = $request->file('attachment');
 
-        
+
         DB::table('bulk_email_campaign')->insert($data2);
-        
+
         $validatedData = $request->validate(['title' => 'required|max:255',
                                     'subject' => 'required|max:255',
                                     'message'  => 'required',]);
@@ -946,7 +939,6 @@ class MailController extends Controller
                 "message"=>$request->message,
                 'attachments'=>$data2['attachment']
             ];
-            //dd($request->all());
 
 
             dispatch(new SendBulkEmailToAll($details));
@@ -954,7 +946,7 @@ class MailController extends Controller
              Flash::success('Bulk mail send successfully in the background...');
             return Redirect::back();
         }
-    
+
 
 
         // Flash::success('Bulk mail send successfully in the background...');

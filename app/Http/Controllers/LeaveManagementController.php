@@ -76,7 +76,6 @@ class LeaveManagementController extends Controller
 
         $request_to = \App\Models\Team::where('org_id', \Auth::user()->org_id)
                         ->select('name as username', 'id')->get();
-        // dd($request_to);
         $department = \App\Models\Department::all();
 
         $mystaticLeave = \App\Models\LeaveUser::where('user_id',\Auth::user()->id)->pluck('leave_id')->toArray();
@@ -94,7 +93,6 @@ class LeaveManagementController extends Controller
 
     public function store(Request $request)
     {
-        //dd(Request::all());
         $attributes = $request->all();
 
 
@@ -205,7 +203,6 @@ class LeaveManagementController extends Controller
     {
         $leaveApp = LeaveApplication::where('leave_application_id', $id)->first();
 
-        //dd("HGG");
         // if (! $leaveApp || $leaveApp->isEditable()) {
         //     Flash::warning('Sorry! You do not have enough privilege to edit this.');
         //     abort(403);
@@ -333,7 +330,6 @@ class LeaveManagementController extends Controller
         $getLeaveCatInfo = $leaveApp->category;
 
 
-        // dd("STOP");
 
         if (! $leaveApp || ! $leaveApp->isEditable()) {
             Flash::warning('Sorry! You do not have enough privilege to change the status of this.');
@@ -564,7 +560,7 @@ class LeaveManagementController extends Controller
                                                         return $filterleaveType($query);
                                                     })->orderBy('leave_start_date', 'desc')
                                                       ->whereIn('leave_application_id',$leave_forward_id)->get());
-                        
+
             $request_user_id  = \request('user');
             $request_user = \App\User::where('id',$request_user_id)->first();
             if((\request('user') == \Auth::user()->id) || (empty(\request('user'))) || (\App\Helpers\TaskHelper::is_line_manager(\Auth::user()->id)))
@@ -594,8 +590,8 @@ class LeaveManagementController extends Controller
                                                         return $filterleaveType($query);
                                                     })->orderBy('leave_start_date', 'desc')
                                                      ->get());
-           
-          
+
+
             }
             $leave_applied__user_id = \App\Models\LeaveChangeRequestForward::where('to_id',\Auth::user()->id)->where('forward_source','leave')->pluck('from_id');
 
@@ -603,7 +599,7 @@ class LeaveManagementController extends Controller
 
 
             }else{
-                
+
                   $allleaves = LeaveApplication::where(function ($query) use ($filterleaveType) {
                             return $filterleaveType($query);
                         })
@@ -618,7 +614,7 @@ class LeaveManagementController extends Controller
                           ->paginate(25);
              }
 
-         
+
 
         $categories = LeaveCategory::get();
 
@@ -628,16 +624,13 @@ class LeaveManagementController extends Controller
 
         $page_description = 'Pending Leaves Lists';
 
-        //dd($allleaves);
 
         return view('admin.leave_mgmt.allpendingleaves', compact('is_second_line_manager','allleaves', 'page_title', 'categories', 'users', 'page_description', 'startdate', 'enddate'));
     }
 
     public function leavereport(Request $request)
     {
-        //dd($request->all());
         $requestData = $request->all();
-        // dd($requestData);
         $allleaves = LeaveApplication::orderBy('leave_start_date', 'desc')->get();
 
         $categories = LeaveCategory::get();
@@ -735,9 +728,7 @@ class LeaveManagementController extends Controller
             $startdate = $_years->start_date;
             $enddate = $_years->end_date;
         }
-        //dd($nepstartdate);
 
-        //dd($enddate);
 
         return view('admin.leave_mgmt.leavereport', compact('allleaves', 'page_title', 'categories', 'users', 'nepstart_date', 'nepend_date', 'page_description', 'leave_years', 'startdate', 'enddate', 'userlists','departments','divisions','requestData'));
     }
@@ -965,14 +956,13 @@ class LeaveManagementController extends Controller
     public function leaveRequestModal($id)
     {
         $leaveapp =  LeaveApplication::where('leave_application_id', $id)->first();
-        $forwaded = \App\Models\LeaveChangeRequestForward::where('leave_id',$leaveapp->leave_application_id)->first(); 
+        $forwaded = \App\Models\LeaveChangeRequestForward::where('leave_id',$leaveapp->leave_application_id)->first();
          return view('admin.leave_mgmt.leave_approve_modal', compact('forwaded','forward_messages','page_title', 'page_description', 'leaveapp', 'attendance'));
     }
 
 
     public function leaveRequestUpdate(Request $request, $id)
     {
-        // dd($request->all());
         $leaveapp =  LeaveApplication::where('leave_application_id', $id)->first();
 
         $leaveapp->where('leave_application_id',$id)->update([
@@ -1016,7 +1006,7 @@ class LeaveManagementController extends Controller
         $line_manager = \App\User::where('id',$users)->get();
 
 
-        
+
         // $users = \App\User::where('id',$leaveapp->user_id)->first();
         // $line_manager = collect();
         // if(!empty(\Auth::user()->second_line_manager)){
@@ -1026,7 +1016,7 @@ class LeaveManagementController extends Controller
         //     //check if this is second line if than forward to hr or
         //  $line_manager = $line_manager->push(\App\User::where('id',\Auth::user()->first_line_manager)->first());
         // }
-        return view('admin.leave_mgmt.leave_forward_approve_modal', compact('line_manager','page_title', 'page_description', 'leaveapp', 'attendance')); 
+        return view('admin.leave_mgmt.leave_forward_approve_modal', compact('line_manager','page_title', 'page_description', 'leaveapp', 'attendance'));
 
     }
 

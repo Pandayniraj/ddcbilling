@@ -59,7 +59,6 @@ class AppraisalObjectiveTypeController extends Controller
 
         }
         $count=(int)$data->points/5;
-        // dd($count);
         for($i=0; $i<$count;$i++){
             AppraisalObjective::create([
                 'obj_type_id' =>$data->id,
@@ -88,7 +87,6 @@ class AppraisalObjectiveTypeController extends Controller
         $request->is_master ? ($objectivetypes['is_master'] = $request->is_master) : ($objectivetypes['is_master'] = null);
         $request->status ? ($objectivetypes['status'] = $request->status) : ($objectivetypes['status'] = '0');
 
-        // dd($request->all());
         AppraisalObjectiveType::where('id', $id)->update($objectivetypes);
         if($request->is_master)
             AppraisalTemplateType::where('type_id', $id)->delete();

@@ -318,7 +318,6 @@ class TasksController extends Controller
         $task_user->user_id = Auth::user()->id;
         $task_user->save();
 
-        // dd($task_user);
 
         Flash::success(trans('admin/tasks/general.status.created'));
         if (\Request::ajax()) {
@@ -391,7 +390,6 @@ class TasksController extends Controller
 
         $attributes['task_start_date'] = date('Y-m-d G:i', strtotime($request['task_start_date']));
         $attributes['task_due_date'] = date('Y-m-d G:i', strtotime($request['task_due_date']));
-        //dd($attributes['task_start_date']);
 
         $task = $this->task->find($id);
         if($task->task_status != 'Completed' && !$wantToMakeComplete){
@@ -595,7 +593,6 @@ class TasksController extends Controller
 
 
 
-        // dd($request->id);
 
         $task->update($attributes);
 

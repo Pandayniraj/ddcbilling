@@ -257,13 +257,9 @@ class HomeController extends Controller
             $travel_request1 = TravelRequest::whereIn('user_id',$firstline_subordinates)->where('status',1)->where('is_forwarded',0)->orderBy('created_at', 'desc')->limit(10)->get();
             $travel_request2 = TravelRequest::whereIn('user_id',$secondline_subordinates)->where('status',1)->where('is_forwarded',1)->orderBy('created_at', 'desc')->limit(10)->get();
             $travel_request = $travel_request1->merge($travel_request2);
-            // dd($travel_request,$attendance,$add_attendance);
         }
-        
 
         $online_leads = \App\Models\Lead::where('lead_type_id','1')->orderBy('id', 'DESC')->limit(5)->get();
-
-
 
         return view('home', compact('page_title', 'leftCheckin','page_description','annoucements', 'attendance_log','projects','newsfeeds','present_user','leads','on_leave','absent_user','users','birthdays','holidays','greetings','birthdayMessage','anniversaryMessage','aniversary','attendance','isShiftStart','add_attendance','missing_details','userAtt','travel_request','online_leads'));
     }
@@ -311,8 +307,6 @@ class HomeController extends Controller
                                     ->where('org_id', Auth::user()->org_id)
                                     ->where('enabled', '1')
                                     ->orderBy('id', 'desc')->paginate(20);
-
-        // dd($cases);
 
         return view('notviewedcases', compact('page_title', 'page_description', 'cases'));
     }
