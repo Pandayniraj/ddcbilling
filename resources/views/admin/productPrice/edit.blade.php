@@ -25,15 +25,15 @@
                             </div>
                             <div class="form-group col-md-6">
                                 {!! Form::label('price', 'Distributor Sales Pricing') !!}
-                                {!! Form::number('distributor_price', null, ['class' => 'form-control']) !!}
+                                {!! Form::number('distributor_price', null, ['class' => 'form-control', 'step' => '0.01']) !!}
                             </div>
                             <div class="form-group col-md-6">
                                 {!! Form::label('price', 'Retailer Sales Pricing') !!}
-                                {!! Form::number('retailer_price', null, ['class' => 'form-control']) !!}
+                                {!! Form::number('retailer_price', null, ['class' => 'form-control', 'step' => '0.01']) !!}
                             </div>
                             <div class="form-group col-md-6">
                                 {!! Form::label('price', 'Customer Sales Pricing') !!}
-                                {!! Form::number('customer_price', null, ['class' => 'form-control']) !!}
+                                {!! Form::number('customer_price', null, ['class' => 'form-control', 'step' => '0.01']) !!}
                             </div>
                         </div>
                         <br>

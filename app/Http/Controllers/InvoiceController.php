@@ -868,33 +868,12 @@ class InvoiceController extends Controller
         $ledgerId = \App\Models\Client::find($invoice->client_id)->ledger_id??465;
 
         \App\Models\Entryitem::where('entry_id', $entry->id)->delete();
-        if ($request->payment_type == 'Credit') {
-            //Sales account
-            $sub_amount = new \App\Models\Entryitem();
-            $sub_amount->entry_id = $entry->id;
-            $sub_amount->user_id = \auth()->id();
-            $sub_amount->org_id = \Auth::user()->org_id;
-            $sub_amount->dc = 'C';
-            $sub_amount->ledger_id = \App\Helpers\FinanceHelper::get_ledger_id("SALES_LEDGER_ID");
-            $sub_amount->amount = $request->amount;
-            $sub_amount->narration = 'Invoice Sales Receipt Made';
-            $sub_amount->save();
-            // cash account
-            $cash_amount = new \App\Models\Entryitem();
-            $cash_amount->entry_id = $entry->id;
-            $cash_amount->user_id = \auth()->id();
-            $cash_amount->org_id = \Auth::user()->org_id;
-            $cash_amount->dc = 'D';
-            $cash_amount->ledger_id = $ledgerId; //
-            $cash_amount->amount = $request->amount;
-            $cash_amount->narration = 'Invoice Credit Receipt';
-            $cash_amount->save();
-        } else {
+        if($request->payment_type == 'Cash') {
             $entry_item = \App\Models\Entryitem::create([
                 'entry_id' => $entry->id,
                 'dc' => 'D',
                 'ledger_id' => 465, // cash_sales ledger id
-                'amount' => $invoice->subtotal,
+                'amount' => $invoice->total_amount,
                 'narration' => 'Cash payment on Sales being made',
             ]);
 
@@ -905,16 +884,6 @@ class InvoiceController extends Controller
                 'amount' => $invoice->total_amount,
                 'narration' => 'Sales Amount',
             ]);
-
-            if ($invoice->total_tax_amount > 0) {
-                $entry_item = \App\Models\Entryitem::create([
-                    'entry_id' => $entry->id,
-                    'dc' => 'D',
-                    'ledger_id' => \FinanceHelper::get_ledger_id('SALES_TAX_LEDGER'), //Sales Tax Ledger
-                    'amount' => $invoice->total_tax_amount,
-                    'narration' => 'Tax to pay',
-                ]);
-            }
         }
 
         $customerdeposit['user_id'] = \auth()->id();

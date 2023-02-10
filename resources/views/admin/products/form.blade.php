@@ -55,7 +55,7 @@
     <div class="form-group col-sm-6">
         {!! Form::label('product_image', 'Product Image') !!}
         <div class="">
-            <input type="file" name="product_image" class="form-control">
+            <input type="file" name="product_image" class="form-control" accept="image/*">
             @if($course->product_image)
                 <img src="{{ asset('products/'.$course->product_image) }}" alt="Product Img" style="width: 120px; height: auto;">
             @endif

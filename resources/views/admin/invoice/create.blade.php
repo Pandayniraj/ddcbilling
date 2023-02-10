@@ -781,7 +781,7 @@
                                 total = total;
                             } else
                                 parentDiv.find('.tax_amount_line').val('0');
-                            parentDiv.find('.total').val(total);
+                            parentDiv.find('.total').val(total.toFixed(2));
                             calcTotal();
                         } else {
                             parentDiv.find('.price').val('');
@@ -818,15 +818,15 @@
                         parentDiv.find('.tax_amount').val('0');
 
                     if (isNumeric(total) && total != '') {
-                        parentDiv.find('.total').val(total);
+                        parentDiv.find('.total').val(total.toFixed(2));
                         calcTotal();
                     }
                 });
                 let customer_id = $(this).val();
                 $.get('/admin/customer/depositamount/' + customer_id, function (data, status) {
-                    $('#bank_deposit').val(data.deposit_amount);
-                    $('#credit_limit').val(data.credit_limit);
-                    $('#remaining_amount').val(data.remaining_amount);
+                    $('#bank_deposit').val(data.deposit_amount.toFixed(2));
+                    $('#credit_limit').val(data.credit_limit.toFixed(2));
+                    $('#remaining_amount').val(data.remaining_amount.toFixed(2));
                 });
             } else {
                 $('.total').val('0');
@@ -1017,9 +1017,9 @@
 
             if (deposit_amount > 0) {
                 let remaining_amount = Number(deposit_amount) + Number(credit_limit);
-                $('#remaining_amount').val(remaining_amount);
+                $('#remaining_amount').val(remaining_amount.toFixed(2));
             } else {
-                $('#remaining_amount').val(credit_limit);
+                $('#remaining_amount').val(credit_limit.toFixed(2));
             }
             calcTotal();
         });
@@ -1041,14 +1041,12 @@
                 total = total;
             } else
                 parentDiv.find('.tax_amount_line').val('0');
-            parentDiv.find('.total').val(total);
+            parentDiv.find('.total').val(total.toFixed(2));
             adjustTax($(this));
             calcTotal();
         });
 
         $(document).on('change', '.price', function () {
-
-
             var parentDiv = $(this).parent().parent();
             if (isNumeric(this.value) && this.value != '') {
                 if (isNumeric(parentDiv.find('.quantity').val()) && parentDiv.find('.quantity').val() != '') {
@@ -1066,7 +1064,7 @@
             } else
                 parentDiv.find('.tax_amount_line').val('0');
 
-            parentDiv.find('.total').val(total);
+            parentDiv.find('.total').val(total.toFixed(2));
             adjustTax($(this));
             calcTotal();
         });
@@ -1112,7 +1110,7 @@
             } else
                 parentDiv.find('.tax_amount_line').val('0');
 
-            parentDiv.find('.total').val(total);
+            parentDiv.find('.total').val(total.toFixed(2));
             calcTotal();
         });
 
@@ -1220,10 +1218,10 @@
             $('#total_tax_amount').val(tax_amount);
 
             $('#total').html(total.toLocaleString());
-            $('#total_').val(total);
+            $('#total_').val(total.toFixed(2));
             let credit_limit = $('#credit_limit').val();
-            remaining_amount = Number(credit_limit) - Number(total);
-            $('#remaining_amount').val(remaining_amount);
+            var remaining_amount = Number(credit_limit) - Number(total);
+            $('#remaining_amount').val(remaining_amount.toFixed(2));
             // remaining_amount=Number($('#remaining_amount').val());
 
             var bill_type = $('#bill_type').val();
@@ -1474,7 +1472,7 @@
                         } else
                             parentDiv.find('.tax_amount_line').val('0');
 
-                        parentDiv.find('.total').val(total);
+                        parentDiv.find('.total').val(total.toFixed(2));
                         calcTotal();
                     }
                 });
