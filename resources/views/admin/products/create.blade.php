@@ -34,10 +34,7 @@
                     </div>
                 </div>
             </div>
-
-            <!-- /.tab-pane -->
         </div>
-        <!-- /.tab-content -->
     </div>
 
     <script>
@@ -61,6 +58,5 @@
                 }
             });
         });
-
     </script>
 @endsection

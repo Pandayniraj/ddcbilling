@@ -1050,14 +1050,13 @@ class InvoiceController extends Controller
 
             $bill_date_nepali = $this->convertdate($invoice->bill_date);
             // $bill_date_nepali = $invoice->bill_date;
-            // $bill_date_nepali = $invoice->bill_date;
             // $bill_date_nepali = new DateTime($bill_date_nepal.' '.date('H:i:s'));
 
             $bill_today_date_nep = date('Y-m-d H:i:s');
             // $bill_today_date_nep = new DateTime($bill_today_date_n.' '.date('H:i:s A'));
             $irddetail = IrdDetail::first();
 
-            $data = json_encode(['username' => env('IRD_USERNAME'), 'password' => env('IRD_PASSWORD'), 'seller_pan' => @$irddetail->seller_pan??'',
+            $data = json_encode(['username' => @$irddetail->username, 'password' => @$irddetail->username, 'seller_pan' => @$irddetail->seller_pan??'',
                 'buyer_pan' => $buyer_pan, 'fiscal_year' => $invoice->fiscal_year, 'buyer_name' => $guest_name,
                 'invoice_number' => $invoice->outlet->short_name . '/' . $invoice->fiscal_year . '/' . '00' . $invoice->bill_no,
                 'invoice_date' => $bill_date_nepali, 'total_sales' => $invoice->total_amount, 'taxable_sales_vat' => $invoice->taxable_amount,
@@ -1066,7 +1065,6 @@ class InvoiceController extends Controller
                 'datetimeClien' => $bill_today_date_nep]);
 
             // $data = json_encode(['username' => env('IRD_USERNAME'), 'password' => env('IRD_PASSWORD'), 'seller_pan' => env('SELLER_PAN'), 'buyer_pan' => $buyer_pan, 'fiscal_year' => $invoice->fiscal_year, 'buyer_name' => $guest_name, 'invoice_number' => env('SALES_BILL_PREFIX').$invoice->bill_no, 'invoice_date' => $bill_date_nepali, 'total_sales' => $invoice->total_amount, 'taxable_sales_vat' => $invoice->taxable_amount, 'vat' => $invoice->tax_amount, 'excisable_amount' => 0, 'excise' => 0, 'taxable_sales_hst' => 0, 'hst' => 0, 'amount_for_esf' => 0, 'esf' => 0, 'export_sales' => 0, 'tax_exempted_sales' => 0, 'isrealtime' => true, 'datetimeClient' => $bill_today_date_nep]);
-
 
             $irdsync = new \App\Models\NepalIRDSync();
             $response = $irdsync->postbill($data, @$irddetail->api_link??'');

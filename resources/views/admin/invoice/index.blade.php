@@ -49,6 +49,9 @@
         table#orders-table {
             font-size: 12px;
         }
+        input.nep-date-toggle.form-control.andp-date-picker {
+            width: 100% !important;
+        }
     </style>
     <link href="/bower_components/admin-lte/select2/css/select2.min.css" rel="stylesheet"/>
     <script src="/bower_components/admin-lte/select2/js/select2.min.js"></script>
@@ -66,50 +69,66 @@
                 <div class="wrap hide_on_tablet" style="margin-top:15px;margin-left:11px;">
                     <form method="get" action="/admin/invoice1">
                         <div class="filter form-inline" style="margin:0 30px 0 0;">
-                            {!! Form::text('start_date', \Request::get('start_date'), ['style' => 'width:120px;', 'class' => 'form-control input-sm input-sm date-toggle-nep-eng1', 'id'=>'start_date', 'placeholder'=>'Bill start date...','autocomplete' =>'off']) !!}
-                            &nbsp;&nbsp;
-                            <!-- <label for="end_date" style="float:left; padding-top:7px;">End Date: </label> -->
-                            {!! Form::text('end_date', \Request::get('end_date'), ['style' => 'width:120px; display:inline-block;', 'class' => 'form-control input-sm input-sm date-toggle-nep-eng1', 'id'=>'end_date', 'placeholder'=>'Bill end date..','autocomplete' =>'off']) !!}
-                            &nbsp;&nbsp;
-                            {!! Form::text('bill_no', \Request::get('bill_no'), ['style' => 'width:100px; display:inline-block;', 'class' => 'form-control input-sm input-sm', 'id'=>'bill_no', 'placeholder'=>'Enter bill number...','autocomplete' =>'off']) !!}
-                            &nbsp;&nbsp;
-                            <select class="form-control input-sm searchable" style="width: 150px;" name="outlet_id">
-                                <option value="">Select Outlet</option>
-                                @if(isset($outlets))
-                                    @if(\Auth::user()->hasRole('admins'))
-                                        @foreach($outlets as $key=>$out)
-                                            <option value="{{ $key }}"
-                                                    @if(Request::get('outlet_id') == $key) selected="" @endif>
-                                                {{$out}}
-                                            </option>
-                                        @endforeach
-                                    @else
-                                        {
-                                        @foreach($outlets as $key=>$out)
-                                            <option value="{{ $out->id }}"
-                                                    @if(Request::get('outlet_id') == $out->id) selected="" @endif>
-                                                {{$out->name}}
-                                            </option>
-                                        @endforeach
-                                        }
-                                    @endif
-                                @endif
-                            </select>
-                            {!! Form::select('client_id', ['' => 'Select Customer'] + ($clients ?? []), \Request::get('client_id'), ['id'=>'filter-customer', 'class'=>'form-control input-sm searchable', 'style'=>'width:150px; display:inline-block;']) !!}
-                            &nbsp;&nbsp;
-                            {!! Form::select('fiscal_year', ['' => 'Fiscal Year'] + ($fiscal_years ?? []), \Request::get('fiscal_year'), ['id'=>'fiscal_year', 'class'=>'form-control input-sm searchable', 'style'=>'width:100px; display:inline-block;']) !!}
-                            &nbsp;&nbsp;
-                            {!! Form::select('pay_status',[''=>'All Payments','Pending'=>'Pending',
-                               'Partial'=>'Partial','Paid'=>'Paid'] , Request::get('pay_status') ,
-                               ['class'=>'form-control input-sm','id'=>'pay_status'])  !!}
-                            <input type="hidden" name="search" value="true">
-                            <input type="hidden" name="type" value={{ Request::get('type') }}>
-                            <button class="btn btn-primary btn-sm" id="btn-submit-filter" type="submit">
-                                <i class="fa fa-list"></i> Filter
-                            </button>
-                            <a href="/admin/invoice1" class="btn btn-default btn-sm" id="btn-filter-clear">
-                                <i class="fa fa-close"></i>
-                            </a>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <label for="start_date">Start Date</label>
+                                    {!! Form::text('start_date', \Request::get('start_date'), ['style' => 'width:100% !important;', 'class' => 'form-control input-sm input-sm date-toggle-nep-eng1', 'id'=>'start_date', 'placeholder'=>'Bill start date...','autocomplete' =>'off']) !!}
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="end_date">End Date</label>
+                                    {!! Form::text('end_date', \Request::get('end_date'), ['style' => 'width:100% !important; display:inline-block;', 'class' => 'form-control input-sm input-sm date-toggle-nep-eng1', 'id'=>'end_date', 'placeholder'=>'Bill end date..','autocomplete' =>'off']) !!}
+                                </div>
+                                <div class="col-md-3" style="margin-top: 5px;">
+                                    <label for="filter-customer">Customer</label>
+                                    {!! Form::select('client_id', ['' => 'Select Customer'] + ($clients ?? []), \Request::get('client_id'), ['id'=>'filter-customer', 'class'=>'form-control input-sm searchable', 'style'=>'width:100%; display:inline-block;']) !!}
+                                </div>
+                                <div class="col-md-3" style="margin-top: 5px;">
+                                    <label for="fiscal_year">Year</label>
+                                    {!! Form::select('fiscal_year', ['' => 'Fiscal Year'] + ($fiscal_years ?? []), \Request::get('fiscal_year'), ['id'=>'fiscal_year', 'class'=>'form-control input-sm searchable', 'style'=>'width:100%; display:inline-block;']) !!}
+                                </div>
+                                <div class="col-md-3">
+                                    {!! Form::text('bill_no', \Request::get('bill_no'), ['style' => 'width:100%; display:inline-block;', 'class' => 'form-control input-sm input-sm', 'id'=>'bill_no', 'placeholder'=>'Enter bill number...','autocomplete' =>'off']) !!}
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-control input-sm searchable" style="width: 100%;" name="outlet_id">
+                                        <option value="">Select Outlet</option>
+                                        @if(isset($outlets))
+                                            @if(\Auth::user()->hasRole('admins'))
+                                                @foreach($outlets as $key=>$out)
+                                                    <option value="{{ $key }}"
+                                                            @if(Request::get('outlet_id') == $key) selected="" @endif>
+                                                        {{$out}}
+                                                    </option>
+                                                @endforeach
+                                            @else
+                                                {
+                                                @foreach($outlets as $key=>$out)
+                                                    <option value="{{ $out->id }}"
+                                                            @if(Request::get('outlet_id') == $out->id) selected="" @endif>
+                                                        {{$out->name}}
+                                                    </option>
+                                                @endforeach
+                                                }
+                                            @endif
+                                        @endif
+                                    </select>
+                                </div>
+                                <div class="col-md-3" style="margin-top: 5px;">
+                                    {!! Form::select('pay_status',[''=>'All Payments','Pending'=>'Pending',
+                                   'Partial'=>'Partial','Paid'=>'Paid'] , Request::get('pay_status') ,
+                                   ['class'=>'form-control input-sm','id'=>'pay_status', 'style' => 'width: 100%;'])  !!}
+                                    <input type="hidden" name="search" value="true">
+                                    <input type="hidden" name="type" value={{ Request::get('type') }}>
+                                </div>
+                                <div class="col-md-3" style="margin-top: 5px;">
+                                    <button class="btn btn-primary btn-sm" id="btn-submit-filter" type="submit">
+                                        <i class="fa fa-list"></i> Filter
+                                    </button>
+                                    <a href="/admin/invoice1" class="btn btn-default btn-sm" id="btn-filter-clear">
+                                        <i class="fa fa-close"></i> Clear
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     </form>
                 </div>

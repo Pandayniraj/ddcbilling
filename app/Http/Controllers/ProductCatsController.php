@@ -84,12 +84,20 @@ class ProductCatsController extends Controller
     {
         $this->validate($request, ['name' => 'required']);
 
-        $attributes = $request->all();
+        if (\Request::ajax()) {
+            $validator = \Validator::make($request->all(), ['name' => 'required']);
+            if ($validator->fails()) {
+                return ['error' => $validator->errors()];
+            }
+        }
+        $attributes = $request->only(['name', 'enabled']);
 
         $attributes['org_id'] = Auth::user()->org_id;
         $ProductCategory = $this->ProductCategory->create($attributes);
 
-        Flash::success('created'); // 'LeadStatus successfully created');
+        if (\Request::ajax()) return ['status' => 'success', 'data' => $ProductCategory];
+
+       Flash::success('created'); // 'LeadStatus successfully created');
 
         return redirect('/admin/productcats');
     }

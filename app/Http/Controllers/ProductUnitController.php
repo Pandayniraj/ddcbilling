@@ -28,6 +28,8 @@ class ProductUnitController extends Controller
     {
         $_unit = $request->all();
         $product_unit = ProductsUnit::create($_unit);
+
+        if (\Request::ajax()) return ['status' => 'success', 'data' => $product_unit];
         Flash::success('Product unit Added');
 
         return redirect('/admin/production/product-unit-index/');

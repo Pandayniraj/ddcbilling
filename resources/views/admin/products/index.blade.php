@@ -138,30 +138,30 @@
                                         {{-- <td>{!! $course->warranty==0?'NO': $course->warranty.' months'!!}</td> --}}
                                         <td>
 
-                                            <a href="{{route('admin.product-pricing.index',$course->id)}}"><i
-                                                    class="fa fa-money" title="Add Product Price" style="font-size: 25px;"></i>
+                                            <a href="{{route('admin.product-pricing.index',$course->id)}}">
+                                                <i class="fa fa-money" title="Add Product Price" style="font-size: 25px;"></i>
                                             </a>
                                         </td>
                                         <td>
                                             @if ( $course->isEditable() || $course->canChangePermissions() )
                                                 @if(\Auth::user()->hasRole('admins'))
                                                     <a href="{!! route('admin.products.edit', $course->id) !!}"
-                                                       title="{{ trans('general.button.edit') }}"><i
-                                                            class="fa fa-edit"></i></a>
+                                                       title="{{ trans('general.button.edit') }}">
+                                                        <i class="fa fa-edit" style="font-size: 17px;"></i></a>
                                                 @endif
                                             @else
                                                 <i class="fa fa-edit text-muted"
-                                                   title="{{ trans('admin/courses/general.error.cant-edit-this-course') }}"></i>
+                                                   title="{{ trans('admin/courses/general.error.cant-edit-this-course') }}" style="font-size: 17px;"></i>
                                             @endif
 
                                             @if ( $course->enabled )
                                                 <a href="{!! route('admin.products.disable', $course->id) !!}"
-                                                   title="{{ trans('general.button.disable') }}"><i
-                                                        class="fa fa-check-circle enabled"></i></a>
+                                                   title="{{ trans('general.button.disable') }}">
+                                                    <i class="fa fa-check-circle enabled" style="font-size: 17px;"></i></a>
                                             @else
                                                 <a href="{!! route('admin.products.enable', $course->id) !!}"
-                                                   title="{{ trans('general.button.enable') }}"><i
-                                                        class="fa fa-ban disabled"></i></a>
+                                                   title="{{ trans('general.button.enable') }}">
+                                                    <i class="fa fa-ban disabled" style="font-size: 17px;"></i></a>
                                             @endif
 
                                             {{-- @if ( $course->isDeletable() )
@@ -169,8 +169,8 @@
                                             @else
                                             <i class="fa fa-trash text-muted" title="{{ trans('admin/courses/general.error.cant-delete-this-course') }}"></i>
                                             @endif --}}
-                                            <a href="{{route('admin.products.int_purch',$course->id)}}"><i
-                                                    class="fa fa-globe" title="International Purchase"></i>
+                                            <a href="{{route('admin.products.int_purch',$course->id)}}">
+                                                <i class="fa fa-globe" title="International Purchase" style="font-size: 17px;"></i>
                                             </a>
                                         </td>
                                     </tr>

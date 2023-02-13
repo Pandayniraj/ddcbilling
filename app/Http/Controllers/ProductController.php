@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Entry;
 use App\Models\Fiscalyear;
 use App\Models\Entryitem;
+use App\Models\ProductPrice;
 use App\Models\StockAdjustmentDetail;
 use App\Models\StockMove;
 use App\Models\Audit as Audit;
@@ -157,10 +158,7 @@ class ProductController extends Controller
         $stores = \App\Models\Store::pluck('name', 'id');
         // $menus  = \App\Models\PosMenu::orderBy('id','desc')->select('menu_name','id')->get();
         if (\Request::ajax()) {
-
             return view('admin.products.modals.create', compact('course', 'perms', 'outlets', 'page_title', 'page_description', 'categories', 'product_unit', 'product_type_masters', 'stores'));
-
-
         }
 
         return view('admin.products.create', compact('products', 'course', 'perms', 'outlets', 'page_title', 'page_description', 'categories', 'product_unit', 'product_type_masters', 'stores'));
@@ -354,6 +352,7 @@ class ProductController extends Controller
 
         Audit::log(Auth::user()->id, trans('admin/courses/general.audit-log.category'), trans('admin/courses/general.audit-log.msg-destroy', ['name' => $course->name]));
 
+        ProductPrice::where('product_id', $id)->delete();
         $course->delete();
 
         Flash::success(trans('admin/courses/general.status.deleted')); // 'Course successfully deleted');
