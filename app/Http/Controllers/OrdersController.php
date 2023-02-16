@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Response;
 use App\Models\Invoice;
 use DB;
+
 /**
  * THIS CONTROLLER IS USED AS PRODUCT CONTROLLER.
  */
@@ -52,7 +53,6 @@ class OrdersController extends Controller
     }
 
 
-
     /**
      * @return \Illuminate\View\View
      */
@@ -78,7 +78,7 @@ class OrdersController extends Controller
             ->where(function ($query) {
                 if (\Request::get('fiscal_id') && \Request::get('fiscal_id') != '') {
 
-                    return $query->where('fiscal_year_id',\Request::get('fiscal_id'));
+                    return $query->where('fiscal_year_id', \Request::get('fiscal_id'));
                 }
             })
             ->where(function ($query) {
@@ -88,12 +88,12 @@ class OrdersController extends Controller
             })
             ->where(function ($query) {
                 if (\Request::get('customer_id') && \Request::get('customer_id') != '') {
-                    return $query->where('source','lead')->where('client_id', \Request::get('customer_id'));
+                    return $query->where('source', 'lead')->where('client_id', \Request::get('customer_id'));
                 }
             })
             ->where(function ($query) {
                 if (\Request::get('client_id') && \Request::get('client_id') != '') {
-                    return $query->where('source','client')->where('client_id', \Request::get('client_id'));
+                    return $query->where('source', 'client')->where('client_id', \Request::get('client_id'));
                 }
             })
             ->where(function ($query) {
@@ -101,35 +101,35 @@ class OrdersController extends Controller
                     return $query->where('from_stock_location', \Request::get('location_id'));
                 }
             })
-            ->where(function($query){
-                if(!Auth::user()->hasRole('admins')){
-                    return $query->where('user_id',Auth::user()->id);
+            ->where(function ($query) {
+                if (!Auth::user()->hasRole('admins')) {
+                    return $query->where('user_id', Auth::user()->id);
                 }
-            })->where(function($query){
+            })->where(function ($query) {
 
                 $pay_status = \Request::get('pay_status');
-                if($pay_status == 'Pending'){
+                if ($pay_status == 'Pending') {
 
-                    return $query->where('payment_status','Pending')
-                            ->orWhereNull('payment_status')
-                            ->orWhere('payment_status','');
+                    return $query->where('payment_status', 'Pending')
+                        ->orWhereNull('payment_status')
+                        ->orWhere('payment_status', '');
 
-                }elseif($pay_status == 'Partial'){
+                } elseif ($pay_status == 'Partial') {
 
-                   return $query->where('payment_status','Partial');
+                    return $query->where('payment_status', 'Partial');
 
-                }elseif($pay_status == 'Paid'){
+                } elseif ($pay_status == 'Paid') {
 
-                  return  $query->where('payment_status','Paid');
+                    return $query->where('payment_status', 'Paid');
                 }
 
             })
-            ->where(function($query){
+            ->where(function ($query) {
                 $payments = \Request::get('payment');
-                if($payments == 'pending_partial'){
-                    return $query->whereIn('payment_status',['Pending','Partial'])
-                            ->orWhereNull('payment_status')
-                            ->orWhere('payment_status','');
+                if ($payments == 'pending_partial') {
+                    return $query->whereIn('payment_status', ['Pending', 'Partial'])
+                        ->orWhereNull('payment_status')
+                        ->orWhere('payment_status', '');
                 }
             })
             ->paginate(25);
@@ -148,7 +148,7 @@ class OrdersController extends Controller
         $page_title = 'Orders';
         $page_description = 'Manage Orders';
 
-        return view('admin.orders.index', compact('orders', 'page_title', 'page_description', 'locations', 'leads', 'fiscalyears','clients'));
+        return view('admin.orders.index', compact('orders', 'page_title', 'page_description', 'locations', 'leads', 'fiscalyears', 'clients'));
     }
 
     //renewals
@@ -309,9 +309,9 @@ class OrdersController extends Controller
         $org_id = \Auth::user()->org_id;
 
         $ckfiscalyear = \App\Models\Fiscalyear::where('current_year', '1')
-                        ->where('org_id', $org_id)
-                        ->first();
-        if(!$ckfiscalyear){
+            ->where('org_id', $org_id)
+            ->first();
+        if (!$ckfiscalyear) {
             Flash::error("Please Set Fiscal Year First");
             return redirect()->back();
         }
@@ -359,7 +359,7 @@ class OrdersController extends Controller
                 $detail->date = date('Y-m-d H:i:s');
                 $detail->is_inventory = 1;
                 $detail->save();
-                if($isInvoice){
+                if ($isInvoice) {
                     // create stockMove
                     $stockMove = new StockMove();
                     $stockMove->stock_id = $product_id[$key];
@@ -430,7 +430,7 @@ class OrdersController extends Controller
         $page_title = 'Orders';
         $page_description = 'Edit Orders';
         $order = Orders::where('id', $id)->first();
-         \TaskHelper::authorizeOrg($order);
+        \TaskHelper::authorizeOrg($order);
         $orderDetails = OrderDetail::where('order_id', $order->id)->get();
         $fiscal_year = \FinanceHelper::cur_fisc_yr();
         $products = Product::select('id', 'name')->get();
@@ -461,7 +461,7 @@ class OrdersController extends Controller
     public function update(Request $request, $id)
     {
 
-      //  DB::beginTransaction();
+        //  DB::beginTransaction();
 
         $this->validate($request, [
 
@@ -472,7 +472,7 @@ class OrdersController extends Controller
 
 
         $order = $this->orders->find($id);
-         \TaskHelper::authorizeOrg($order);
+        \TaskHelper::authorizeOrg($order);
 
         if ($order->isEditable()) {
             $order_attributes = $request->all();
@@ -520,7 +520,7 @@ class OrdersController extends Controller
                     $detail->is_inventory = 1;
                     $detail->date = date('Y-m-d H:i:s');
                     $detail->save();
-                    if($isInvoice){
+                    if ($isInvoice) {
                         // create stockMove
                         $stockMove = new StockMove();
                         $stockMove->stock_id = $product_id[$key];
@@ -528,7 +528,7 @@ class OrdersController extends Controller
                         $stockMove->user_id = \Auth::user()->id;
                         $stockMove->reference = 'store_out_' . $order->id;
                         $stockMove->transaction_reference_id = $order->id;
-                        $stockMove->qty = '-'.$quantity[$key];
+                        $stockMove->qty = '-' . $quantity[$key];
                         $stockMove->trans_type = SALESINVOICE;
                         $stockMove->order_no = $order->bill_no;
                         $stockMove->location = $request->from_stock_location;
@@ -647,10 +647,9 @@ class OrdersController extends Controller
         } else {
             Flash::success('Error in updating Order.');
         }
-       // DB::commit();
+        // DB::commit();
         return \Redirect::back()->withInput(\Request::all());
     }
-
 
     private function postLedger($ord_id)
     {
@@ -687,8 +686,8 @@ class OrdersController extends Controller
             $entry_item_c->update($item_c);
 
             $entry_item_d_tax = \App\Models\Entryitem::where('entry_id', $order->entry_id)
-                    ->where('dc', 'C')->where('ledger_id',
-                        \FinanceHelper::get_ledger_id('SALES_TAX_LEDGER'))->first();
+                ->where('dc', 'C')->where('ledger_id',
+                    \FinanceHelper::get_ledger_id('SALES_TAX_LEDGER'))->first();
             $item_d_tax = [
                 'entry_id' => $entry->id,
                 'org_id' => \Auth::user()->org_id,
@@ -715,7 +714,7 @@ class OrdersController extends Controller
             $entrytype_id = \FinanceHelper::get_entry_type_id('sales');
             $entry = \App\Models\Entry::create([
                 'tag_id' => '6',
-                'entrytype_id' =>$entrytype_id,
+                'entrytype_id' => $entrytype_id,
                 'number' => \FinanceHelper::get_last_entry_number($entrytype_id),
                 'org_id' => \Auth::user()->org_id,
                 'user_id' => \Auth::user()->id,
@@ -742,7 +741,7 @@ class OrdersController extends Controller
                 'entry_id' => $entry->id,
                 'org_id' => \Auth::user()->org_id,
                 'dc' => 'C',
-                'ledger_id' =>  \FinanceHelper::get_ledger_id('SALES_TAX_LEDGER'), //Sales Tax Ledger
+                'ledger_id' => \FinanceHelper::get_ledger_id('SALES_TAX_LEDGER'), //Sales Tax Ledger
                 'amount' => $order->tax_amount,
                 'narration' => 'Tax to pay',
             ]);
@@ -769,15 +768,12 @@ class OrdersController extends Controller
     public function destroy($id)
     {
         $order = $this->orders->find($id);
-         \TaskHelper::authorizeOrg($order);
+        \TaskHelper::authorizeOrg($order);
         $orderDetail = OrderDetail::where('order_id', $order->id)->get();
 
-        if (!$order->isdeletable()) {
-            abort(403);
-        }
+        if (!$order->isdeletable()) abort(403);
 
         $order->delete($id);
-
         OrderDetail::where('order_id', $id)->delete($id);
 
         foreach ($orderDetail as $od) {
@@ -795,9 +791,7 @@ class OrdersController extends Controller
 
         Flash::success('Order successfully deleted.');
 
-        if (\Request::get('type')) {
-            return redirect('/admin/orders?type=' . \Request::get('type'));
-        }
+        if (\Request::get('type')) return redirect('/admin/orders?type=' . \Request::get('type'));
 
         return redirect('/admin/orders?type=quotation');
     }
@@ -805,8 +799,8 @@ class OrdersController extends Controller
     public function getProductDetailAjax($productId)
     {
         if (\Request::get('term')) {
-            $product = Product::select('id', 'name', 'price','distributor_price','retailer_price','boothman_price',
-                'direct_customer_price','is_vat', 'cost')
+            $product = Product::select('id', 'name', 'price', 'distributor_price', 'retailer_price', 'boothman_price',
+                'direct_customer_price', 'is_vat', 'cost')
                 ->where('name', \Request::get('term'))->first();
         } else {
             if (request()->has('outlet_id') && (request()->outlet_id != '')) {
@@ -823,21 +817,20 @@ class OrdersController extends Controller
                     'direct_customer_price', 'cost', 'is_vat', 'product_unit')->with('unit:id,symbol')->where('id', $productId)->first();
             }
         }
-        if ($outlet->project_id) $stock=\TaskHelper::returnAvailableStock($productId, $outlet->project_id);
-        else $stock=\TaskHelper::getTranslations($productId);
+        if ($outlet->project_id) $stock = \TaskHelper::returnAvailableStock($productId, $outlet->project_id);
+        else $stock = \TaskHelper::getTranslations($productId);
 
+        $stock_moves = StockMove::selectRaw('sum(qty) as total_qty,sum(price*qty) as total_price')->where('trans_type', 103)->where('stock_id', $product->id)->first();
 
-
-        $stock_moves=StockMove::selectRaw('sum(qty) as total_qty,sum(price*qty) as total_price')->where('trans_type',103)->where('stock_id',$product->id)->first();
-
-        $avg_price=$stock_moves->total_qty!=0?(($stock_moves->total_price)/$stock_moves->total_qty):0;
-        $client_type=\App\Models\Client::find(\Request::get('client'))->relation_type;
-        return ['data' => json_encode($product),'stock'=>$stock,'avg_price'=>round($avg_price,2),'client_type'=>$client_type]; }
+        $avg_price = $stock_moves->total_qty != 0 ? (($stock_moves->total_price) / $stock_moves->total_qty) : 0;
+        $client_type = \App\Models\Client::find(\Request::get('client'))->relation_type;
+        return ['data' => json_encode($product), 'stock' => $stock, 'avg_price' => round($avg_price, 2), 'client_type' => $client_type];
+    }
 
     /**
      * Delete Confirm.
      *
-     * @param   int   $id
+     * @param int $id
      * @return  View
      */
     public function getModalDelete($id)
@@ -917,36 +910,35 @@ class OrdersController extends Controller
         return \Response::json($return_array);
     }
 
-
     public function SalesPayment()
     {
-        $page_title = 'Tax Invoice Payment List';
-        $page_description = 'Listing of all tax sales Payments';
+        $page_title = 'Tax Invoice Receipt List';
+        $page_description = 'Listing of all tax sales receipts';
+        $payment_list = \App\Models\InvoicePayment::orderBy('id', 'desc')->where('type', 'Cash')->whereNotNull('invoice_id')->get();
+        $orderTopay = Invoice::leftjoin('invoice_payment_status', 'invoice_payment_status.invoice_id', 'invoice.id')
+            ->select('invoice.*', 'invoice_payment_status.payment_status')
+            ->whereIn('invoice_payment_status.payment_status', ['Pending', 'Partial'])
+            ->orWhereNull('invoice_payment_status.payment_status')
+            ->get();
 
-        $payment_list = \App\Models\InvoicePayment::orderBy('id', 'desc')->whereNotNull('invoice_id')->get();
-        $orderTopay = \App\Models\Invoice::orderBy('id')->whereIn('payment_status', ['Partial', 'Pending'])->orWhere('payment_status', null)->get();
-
-        return view('admin.orders.salespaymentlist', compact('page_title', 'page_description', 'payment_list', 'orderTopay'));
+        return view('admin.orders.salespaymentlist', compact('page_title', 'page_description', 'payment_list','orderTopay'));
     }
 
-    public function paymentlist(){
-
+    public function paymentlist()
+    {
         $page_title = 'Sales Payment List';
         $page_description = 'Listing of all Sales Payments';
 
         $payment_list = \App\Models\Payment::orderBy('id', 'desc')
-                        ->whereNotNull('sale_id')->get()->groupBy('sale_id');
+            ->whereNotNull('sale_id')->get()->groupBy('sale_id');
 
-        $purchaseToPay = $this->orders->whereIn('payment_status',['Pending','Partial'])
-                ->orWhereNull('payment_status')
-                ->orWhere('payment_status','')
-                ->where('order_type','proforma_invoice')
-                ->get();
+        $purchaseToPay = $this->orders->whereIn('payment_status', ['Pending', 'Partial'])
+            ->orWhereNull('payment_status')
+            ->orWhere('payment_status', '')
+            ->where('order_type', 'proforma_invoice')
+            ->get();
 
-        return view('admin.orders.allsalespaymentlist', compact('page_title', 'page_description', 'payment_list','purchaseToPay'));
-
-
-
+        return view('admin.orders.allsalespaymentlist', compact('page_title', 'page_description', 'payment_list', 'purchaseToPay'));
     }
 
     public function SalesPaymentPdf()
@@ -963,9 +955,10 @@ class OrdersController extends Controller
     }
 
 
-    public function addtoStockMoves($order_id){
+    public function addtoStockMoves($order_id)
+    {
         $order = $this->orders->find($order_id);
-        $ordersDetails = \App\Models\OrderDetail::where('order_id',$order_id)->get();
+        $ordersDetails = \App\Models\OrderDetail::where('order_id', $order_id)->get();
 
         foreach ($ordersDetails as $key => $value) {
 
@@ -986,10 +979,7 @@ class OrdersController extends Controller
         return false;
 
 
-
-
     }
-
 
 
     public function convertToPI($id)
@@ -1005,7 +995,7 @@ class OrdersController extends Controller
 
         $leads = \App\Models\Lead::find($orders->client_id);
 
-        if ( ($leads->company->name ?? '') ) {
+        if (($leads->company->name ?? '')) {
             $clients_name = $leads->name;
         } else {
             $clients_name = $leads->name ?? '';
@@ -1022,7 +1012,7 @@ class OrdersController extends Controller
             'name' => $clients_name,
             'phone' => $mobile,
             'email' => $leads->email ?? '',
-            'type' => $leads->leadType->name ??'',
+            'type' => $leads->leadType->name ?? '',
             'enabled' => '1',
         ];
 
@@ -1059,7 +1049,7 @@ class OrdersController extends Controller
         return view('modal_confirmation', compact('error', 'modal_route', 'modal_title', 'modal_body'));
     }
 
-     public function showcreditnote($id)
+    public function showcreditnote($id)
     {
         $ord = $this->invoice->find($id);
         $page_title = 'Credit Note';
@@ -1077,7 +1067,7 @@ class OrdersController extends Controller
 
         $imagepath = \Auth::user()->organization->logo;
 
-        if($type == 'print'){
+        if ($type == 'print') {
 
 
             return view('admin.orders.credit_note_print', compact('ord', 'imagepath', 'page_title', 'page_description', 'orderDetails'));
@@ -1094,4 +1084,10 @@ class OrdersController extends Controller
         return $pdf->download($file);
     }
 
+    public function SalesPaymentPrint($id)
+    {
+        $payment_detail = \App\Models\InvoicePayment::where('id', $id)->first();
+        $organization = auth()->user()->organization;
+        return view('admin.orders.salespaymenprint', compact('payment_detail', 'organization'));
+    }
 }

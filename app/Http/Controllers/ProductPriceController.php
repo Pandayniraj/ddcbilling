@@ -32,7 +32,9 @@ class ProductPriceController extends Controller
         $product = $this->product->find($id);
         $page_title = 'Product Prices of '.$product->name??'';
         $page_description = '';
-        $productPrices= $this->productPrice->where('product_id', $product->id)->orderBy('id', 'desc')->paginate(25);
+        if (auth()->user()->hasRole('admins'))
+            $productPrices= $this->productPrice->where('product_id', $product->id)->orderBy('id', 'desc')->paginate(25);
+        else $productPrices= $this->productPrice->where('product_id', $product->id)->where('project_id', auth()->user()->project_id??0)->orderBy('id', 'desc')->paginate(25);
 
         return view('admin.productPrice.index', compact('page_title', 'page_description', 'product', 'productPrices'));
     }
@@ -44,7 +46,9 @@ class ProductPriceController extends Controller
         $product = $this->product->find($id);
         $page_title = 'Add Product Price of '.$product->name??'';
         $page_description = 'Create Product Price';
+        if (auth()->user()->hasRole('admins'))
         $projects = Store::orderBy('name')->pluck('name', 'id')->toArray();
+        else $projects = Store::orderBy('name')->where('id', auth()->user()->project_id??0)->pluck('name', 'id')->toArray();
         return view('admin.productPrice.create', compact('page_title', 'page_description', 'product', 'projects'));
     }
 
@@ -69,9 +73,20 @@ class ProductPriceController extends Controller
             Flash::error('Product Price for following project already exists.');
             return redirect()->route('admin.product-pricing.index', $id);
         } else {
-            $this->productPrice->create($attributes);
-            Flash::success('Product Price Successfully Created');
-            return redirect()->route('admin.product-pricing.index', $id);
+            if (auth()->user()->hasRole('admins')) {
+                $this->productPrice->create($attributes);
+                Flash::success('Product Price Successfully Created');
+                return redirect()->route('admin.product-pricing.index', $id);
+            } else {
+                if (!auth()->user()->project_id) {
+                    Flash::error("Sorry, You didn't belong to any project yet");
+                    return redirect()->route('admin.product-pricing.index', $id);
+                }
+                $attributes['project_id'] = auth()->user()->project_id;
+                $this->productPrice->create($attributes);
+                Flash::success('Product Price Successfully Created');
+                return redirect()->route('admin.product-pricing.index', $id);
+            }
         }
     }
 
@@ -85,7 +100,9 @@ class ProductPriceController extends Controller
         $product = $this->product->find($productPricing->product_id);
         $page_title = 'Add Product Price of '.$product->name??'';
         $page_description = 'Edit Product Price';
-        $projects = Store::orderBy('name')->pluck('name', 'id')->toArray();
+        if (auth()->user()->hasRole('admins'))
+            $projects = Store::orderBy('name')->pluck('name', 'id')->toArray();
+        else $projects = Store::orderBy('name')->where('id', auth()->user()->project_id??0)->pluck('name', 'id')->toArray();
 
         return view('admin.productPrice.edit', compact('page_title', 'page_description', 'productPricing',
             'product', 'projects'));
@@ -112,14 +129,26 @@ class ProductPriceController extends Controller
             Flash::error('Product Price for following project already exists.');
             return redirect()->route('admin.product-pricing.index', $productPrice->product_id);
         } else {
-            $productPrice = $this->productPrice->find($id);
-            $productPrice->update($attributes);
+            if (auth()->user()->hasRole('admins')) {
+                $productPrice = $this->productPrice->find($id);
+                $productPrice->update($attributes);
 
-            Flash::success('Product Price Update Successfully');
-            return redirect()->route('admin.product-pricing.index', $productPrice->product_id);
+                Flash::success('Product Price Update Successfully');
+                return redirect()->route('admin.product-pricing.index', $productPrice->product_id);
+            } else {
+                if (!auth()->user()->project_id) {
+                    Flash::error("Sorry, You didn't belong to any project yet");
+                    return redirect()->route('admin.product-pricing.index', $id);
+                }
+
+                $attributes['project_id'] = auth()->user()->project_id;
+                $productPrice = $this->productPrice->find($id);
+                $productPrice->update($attributes);
+                Flash::success('Product Price Update Successfully');
+                return redirect()->route('admin.product-pricing.index', $id);
+            }
         }
     }
-
 
     /**
      * @param  int  $id

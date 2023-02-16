@@ -1,10 +1,9 @@
 @extends('layouts.master')
 
 @section('head_extra')
-
     @include('partials._head_extra_select2_css')
-
 @endsection
+
 @section('content')
     <section class="content-header" style="margin-top: -35px; margin-bottom: 20px">
         <h1>
@@ -24,27 +23,18 @@
                     $order_type = $order_name->order_type;
                     ?>
                     @if($order_type == 'quotation')
-                        <a class="btn btn-primary btn-sm float-right" href="/admin/invoice1" title="Close">
-                            Close
-                        </a>
+                        <a class="btn btn-primary btn-sm float-right" href="/admin/invoice1" title="Close">Close</a>
                     @elseif($order_type == 'proforma_invoice')
-                        <a class="btn btn-primary btn-sm float-right" href="/admin/invoice1" title="Close">
-                            Close
-                        </a>
+                        <a class="btn btn-primary btn-sm float-right" href="/admin/invoice1" title="Close">Close</a>
                     @elseif($order_type == 'order')
-                        <a class="btn btn-primary btn-sm float-right" href="/admin/invoice1" title="Close">
-                            Close
-                        </a>
+                        <a class="btn btn-primary btn-sm float-right" href="/admin/invoice1" title="Close">Close</a>
                     @else
-                        <a class="btn btn-primary btn-sm" href="/admin/invoice1" title="Close">
-                            Close
-                        </a>
+                        <a class="btn btn-primary btn-sm" href="/admin/invoice1" title="Close">Close</a>
                     @endif
-
                     &nbsp;
-                    <a class="btn btn-sm btn-success" href="{!! route('admin.payment.invoice.create', $invoice_id) !!}"
-                       title=" Add Payment">
-                        <i class="fa fa-plus"></i> Add Payment
+                    <a class="btn btn-sm btn-success" @if($payment_remain>0) href="{!! route('admin.payment.invoice.create', $invoice_id) !!}" title="Make Receipt" @endif>
+                        @if($payment_remain>0) <i class="fa fa-plus"></i> Make Receipt
+                        @else <i class="fa fa-money"></i> Already Received @endif
                     </a>
                 </div>
 
@@ -74,7 +64,6 @@
                                         <td>
                                             <a href="{{route('admin.payment.invoice.show',$o->id)}}"><i
                                                     class="fa  fa-sticky-note-o" title="show"></i> </a>
-
                                             <i class="fa fa-edit text-muted" title="cannot edit"></i>
                                             <i class="fa fa-trash text-muted" title="cannot delete"></i>
                                         </td>

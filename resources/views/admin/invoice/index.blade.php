@@ -1,15 +1,11 @@
 @extends('layouts.master')
-@section('content')
+@section('head_extra')
+    <link href="{{ asset("/bower_components/admin-lte/plugins/jQueryUI/jquery-ui.css") }}" rel="stylesheet"
+          type="text/css"/>
+    <link href="{{ asset("/bower_components/admin-lte/bootstrap/css/bootstrap-datetimepicker.css") }}" rel="stylesheet"
+          type="text/css"/>
+    <link href="/bower_components/admin-lte/select2/css/select2.min.css" rel="stylesheet"/>
 
-    <section class="content-header" style="margin-top: -35px; margin-bottom: 20px">
-        <h1>
-            {{ $page_title }} Manager
-            <small>{{ $page_description }}</small>
-        </h1>
-        Current Fiscal Year: <strong>{{ FinanceHelper::cur_fisc_yr()->fiscal_year}}</strong>
-        {!! MenuBuilder::renderBreadcrumbTrail(null, 'root', false) !!}
-
-    </section>
     <style type="text/css">
         @media only screen and (max-width: 770px) {
 
@@ -53,10 +49,20 @@
             width: 100% !important;
         }
     </style>
-    <link href="/bower_components/admin-lte/select2/css/select2.min.css" rel="stylesheet"/>
-    <script src="/bower_components/admin-lte/select2/js/select2.min.js"></script>
-    <div class='row'>
+@endsection
 
+@section('content')
+    <section class="content-header" style="margin-top: -35px; margin-bottom: 20px">
+        <h1>
+            {{ $page_title }} Manager
+            <small>{{ $page_description }}</small>
+        </h1>
+        Current Fiscal Year: <strong>{{ FinanceHelper::cur_fisc_yr()->fiscal_year}}</strong>
+        {!! MenuBuilder::renderBreadcrumbTrail(null, 'root', false) !!}
+
+    </section>
+
+    <div class='row'>
         <div class='col-md-12'>
             <div class="box">
                 <div class="box-header">
@@ -134,14 +140,12 @@
                 </div>
                 {!! Form::open( array('route' => 'admin.orders.enable-selected', 'id' => 'frmClientList') ) !!}
                 <div class="box-body">
-
                     <div class="table-responsive">
-
                         <table class="table table-hover table-bordered table-striped" id="orders-table">
                             <thead>
                             <tr class="bg-info">
                                 <th> Num</th>
-{{--                                <th>Bill date AD</th>--}}
+                                {{-- <th>Bill date AD</th>--}}
                                 <th>Bill date BS</th>
                                 <th>Officer</th>
                                 <th>Bill No.</th>
@@ -210,11 +214,11 @@
                                                 ?>
                                             <td style="display: flex;">
                                                 @if($checkprintformat=="thermal")
-                                                    <a href="/admin/invoice/thermalprint/{{$o->id}}" target="_blank"
+                                                    <a href="{{route('admin.invoice.preview-thermalprint', $o->id)}}" target="_blank"
                                                        title="print"><i class="fa fa-print"
                                                                         style="font-size: 25px;"></i></a>
                                                 @else
-                                                    <a href="/admin/invoice/print/{{$o->id}}" target="_blank"
+                                                    <a href="{{route('admin.invoice.preview-print', $o->id)}}" target="_blank"
                                                        title="print"><i class="fa fa-print"
                                                                         style="font-size: 25px;"></i></a>
                                                 @endif
@@ -231,32 +235,26 @@
                             @endif
                             </tbody>
                         </table>
-
                         {!! $orders->render() !!}
-
-                    </div> <!-- table-responsive -->
-
-                </div><!-- /.box-body -->
-            </div><!-- /.box -->
+                    </div>
+                </div>
+            </div>
             {!! Form::close() !!}
-        </div><!-- /.col -->
-
-    </div><!-- /.row -->
+        </div>
+    </div>
 @endsection
 
 
 <!-- Optional bottom section for modals etc... -->
 @section('body_bottom')
-    <link href="{{ asset("/bower_components/admin-lte/plugins/jQueryUI/jquery-ui.css") }}" rel="stylesheet"
-          type="text/css"/>
-    <link href="{{ asset("/bower_components/admin-lte/bootstrap/css/bootstrap-datetimepicker.css") }}" rel="stylesheet"
-          type="text/css"/>
     <script src="{{ asset("/bower_components/admin-lte/plugins/jQueryUI/jquery-ui.min.js") }}"></script>
     <script src="{{ asset ("/bower_components/admin-lte/plugins/daterangepicker/moment.js") }}"
             type="text/javascript"></script>
     <script src="{{ asset ("/bower_components/admin-lte/bootstrap/js/bootstrap-datetimepicker.js") }}"
             type="text/javascript"></script>
     <script src="{{ asset ("/bower_components/admin-lte/plugins/datatables/jquery.dataTables.min.js") }}"></script>
+    <script src="/bower_components/admin-lte/select2/js/select2.min.js"></script>
+
     @include('partials._date-toggle')
     <script language="JavaScript">
         function toggleCheckbox() {

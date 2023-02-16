@@ -173,7 +173,6 @@ class InvoiceController extends Controller
         else $this->validate($request, ['customer_id' => 'required']);
 
         \DB::beginTransaction();
-
         $org_id = \Auth::user()->org_id;
         $ckfiscalyear = \App\Models\Fiscalyear::where('current_year', '1')
             ->where('org_id', $org_id)
@@ -526,6 +525,17 @@ class InvoiceController extends Controller
         return view('modal_confirmation', compact('error', 'modal_route', 'modal_title', 'modal_body'));
     }
 
+    public function previewPrintInvoice($id)
+    {
+        $ord = $this->invoice->find($id);
+        \TaskHelper::authorizeOrg($ord);
+        $orderDetails = InvoiceDetail::where('invoice_id', $id)->get();
+
+        $imagepath = \Auth::user()->organization->logo;
+
+        return view('admin.invoice.previewPrint', compact('ord', 'imagepath', 'orderDetails'));
+    }
+
     public function printInvoice($id)
     {
         $ord = $this->invoice->find($id);
@@ -542,6 +552,16 @@ class InvoiceController extends Controller
         $ord->update(['is_bill_printed' => 1]);
 
         return view('admin.invoice.print', compact('ord', 'imagepath', 'orderDetails', 'print_no'));
+    }
+
+    public function previewThermalprintInvoice($id)
+    {
+        $ord = $this->invoice->find($id);
+        \TaskHelper::authorizeOrg($ord);
+        $orderDetails = InvoiceDetail::where('invoice_id', $id)->get();
+
+        $imagepath = \Auth::user()->organization->logo;
+        return view('admin.invoice.previewThermalprint', compact('ord', 'imagepath', 'orderDetails'));
     }
 
     public function thermalprintInvoice($id)
@@ -784,8 +804,13 @@ class InvoiceController extends Controller
         \TaskHelper::authorizeOrg($order_detail);
         $lead_name = $order_detail->lead->name;
         $page_title = 'Invoice Payment List';
-        $page_description = 'Receipt List Of ' . $lead_name . ' Invoice # ' . $id . '';
-        return view('admin.invoice.invoicepayment', compact('page_title', 'page_description', 'invoice_id', 'payment_list'));
+        $page_description = 'Receipt List Of ' . $lead_name . ' Invoice # ' . $order_detail->outlet->short_name.'/'.$order_detail->fiscal_year.'/00'.$order_detail->bill_no;
+
+        $purchase_total = $order_detail->total_amount;
+        $paid_amount = \App\Models\InvoicePayment::where('invoice_id', $id)->where('type', '!=', 'credit')->sum('amount');
+        $payment_remain = $purchase_total - $paid_amount;
+
+        return view('admin.invoice.invoicepayment', compact('page_title', 'page_description', 'invoice_id', 'payment_list', 'payment_remain'));
     }
 
     public function invoicePaymentcreate($id)
@@ -811,96 +836,104 @@ class InvoiceController extends Controller
         $attributes = $request->all();
         $attributes['created_by'] = \auth()->id();
         $invoice = \App\Models\Invoice::find($id);
-        if ($request->payment_type == 'Credit') $attributes['type'] = "Credit";
-        else $attributes['type'] = "Cash";
+        if ($request->payment_type != 'Credit') {
+            $attributes['type'] = "Cash";
 
-        if ($request->file('attachment')) {
-            $stamp = time();
-            $file = $request->file('attachment');
+            if ($request->file('attachment')) {
+                $stamp = time();
+                $file = $request->file('attachment');
 
-            $destinationPath = public_path() . '/attachment/';
-            $filename = $file->getClientOriginalName();
-            $request->file('attachment')->move($destinationPath, $stamp . '_' . $filename);
+                $destinationPath = public_path() . '/attachment/';
+                $filename = $file->getClientOriginalName();
+                $request->file('attachment')->move($destinationPath, $stamp . '_' . $filename);
 
-            $attributes['attachment'] = $stamp . '_' . $filename;
-        }
-        InvoicePayment::create($attributes);
-
-        $paid_amount = InvoicePayment::where('invoice_id', $id)->where('type', 'Cash')->sum('amount');
-
-        if ($invoice->client_type == 'random_customer') $customer_ledger = \App\Helpers\FinanceHelper::get_ledger_id("RANDOM_CUSTOMER");
-        else $customer_ledger = $invoice->client->ledger_id ?? 465;
-
-        if ($request->payment_type == 'Cash') {
-            $attributes_purchase['type'] = 'Cash';
-            if ($paid_amount >= $invoice->total_amount) {
-                $attributes_purchase['payment_status'] = 'Paid';
-                $invoice->update($attributes_purchase);
-            } elseif ($paid_amount <= $invoice->total_amount && $paid_amount > 0) {
-                $attributes_purchase['payment_status'] = 'Partial';
-                $invoice->update($attributes_purchase);
-            } else {
-                $attributes_purchase['payment_status'] = 'Pending';
-                $invoice->update($attributes_purchase);
+                $attributes['attachment'] = $stamp . '_' . $filename;
             }
+            $invoicePayment = InvoicePayment::create($attributes);
+
+            $paid_amount = InvoicePayment::where('invoice_id', $id)->where('type', 'Cash')->sum('amount');
+
+            if ($invoice->client_type == 'random_customer') $customer_ledger = \App\Helpers\FinanceHelper::get_ledger_id("RANDOM_CUSTOMER");
+            else {
+                $invoicePayment->paid_by = $invoice->client->id??null;
+                $invoicePayment->save();
+                $customer_ledger = $invoice->client->ledger_id ?? 465;
+            }
+
+            if ($request->payment_type == 'Cash') {
+                $attributes_purchase['type'] = 'Cash';
+                if ($paid_amount >= $invoice->total_amount) {
+                    $attributes_purchase['payment_status'] = 'Paid';
+                    $invoice->update($attributes_purchase);
+                } elseif ($paid_amount <= $invoice->total_amount && $paid_amount > 0) {
+                    $attributes_purchase['payment_status'] = 'Partial';
+                    $invoice->update($attributes_purchase);
+                } else {
+                    $attributes_purchase['payment_status'] = 'Pending';
+                    $invoice->update($attributes_purchase);
+                }
+            }
+            if (!$customer_ledger) {
+                Flash::error("Create custome Ledger first !!");
+                return redirect()->back();
+            }
+
+            //ENTRY FOR Total AMOUNT
+            $attributes['entrytype_id'] = \FinanceHelper::get_entry_type_id('receipt'); //receipt
+            $attributes['tag_id'] = '19'; //Invoice Payment
+            $attributes['user_id'] = \auth()->id();
+            $attributes['org_id'] = \Auth::user()->org_id;
+            $attributes['number'] = \FinanceHelper::get_last_entry_number($attributes['entrytype_id']);
+            $attributes['date'] = \Carbon\Carbon::today();
+            $attributes['dr_total'] = $request->amount;
+            $attributes['cr_total'] = $request->amount;
+            if ($request->payment_type == 'Credit') $attributes['source'] = "Credit Invoice";
+            else $attributes['source'] = "Invoice Cash Payment";
+            $attributes['fiscal_year_id'] = \FinanceHelper::cur_fisc_yr()->id;
+            $attributes['ref_id'] = $invoice->id;
+            $entry = \App\Models\Entry::create($attributes);
+
+            if ($invoice->client_type == 'random_customer') $ledgerId = \App\Helpers\FinanceHelper::get_ledger_id("RANDOM_CUSTOMER");
+            $ledgerId = \App\Models\Client::find($invoice->client_id)->ledger_id ?? 465;
+
+            \App\Models\Entryitem::where('entry_id', $entry->id)->delete();
+            if ($request->payment_type == 'Cash') {
+                $entry_item = \App\Models\Entryitem::create([
+                    'entry_id' => $entry->id,
+                    'dc' => 'D',
+                    'ledger_id' => 465, // cash_sales ledger id
+                    'amount' => $invoice->total_amount,
+                    'narration' => 'Cash payment on Sales being made',
+                ]);
+
+                $entry_item = \App\Models\Entryitem::create([
+                    'entry_id' => $entry->id,
+                    'dc' => 'C',
+                    'ledger_id' => $ledgerId, //Sales Ledger 39
+                    'amount' => $invoice->total_amount,
+                    'narration' => 'Sales Amount',
+                ]);
+            }
+
+            $customerdeposit['user_id'] = \auth()->id();
+            $customerdeposit['date'] = \Carbon\Carbon::today();
+            $customerdeposit['remarks'] = "Payment Made from Invoice payement";
+            $customerdeposit['type'] = "Deposit";
+            if ($invoice->client_type == 'random_customer') $customerdeposit['client_id'] = 38;
+            else $customerdeposit['client_id'] = $invoice->client->id;
+            $customerdeposit['amount'] = $request->amount;
+            $customerdeposit['closing'] = (float)(\App\Models\CustomerDeposit::where('client_id', $customerdeposit['client_id'])->latest()->first()->closing ?? 0) + (float)$request->amount;
+
+            \App\Models\CustomerDeposit::create($customerdeposit);
+
+            DB::commit();
+            Flash::success('Receipt Created');
+
+            return redirect('/admin/invoice/payment/' . $id . '');
+        } else {
+            Flash::success('Fail to create Receipt');
+            return redirect('/admin/invoice/payment/' . $id . '');
         }
-        if (!$customer_ledger) {
-            Flash::error("Create custome Ledger first !!");
-            return redirect()->back();
-        }
-
-        //ENTRY FOR Total AMOUNT
-        $attributes['entrytype_id'] = \FinanceHelper::get_entry_type_id('receipt'); //receipt
-        $attributes['tag_id'] = '19'; //Invoice Payment
-        $attributes['user_id'] = \auth()->id();
-        $attributes['org_id'] = \Auth::user()->org_id;
-        $attributes['number'] = \FinanceHelper::get_last_entry_number($attributes['entrytype_id']);
-        $attributes['date'] = \Carbon\Carbon::today();
-        $attributes['dr_total'] = $request->amount;
-        $attributes['cr_total'] = $request->amount;
-        if ($request->payment_type == 'Credit') $attributes['source'] = "Credit Invoice";
-        else $attributes['source'] = "Invoice Cash Payment";
-        $attributes['fiscal_year_id'] = \FinanceHelper::cur_fisc_yr()->id;
-        $attributes['ref_id'] = $invoice->id;
-        $entry = \App\Models\Entry::create($attributes);
-
-        if ($invoice->client_type == 'random_customer') $ledgerId = \App\Helpers\FinanceHelper::get_ledger_id("RANDOM_CUSTOMER");
-        $ledgerId = \App\Models\Client::find($invoice->client_id)->ledger_id??465;
-
-        \App\Models\Entryitem::where('entry_id', $entry->id)->delete();
-        if($request->payment_type == 'Cash') {
-            $entry_item = \App\Models\Entryitem::create([
-                'entry_id' => $entry->id,
-                'dc' => 'D',
-                'ledger_id' => 465, // cash_sales ledger id
-                'amount' => $invoice->total_amount,
-                'narration' => 'Cash payment on Sales being made',
-            ]);
-
-            $entry_item = \App\Models\Entryitem::create([
-                'entry_id' => $entry->id,
-                'dc' => 'C',
-                'ledger_id' => $ledgerId, //Sales Ledger 39
-                'amount' => $invoice->total_amount,
-                'narration' => 'Sales Amount',
-            ]);
-        }
-
-        $customerdeposit['user_id'] = \auth()->id();
-        $customerdeposit['date'] = \Carbon\Carbon::today();
-        $customerdeposit['remarks'] = "Payment Made from Invoice payement";
-        $customerdeposit['type'] = "Deposit";
-        if($invoice->client_type == 'random_customer') $customerdeposit['client_id'] = 38;
-        else $customerdeposit['client_id'] = $invoice->client->id;
-        $customerdeposit['amount'] = $request->amount;
-        $customerdeposit['closing'] = (float)(\App\Models\CustomerDeposit::where('client_id', $customerdeposit['client_id'])->latest()->first()->closing ?? 0) + (float)$request->amount;
-
-        \App\Models\CustomerDeposit::create($customerdeposit);
-
-        DB::commit();
-        Flash::success('Receipt Created');
-
-        return redirect('/admin/invoice/payment/' . $id . '');
     }
 
     public function invoicePaymentshow($id)
@@ -1812,5 +1845,82 @@ class InvoiceController extends Controller
             elseif ($amount==0) return response()->json(['status' => 'unpaid']);
         }
         return response()->json(['status' => 'paid']);
+    }
+
+    public function billwisedebtorlist()
+    {
+        $page_title = 'Bill wise debtor list';
+        $page_description = 'Listing of all the debtors by bill';
+        // $invoices = Invoice::withSum('invoicePayments','amount')
+        //     ->whereHas("invoicePayments",function ($query){
+        //         $query->havingRaw('invoice.total_amount>sum(amount)');
+        //         $query->groupBy('invoice_id');
+        //     })->orDoesntHave("invoicePayments")
+        //     ->get()->groupBy('client_id');
+
+        $tempamt = \App\Models\Invoice::leftjoin('invoice_payment', 'invoice.id', '=', 'invoice_payment.invoice_id')
+            ->where('invoice_payment.type', 'Credit')
+            ->select('invoice.total_amount', DB::raw('SUM(invoice_payment.amount) as paid_amount'))
+            ->groupby('invoice.id')
+            ->get();
+
+        $invoices = Invoice::leftjoin('invoice_payment_status', 'invoice_payment_status.invoice_id', 'invoice.id')
+            ->leftjoin('invoice_payment', 'invoice.id', '=', 'invoice_payment.invoice_id')
+            ->select('invoice.*', 'invoice_payment_status.payment_status')
+            ->whereIn('invoice_payment_status.payment_status', ['Pending', 'Partial'])
+            ->orWhereNull('invoice_payment_status.payment_status')
+            ->get();
+
+        return view('admin.orders.billwisedebtorlist', compact('page_title', 'page_description', 'invoices'));
+    }
+
+    public function followuplist()
+    {
+        $orders = Invoice::where(function ($query) {
+            $start_date = \Request::get('start_date');
+            $end_date = \Request::get('end_date');
+            if ($start_date && $end_date) {
+                return $query->where('bill_date', '>=', $start_date)
+                    ->where('bill_date', '<=', $end_date);
+            }
+        })->where(function ($query) {
+                $bill_no = \Request::get('bill_no');
+                if ($bill_no) return $query->where('bill_no', $bill_no);
+            })->where(function ($query) {
+                $client_id = \Request::get('client_id');
+                if ($client_id) {
+                    return $query->where('client_id', $client_id);
+                }
+            })->where(function ($query) {
+                $fiscal_year = \Request::get('fiscal_year');
+                if ($fiscal_year) {
+                    return $query->where('fiscal_year', $fiscal_year);
+                }
+
+            })->where(function ($query) {
+                $outlet_id = \Request::get('outlet_id');
+                if ($outlet_id) {
+                    return $query->where('outlet_id', $outlet_id);
+                }
+            })->orderBy('id', 'desc')->paginate(30);
+        $page_title = 'Followup Invoice Payments';
+        $page_description = 'Manage Followup invoices';
+        $clients = \App\Models\Client::select('id', 'name')->where('org_id', \Auth::user()->org_id)->orderBy('id', 'DESC')->pluck('name', 'id')->all();
+        $outlets = $this->getUserOutlets();
+
+        return view('admin.invoice.followup', compact('orders', 'page_title', 'page_description', 'clients', 'outlets'));
+    }
+
+    public function getUserOutlets()
+    {
+        if (\Auth::user()->hasRole('admins')) $outlets = \App\Models\PosOutlets::get();
+        else {
+            $outletusers = \App\Models\OutletUser::where('user_id', \auth()->id())->get()->pluck('outlet_id');
+            $outlets = \App\Models\PosOutlets::whereIn('id', $outletusers)
+                ->orderBy('id', 'DESC')
+                ->where('enabled', 1)
+                ->get();
+        }
+        return $outlets;
     }
 }

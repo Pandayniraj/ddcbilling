@@ -121,7 +121,7 @@
 
                 <div class="col-sm-6">
                     <div class="form-group">
-                        <label class="control-label col-sm-12">Bank Address</label>
+                        <label class="control-label col-sm-12">Branch Name</label>
                         <div class="input-group ">
                             <input type="text" name="bank_address_one" value="" class="form-control" required>
 

@@ -3,6 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Client extends Model
 {
@@ -15,12 +18,15 @@ class Client extends Model
         'type', 'enabled', 'org_id', 'ledger_id', 'notes', 'reminder', 'bank_name', 'bank_branch', 'bank_account',
         'relation_type', 'physical_address', 'customer_group','image','parent_distributor','deposit_amount', 'outlet_id'];
 
-    public function contact()
+    public function paidby() : HasMany
+    {
+        return $this->hasMany(\App\Models\InvoicePayment::class, 'paid_by');
+    }
+    public function contact() : HasOne
     {
         return $this->hasOne(self::class);
     }
-
-    public function locations()
+    public function locations() : BelongsTo
     {
         return $this->belongsTo(\App\Models\CityMaster::class, 'location');
     }
@@ -32,11 +38,11 @@ class Client extends Model
     {
         return $this->ledger->name??'';
     }
-
     public function groups()
     {
         return $this->belongsTo(\App\Models\CustomerGroup::class, 'customer_group');
     }
+
 
     /**
      * @return bool

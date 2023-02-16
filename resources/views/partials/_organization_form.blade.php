@@ -65,7 +65,7 @@
         <div class="col-md-6">
             <div class="form-group">
                 <label for="logo" class="col-sm-6 btn btn-default control-label">
-                 <i class="fa fa-file"></i> Choose Logo Image 
+                 <i class="fa fa-file"></i> Choose Logo Image
                  <input type="file" name="logo" style="display: none;" id='logo'>
              </label>
              <div class="col-sm-10">
@@ -85,7 +85,7 @@
     <div class="col-md-6">
         <div class="form-group">
             <label for="stamp" class="col-sm-6 btn btn-default control-label">
-             <i class="fa fa-file"></i> Choose Stamp/Signature 
+             <i class="fa fa-file"></i> Choose Stamp/Signature
              <input type="file" name="stamp" style="display: none;" id='stamp'>
          </label>
          <div class="col-sm-10">
@@ -113,7 +113,7 @@
 
             @if( isset($organizations) && $organizations->login_bg != '' )
             <label>Current Background: </label><br />
-            <img style="height: 100px;" src="{{ '/org/'.$organizations->login_bg }}" class="uploadsbg" 
+            <img style="height: 100px;" src="{{ '/org/'.$organizations->login_bg }}" class="uploadsbg"
             >
             @else
             <img style="width:300px;max-height: 100px;" src="" class="uploadsbg">
@@ -125,7 +125,7 @@
 
 <div class="form-group">
     <label>Enabled<i class="imp">*</i></label>
-    <input type="checkbox" name="enabled" 
+    <input type="checkbox" name="enabled"
     value="@if(isset($organizations) && $organizations->enabled) {{ $organizations->enabled }} @endif" @if(isset($organizations) && $organizations->enabled) checked @endif>
 </div>
 </div>
@@ -159,7 +159,6 @@
             }
             var objectUrl = _URL.createObjectURL(file);
             img.onload = function () {
-
                 if( !(this.width ==  190 && this.height == 70)){
                     clearImg();
                     alert("Image size must be of 190px in width & 70px in height");

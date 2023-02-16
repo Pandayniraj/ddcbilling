@@ -10,14 +10,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400&display=swap" rel="stylesheet">
     <title>{{ \Config::get('restro.APP_COMPANY', env('APP_COMPANY'))  }} | INVOICE</title>
     <style type="text/css">
-
         @media print {
             @page {
                 margin: 0;
             }
             body {
                 margin: 0.2cm;
-
             }
         }
         body {
@@ -328,5 +326,10 @@ function numberFomatter($number)
         </span>
     </div>
 @endforeach
+
+<script type="text/javascript">
+    window.print();
+    window.onafterprint = () => window.close();
+</script>
 </body>
 </html>

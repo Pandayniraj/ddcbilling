@@ -53,7 +53,7 @@ class User extends Model implements AuthenticatableContract, CanResetPasswordCon
      *
      * @var array
      */
-    protected $fillable = ['first_name', 'last_name', 'username', 'email', 'password', 'auth_type', 'enabled', 'departments_id', 'designations_id', 'imap_email', 'imap_password', 'image', 'department_head', 'org_id', 'super_manager', 'phone', 'dob', 'ledger_id', 'project_id', 'payroll_method','work_station','division','position','first_line_manager','second_line_manager','int_designation'];
+    protected $fillable = ['first_name', 'last_name', 'username', 'email', 'password', 'auth_type', 'enabled', 'departments_id', 'designations_id', 'imap_email', 'imap_password', 'image', 'department_head', 'org_id', 'super_manager', 'phone', 'dob', 'ledger_id', 'project_id', 'payroll_method', 'work_station', 'division', 'position', 'first_line_manager', 'second_line_manager', 'int_designation'];
 
     /**
      * The attributes excluded from the model's JSON form.
@@ -90,7 +90,6 @@ class User extends Model implements AuthenticatableContract, CanResetPasswordCon
     {
         return [];
     }
-
 
 
     public function audits()
@@ -130,7 +129,7 @@ class User extends Model implements AuthenticatableContract, CanResetPasswordCon
     public function clocking_status()
     {
         $attendance_log = \App\Models\Attendance::where('user_id', $this->id)->where('clocking_status', '1')->first();
-        if (! $attendance_log) {
+        if (!$attendance_log) {
             $status = 'in';
         } else {
             $status = 'out';
@@ -191,7 +190,7 @@ class User extends Model implements AuthenticatableContract, CanResetPasswordCon
     }
 
 
-     /**
+    /**
      * @return bool
      */
     public function isEditable()
@@ -271,9 +270,9 @@ class User extends Model implements AuthenticatableContract, CanResetPasswordCon
             foreach ($name as $roleName) {
                 $hasRole = $this->hasRole($roleName);
 
-                if ($hasRole && ! $requireAll) {
+                if ($hasRole && !$requireAll) {
                     return true;
-                } elseif (! $hasRole && $requireAll) {
+                } elseif (!$hasRole && $requireAll) {
                     return false;
                 }
             }
@@ -335,7 +334,8 @@ class User extends Model implements AuthenticatableContract, CanResetPasswordCon
      * @return void
      */
 
-    public function safeUpdate(array $attributes){
+    public function safeUpdate(array $attributes)
+    {
 
         foreach ($attributes as $key => $value) {
             $this[$key] = $value;
@@ -343,7 +343,8 @@ class User extends Model implements AuthenticatableContract, CanResetPasswordCon
 
         $this->save();
     }
-    public function update(array $attributes = [],array $options = [])
+
+    public function update(array $attributes = [], array $options = [])
     {
         if (array_key_exists('first_name', $attributes)) {
             $this->first_name = $attributes['first_name'];
@@ -421,7 +422,6 @@ class User extends Model implements AuthenticatableContract, CanResetPasswordCon
         }
 
 
-
         $this->save();
 
         // Assign membership(s)
@@ -438,7 +438,7 @@ class User extends Model implements AuthenticatableContract, CanResetPasswordCon
         $this->forceRole('calendar');
 
         // Process user settings
-        $this->processUserSetting("theme.".\Auth::user()->org_id,$attributes);
+        $this->processUserSetting("theme." . \Auth::user()->org_id, $attributes);
         // $this->processUserSetting('theme', $attributes);
         $tzIdentifiers = \DateTimeZone::listIdentifiers();
         $this->processUserSetting('time_zone', $attributes, $tzIdentifiers);
@@ -498,11 +498,12 @@ class User extends Model implements AuthenticatableContract, CanResetPasswordCon
     // public function posoutlets(){
     //     return $this->hasMany(\App\Models\PosOutlets::class, '')
     // }
-    public function isAuthsupervisor(){
+    public function isAuthsupervisor()
+    {
 
         $first = $this->first_line_manager == \Auth::user()->id ? true : false;
         $second = $this->second_line_manager == \Auth::user()->id ? true : false;
-        return ['first'=>$first,'second'=>$second,'supervisor'=> ( $first || $second )];
+        return ['first' => $first, 'second' => $second, 'supervisor' => ($first || $second)];
     }
 
 
@@ -533,11 +534,11 @@ class User extends Model implements AuthenticatableContract, CanResetPasswordCon
      */
     public static function getCreateValidationRules()
     {
-        return ['username'          => 'required|unique:users',
-                      'email' => 'required|email|max:255|unique:users|email:rfc,dns',
-                      'first_name'        => 'required',
-                      'last_name'         => 'required',
-                    ];
+        return ['username' => 'required|unique:users',
+            'email' => 'required|email|max:255|unique:users|email:rfc,dns',
+            'first_name' => 'required',
+            'last_name' => 'required',
+        ];
     }
 
     /**
@@ -547,11 +548,11 @@ class User extends Model implements AuthenticatableContract, CanResetPasswordCon
      */
     public static function getUpdateValidationRules($id)
     {
-        return ['username'          => 'required|unique:users,username,'.$id,
-                      'email'             => 'required|unique:users,email,'.$id,
-                      'first_name'        => 'required',
-                      'last_name'         => 'required',
-                    ];
+        return ['username' => 'required|unique:users,username,' . $id,
+            'email' => 'required|unique:users,email,' . $id,
+            'first_name' => 'required',
+            'last_name' => 'required',
+        ];
     }
 
     /**
@@ -564,7 +565,7 @@ class User extends Model implements AuthenticatableContract, CanResetPasswordCon
         if (null != $this->settings) {
             return $this->settings;
         } else {
-            return new SettingModel('User.'.$this->username);
+            return new SettingModel('User.' . $this->username);
         }
     }
 
@@ -585,15 +586,15 @@ class User extends Model implements AuthenticatableContract, CanResetPasswordCon
             // Get the value from the HTTP atributes
             $setting_selected = $attributes[$settingKey];
 
-            if(substr( $settingKey, 0, 5 ) === "theme"){
+            if (substr($settingKey, 0, 5) === "theme") {
                 $setting_selected = $attributes['theme'];
             }
 
             // If not null set it otherwise forget it.
-            if ('' != trim($setting_selected) || strpos($settingKey,'theme') == 0) {
+            if ('' != trim($setting_selected) || strpos($settingKey, 'theme') == 0) {
 
                 // If a array of values was provided, look up the real value by using the index.
-                if (! is_null($valuesArr)) {
+                if (!is_null($valuesArr)) {
                     $setting_value = $valuesArr[$setting_selected];
                 } else {
                     $setting_value = $setting_selected;
@@ -698,7 +699,7 @@ class User extends Model implements AuthenticatableContract, CanResetPasswordCon
         } else {
             // Filter out remember token.
             $isRememberTokenAttribute = $key == $this->getRememberTokenName();
-            if (! $isRememberTokenAttribute) {
+            if (!$isRememberTokenAttribute) {
                 parent::setAttribute($key, $value);
             }
         }
@@ -706,10 +707,11 @@ class User extends Model implements AuthenticatableContract, CanResetPasswordCon
 
     public function getAvatarAttribute()
     {
-        return new LetterAvatar($this->first_name.' '.$this->last_name);
+        return new LetterAvatar($this->first_name . ' ' . $this->last_name);
     }
 
-        public function assign_default_role(){
+    public function assign_default_role()
+    {
 
         $this->forceRole('users');
         $this->forceRole('profile-managers');
@@ -723,20 +725,24 @@ class User extends Model implements AuthenticatableContract, CanResetPasswordCon
         return 1;
     }
 
-        public function salaryadjustment()
+    public function salaryadjustment()
     {
         return $this->hasMany(\App\Models\SalaryAdjustment::class);
     }
 
 
-    public function employeePayroll(){
+    public function employeePayroll()
+    {
         return $this->hasOne(EmployeePayroll::class);
     }
-    public function firstLineManager(){
-return $this->belongsTo(\App\User::class,'first_line_manager');
-}
 
-   public function secondLineManager(){
-return $this->belongsTo(\App\User::class,'second_line_manager');
-}
+    public function firstLineManager()
+    {
+        return $this->belongsTo(\App\User::class, 'first_line_manager');
+    }
+
+    public function secondLineManager()
+    {
+        return $this->belongsTo(\App\User::class, 'second_line_manager');
+    }
 }

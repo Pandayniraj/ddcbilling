@@ -70,6 +70,9 @@ class Invoice extends Model
     {
         return $this->hasMany(InvoicePayment::class, 'invoice_id');
     }
+    public function followupInvoice(){
+        return $this->hasOne(FollowupInvoice::class, 'invoice_id');
+    }
 
     /**
      * @return bool

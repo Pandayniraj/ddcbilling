@@ -49,7 +49,6 @@ class PurchaseSalePaymentController extends Controller
         $purchase_detail = \App\Models\PurchaseOrder::find($id);
         $purchase_name = $purchase_detail->client->name ?? '';
 
-        // dd($purchase_name);
 
         $payment_list = \App\Models\Payment::where('purchase_id', $id)->orderby('id', 'desc')->get();
 
@@ -195,7 +194,6 @@ class PurchaseSalePaymentController extends Controller
         if ($request->file('attachment')) {
             $stamp = time();
             $file = $request->file('attachment');
-            //dd($file);
             $destinationPath = public_path() . '/attachment/';
             $filename = $file->getClientOriginalName();
             $request->file('attachment')->move($destinationPath, $stamp . '_' . $filename);
@@ -234,7 +232,6 @@ class PurchaseSalePaymentController extends Controller
     {
         $attributes = $request->all();
         $sale_order = \App\Models\Orders::find($id);
-        // dd($sale_order->source);
         if (trim($sale_order->order_type) == '' || trim($sale_order->source) == '') {
             Flash::error('Order Not Valid');
 
@@ -255,14 +252,12 @@ class PurchaseSalePaymentController extends Controller
         if ($request->file('attachment')) {
             $stamp = time();
             $file = $request->file('attachment');
-            //dd($file);
             $destinationPath = public_path() . '/attachment/';
             $filename = $file->getClientOriginalName();
             $request->file('attachment')->move($destinationPath, $stamp . '_' . $filename);
 
             $attributes['attachment'] = $stamp . '_' . $filename;
         }
-        // dd($attributes);
         \App\Models\Payment::create($attributes);
 
         $paid_amount = DB::table('payments')->where('sale_id', $id)->sum('amount');
@@ -334,7 +329,6 @@ class PurchaseSalePaymentController extends Controller
 
     public function SalePaymentedit(Request $request, $id, $payment_id)
     {
-        dd("SalePaymentedit");
         $page_title = 'Sales Payment Edit';
         $page_description = 'create payments of sales';
         $sale_id = $id;
@@ -349,7 +343,6 @@ class PurchaseSalePaymentController extends Controller
     {
         $payment = \App\Models\Payment::find($payment_id);
 
-        //dd($payment);
         $attributes = $request->all();
         $attributes['paid_by'] = $request->payment_method;
         $attributes['created_by'] = \Auth::user()->id;
@@ -357,7 +350,6 @@ class PurchaseSalePaymentController extends Controller
         if ($request->file('attachment')) {
             $stamp = time();
             $file = $request->file('attachment');
-            //dd($file);
             $destinationPath = public_path() . '/attachment/';
             $filename = $file->getClientOriginalName();
             $request->file('attachment')->move($destinationPath, $stamp . '_' . $filename);
@@ -395,7 +387,6 @@ class PurchaseSalePaymentController extends Controller
     {
         $payment = \App\Models\Payment::find($payment_id);
 
-        //dd($payment);
 
         $attributes = $request->all();
         $attributes['created_by'] = \Auth::user()->id;
@@ -403,7 +394,6 @@ class PurchaseSalePaymentController extends Controller
         if ($request->file('attachment')) {
             $stamp = time();
             $file = $request->file('attachment');
-            //dd($file);
             $destinationPath = public_path() . '/attachment/';
             $filename = $file->getClientOriginalName();
             $request->file('attachment')->move($destinationPath, $stamp . '_' . $filename);
@@ -525,7 +515,6 @@ class PurchaseSalePaymentController extends Controller
     {
         $purchase_order = \App\Models\PurchaseOrder::find($request->id);
 
-        // dd($purchase_order);
 
         $attributes['status'] = $request->purchase_status;
 

@@ -31,8 +31,6 @@ Route::get('ticket_thankyou', ['as' => 'ticket_thankyou',          'uses' => 'Ap
 
 // Online Job Application Form
 
-Route::get('getClients', ['as' => 'getclients', 'uses' => 'ClientsController@get_client']);
-
 Route::get('list_job', ['as' => 'list_job',      'uses' => 'ApplicationController@listJob']);
 Route::get('apply_job/{id}', ['as' => 'apply_job',     'uses' => 'ApplicationController@applyJob']);
 Route::get('apply_form/{designation_id}/{job_circular_id}', ['as' => 'apply_form',          'uses' => 'ApplicationController@jobApplyForm']);
@@ -1304,14 +1302,14 @@ Route::group(['middleware' =>  ['iptracker' , 'authorize']], function () {
         Route::any('products/GetProductDetailAjax/{productId}', ['uses' => 'OrdersController@getProductDetailAjax', 'as' => 'admin.products.GetProductDetailAjax']);
         Route::post('multiple_orders', ['uses' => 'OrdersController@store', 'as' => 'admin.multiple_orders.store']);
         Route::get('order/print/{id}', ['as' => 'admin.orders.print',  'uses' => 'OrdersController@printInvoice']);
-        Route::get('order/generatePDF/{id}', ['as' => 'admin.order.generatePDF',   'uses' => 'OrdersController@generatePDF']);
+        Route::get('order/generatePDF/{id}', ['as' => 'admin.order.generatePDF', 'uses' => 'OrdersController@generatePDF']);
 
         Route::post('ajax_order_status', ['as' => 'admin.ajax_order_status', 'uses' => 'PurchaseSalePaymentController@ajaxSaleStatus']);
 
+        Route::get('orders/payments/list', ['as' => 'admin.orders.paymentslist', 'uses' => 'OrdersController@paymentlist']);
 
-        Route::get('orders/payments/list', ['as' => 'admin.orders.paymentslist',  'uses' => 'OrdersController@paymentlist']);
-
-        Route::get('sales/paymentslist', ['as' => 'admin.sales.paymentslist',  'uses' => 'OrdersController@SalesPayment']);
+        Route::get('sales/receipts', ['as' => 'admin.sales.paymentslist', 'uses' => 'OrdersController@SalesPayment']);
+        Route::get('invoice1/printreceipt/{id}', ['as' => 'admin.invoice.printreceipt', 'uses' => 'OrdersController@SalesPaymentPrint']);
 
         Route::get('getpanno/{id}', ['as' => 'admin.getpanno', 'uses' => 'PurchaseController@getPanNUM']);
 
@@ -1366,6 +1364,8 @@ Route::group(['middleware' =>  ['iptracker' , 'authorize']], function () {
         Route::get('invoice/{id}/change', ['as' => 'admin.invoice.change', 'uses' => 'InvoiceController@postOrdertoInvoice']);
         Route::get('invoice/print/{id}', ['as' => 'admin.invoice.print',  'uses' => 'InvoiceController@printInvoice']);
         Route::get('invoice/thermalprint/{id}', ['as' => 'admin.invoice.thermalprint',  'uses' => 'InvoiceController@thermalprintInvoice']);
+        Route::get('invoice/preview-print/{id}', ['as' => 'admin.invoice.preview-print',  'uses' => 'InvoiceController@previewPrintInvoice']);
+        Route::get('invoice/preview-thermalprint/{id}', ['as' => 'admin.invoice.preview-thermalprint',  'uses' => 'InvoiceController@previewThermalprintInvoice']);
         Route::get('invoice/generatePDF/{id}', ['as' => 'admin.invoice.generatePDF',   'uses' => 'InvoiceController@generatePDF']);
         Route::get('invoice/payment/{id}', ['as' => 'admin.invoice.payment',   'uses' => 'InvoiceController@makepayment']);
         Route::get('payment/invoice/{id}/create', ['as' => 'admin.payment.invoice.create',    'uses' => 'InvoiceController@invoicePaymentcreate']);
@@ -1373,6 +1373,8 @@ Route::group(['middleware' =>  ['iptracker' , 'authorize']], function () {
         Route::get('payment/invoice/{id}/show', ['as' => 'admin.payment.invoice.show',    'uses' => 'InvoiceController@invoicePaymentshow']);
 
         Route::get('taxinvoice/renewals', ['as' => 'admin.tax-invoice.renewals',           'uses' => 'InvoiceController@renewals']);
+        Route::get('sales/billwisedebtorlist', ['as' => 'admin.invoice.billwisedebtorlist',  'uses' => 'InvoiceController@billwisedebtorlist']);
+        Route::get('invoice/followuplist', ['as' => 'admin.invoice.followuplist',  'uses' => 'InvoiceController@followuplist']);
 
         // For Purchase
 

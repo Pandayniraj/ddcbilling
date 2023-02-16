@@ -106,8 +106,11 @@
             }
         });
 
-        $(document).on('click', '.quantity', function () {
-            $(this).val('');
+        $(document).on('click', '#btn-submit-edit', function (e) {
+            e.preventDefault();
+            if (confirm("Are you Sure!") == true) {
+                $("#form_edit_client").submit();
+            }
         });
     });
 

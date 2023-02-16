@@ -86,12 +86,15 @@
                                     <th>{{ trans('admin/courses/general.columns.name') }}</th>
                                     <th> Unit</th>
                                     <th>Onhand</th>
-                                    {{-- <th>Dist. Price</th>--}}
-                                    {{-- <th>Retailer Price</th>--}}
-                                    {{-- <th>Boothman Price</th>--}}
-                                    {{-- <th>D.customer Price</th>--}}
-                                    {{-- <th>Customer Price</th>--}}
+                                    @if (auth()->user()->hasRole('admins'))
                                     <th>List Pricing</th>
+                                    @else
+                                         <th>Dist. Price</th>
+                                         <th>Retailer Price</th>
+                                        {{-- <th>Boothman Price</th>--}}
+                                        {{-- <th>D.customer Price</th>--}}
+                                         <th>Customer Price</th>
+                                    @endif
                                     {{-- <th>SP w/o VAT</th> --}}
                                     {{-- <th>Agent Price</th> --}}
                                     {{-- <th>SP with VAT</th> --}}
@@ -124,11 +127,38 @@
 
                                         <td>{!! $course->unit->symbol ?? '' !!}</td>
                                         <td>{!! \TaskHelper::returnAvailableStock($course->id, null) !!}</td>
-                                        {{-- <td>{!! number_format($course->distributor_price,2) !!}</td>--}}
-                                        {{-- <td>{!! number_format($course->retailer_price,2) !!}</td>--}}
-                                        {{-- <td>{!! number_format($course->boothman_price,2) !!}</td>--}}
-                                        {{-- <td>{!! number_format($course->direct_customer_price,2) !!}</td>--}}
-                                        {{-- <td>{!! number_format($course->price,2) !!}</td>--}}
+                                        @if (auth()->user()->hasRole('admins'))
+                                            <td>
+                                                <a href="{{route('admin.product-pricing.index',$course->id)}}">
+                                                    <i class="fa fa-money" title="Add Product Price" style="font-size: 25px;"></i>
+                                                </a>
+                                            </td>
+                                        @else
+                                            @php $displayPrice = 0; @endphp
+                                            @foreach($course->productPrices as $productPrice)
+                                                @if($productPrice->project_id == auth()->user()->project_id??0)
+                                                    @php $displayPrice = 1; @endphp
+                                                    <td>{!! number_format($productPrice->distributor_price,2) !!}</td>
+                                                    <td>{!! number_format($productPrice->retailer_price,2) !!}</td>
+                                                    <td>{!! number_format($productPrice->customer_price,2) !!} &nbsp;
+                                                        <a href="{{route('admin.product-pricing.index',$course->id)}}">
+                                                            <i class="fa fa-pencil" title="Edit Product Price"></i>
+                                                        </a>
+                                                    </td>
+                                                @endif
+                                            @endforeach
+                                            @if($displayPrice == 0)
+                                                <td colspan="3">
+                                                    <a href="{{route('admin.product-pricing.index',$course->id)}}">
+                                                        <i class="fa fa-money" title="Add Product Price"></i> Add Price
+                                                    </a>
+                                                </td>
+                                            @endif
+
+                                            {{-- <td>{!! number_format($course->boothman_price,2) !!}</td>--}}
+                                            {{-- <td>{!! number_format($course->direct_customer_price,2) !!}</td>--}}
+                                            {{-- <td>{!! number_format($course->price,2) !!}</td>--}}
+                                        @endif
 
                                         {{-- <td>{!! number_format($course->price,2) !!}</td> --}}
 
@@ -136,12 +166,7 @@
 
                                         {{-- <td>{!! number_format($course->price+($course->price*0.13),2) !!}</td> --}}
                                         {{-- <td>{!! $course->warranty==0?'NO': $course->warranty.' months'!!}</td> --}}
-                                        <td>
 
-                                            <a href="{{route('admin.product-pricing.index',$course->id)}}">
-                                                <i class="fa fa-money" title="Add Product Price" style="font-size: 25px;"></i>
-                                            </a>
-                                        </td>
                                         <td>
                                             @if ( $course->isEditable() || $course->canChangePermissions() )
                                                 @if(\Auth::user()->hasRole('admins'))

@@ -2,21 +2,32 @@
 
 namespace App\Models;
 
+use App\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class OutletUser extends Model
 {
-      protected $table = 'outlet_users';
-	
-	/**
+    protected $table = 'outlet_users';
+
+    /**
      * @var array
      */
-    protected $fillable = ['outlet_id','user_id'];
-	
-        public function isEditable()
+    protected $fillable = ['outlet_id', 'user_id'];
+
+    public function outlet() : BelongsTo
+    {
+        return $this->belongsTo(PosOutlets::class, 'outlet_id');
+    }
+    public function user() : BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function isEditable()
     {
         // Protect the admins and users Leads from editing changes
-        if ( \Auth::user()->id != $this->user_id && \Auth::user()->id != 1 && \Auth::user()->id != 5 && \Auth::user()->id != 4 && \Auth::user()->id != 3 ) {
+        if (\Auth::user()->id != $this->user_id && \Auth::user()->id != 1 && \Auth::user()->id != 5 && \Auth::user()->id != 4 && \Auth::user()->id != 3) {
             return false;
         }
 
@@ -32,21 +43,10 @@ class OutletUser extends Model
         /*if ( (\Auth::user()->id != $this->user_id  && \Auth::user()->id != 1 && \Auth::user()->id != 5 && \Auth::user()->id != 4 && \Auth::user()->id != 3)) {
             return false;
         } */
-        
-        if ( !\Auth::user()->hasRole('admins'))
+
+        if (!\Auth::user()->hasRole('admins'))
             return false;
 
         return true;
     }
-        
-    public function user()
-    {
-        return $this->belongsTo('App\User');
-    }
-
-     public function outlet()
-    {
-        return $this->belongsTo('App\Models\PosOutlets');
-    }
-    
 }

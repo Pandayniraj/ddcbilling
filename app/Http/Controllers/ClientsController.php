@@ -7,6 +7,7 @@ use App\Http\Requests;
 use App\Models\Audit as Audit;
 use App\Models\Client;
 use App\Models\Contact;
+use App\Models\PosOutlets;
 use App\Models\Proposal;
 use App\Models\Role as Permission;
 use App\User;
@@ -51,7 +52,7 @@ class ClientsController extends Controller
         $clients = Client::where('org_id', \Auth::user()->org_id)
             ->where(function ($query) {
                 if (\Request::get('clients_types') && \Request::get('clients_types') != '') {
-                    return  $query->where('type', \Request::get('clients_types'));
+                    return $query->where('type', \Request::get('clients_types'));
                 }
             })->where(function ($query) {
                 if (\Request::get('term') && \Request::get('term') != '') {
@@ -72,35 +73,34 @@ class ClientsController extends Controller
     public function customers()
     {
         Audit::log(Auth::user()->id, trans('admin/clients/general.audit-log.category'), trans('admin/clients/general.audit-log.msg-index'));
-        $relation_type=\Request::get('relation_type');
-        if($relation_type=="distributor"){
+        $relation_type = \Request::get('relation_type');
+        if ($relation_type == "distributor") {
             $page_title = "Distributor";
             $page_description = "List of distributors";
-        }elseif($relation_type=="retailer"){
+        } elseif ($relation_type == "retailer") {
             $page_title = "Retailer";
             $page_description = "List of retailers";
-        }elseif($relation_type=="boothman"){
+        } elseif ($relation_type == "boothman") {
             $page_title = "Booth Man";
             $page_description = "List of boothmans";
-        }elseif($relation_type=="direct_customer"){
+        } elseif ($relation_type == "direct_customer") {
             $page_title = "Direct Customer";
             $page_description = "List of Direct customer";
-        }elseif($relation_type == "staff"){
+        } elseif ($relation_type == "staff") {
             $page_title = "Staff";
             $page_description = "List of Staff";
         }
         // $outlet= \App\Models\PosOutlets::pluck('name', 'id')->all();
-        $outletuser= \App\Models\OutletUser::where('user_id', \Auth::user()->id)->select('outlet_id')->get()->toArray();
+        $outletuser = \App\Models\OutletUser::where('user_id', auth()->id())->select('outlet_id')->get()->toArray();
+        $posOutlet = PosOutlets::where('project_id', auth()->user()->project_id)->pluck('id')->toArray();
         $clients = Client::where('org_id', \Auth::user()->org_id)
             ->where('relation_type', $relation_type)
-            ->where(function ($q) use($outletuser){
-                if(!Auth::user()->hasRole('admins')){
-                    $q->whereIn('outlet_id', $outletuser);
-                }
+            ->where(function ($q) use ($posOutlet) {
+                if (!Auth::user()->hasRole('admins')) $q->whereIn('outlet_id', $posOutlet);
             })
             ->where(function ($query) {
                 if (\Request::get('clients_types') && \Request::get('clients_types') != '') {
-                    return  $query->where('customer_group', \Request::get('clients_types'));
+                    return $query->where('customer_group', \Request::get('clients_types'));
                 }
             })->where(function ($query) {
                 if (\Request::get('term') && \Request::get('term') != '') {
@@ -109,9 +109,8 @@ class ClientsController extends Controller
                         ->orWhere('customer_group', 'LIKE', '%' . \Request::get('term') . '%');
                 }
             })->orderBy('id', 'DESC')->paginate(25);
-
         $groups = \App\Models\CustomerGroup::where('org_id', \Auth::user()->org_id)
-                ->get();
+            ->get();
         return view('admin.clients.customers', compact('clients', 'page_title', 'page_description', 'groups'));
     }
 
@@ -123,7 +122,7 @@ class ClientsController extends Controller
             ->where('relation_type', 'supplier')
             ->where(function ($query) {
                 if (\Request::get('clients_types') && \Request::get('clients_types') != '') {
-                    return  $query->where('customer_group', \Request::get('clients_types'));
+                    return $query->where('customer_group', \Request::get('clients_types'));
                 }
             })->where(function ($query) {
                 if (\Request::get('term') && \Request::get('term') != '') {
@@ -137,9 +136,9 @@ class ClientsController extends Controller
 
         $page_description = trans('admin/clients/general.page.index.description');
         $groups = \App\Models\CustomerGroup::where('org_id', \Auth::user()->org_id)
-                ->get();
+            ->get();
 
-        return view('admin.clients.suppliers', compact('clients' ,'page_title', 'page_description', 'groups'));
+        return view('admin.clients.suppliers', compact('clients', 'page_title', 'page_description', 'groups'));
     }
 
     public function dealer()
@@ -150,7 +149,7 @@ class ClientsController extends Controller
             ->where('relation_type', 'dealer')
             ->where(function ($query) {
                 if (\Request::get('clients_types') && \Request::get('clients_types') != '') {
-                    return  $query->where('customer_group', \Request::get('clients_types'));
+                    return $query->where('customer_group', \Request::get('clients_types'));
                 }
             })->where(function ($query) {
                 if (\Request::get('term') && \Request::get('term') != '') {
@@ -181,9 +180,9 @@ class ClientsController extends Controller
         $page_description = trans('admin/clients/general.page.show.description'); // "Displaying client: :name";
 
         $contacts = Contact::where('client_id', $id)->get();
-        $proposal = Proposal::where('client_type', 'client')->where('client_lead_id', $id)->get();
+        // $proposal = Proposal::where('client_type', 'client')->where('client_lead_id', $id)->get();
 
-        return view('admin.clients.show', compact('client', 'page_title', 'page_description', 'contacts', 'proposal'));
+        return view('admin.clients.show', compact('client', 'page_title', 'page_description', 'contacts'));
     }
 
     /**
@@ -193,29 +192,30 @@ class ClientsController extends Controller
     {
         $page_title = trans('admin/clients/general.page.create.title'); // "Admin | Client | Create";
 
-        $relation_type=\Request::get('relation_type');
-        if($relation_type=="distributor"){
+        $relation_type = \Request::get('relation_type');
+        if ($relation_type == "distributor") {
             $page_description = "Creating a new distributor";
-        }elseif($relation_type=="retailer"){
+        } elseif ($relation_type == "retailer") {
             $page_description = "Creating a new retailer";
-        }elseif($relation_type=="boothman"){
+        } elseif ($relation_type == "boothman") {
             $page_description = "Creating a new boothman";
-        }elseif($relation_type=="direct_customer"){
+        } elseif ($relation_type == "direct_customer") {
             $page_title = "Direct Customer";
             $page_description = "List of Direct customer";
         }
-        $distributors=\App\Models\Client::select('name','id')->where('relation_type','distributor')->where('org_id',\Auth::user()->org_id)->where('enabled',1)->pluck('name','id');
-        $deliveryroutes=\App\Models\DeliveryRoute::pluck('route_name','id');
+        $distributors = \App\Models\Client::select('name', 'id')->where('relation_type', 'distributor')->where('org_id', \Auth::user()->org_id)->where('enabled', 1)->pluck('name', 'id');
+        $deliveryroutes = \App\Models\DeliveryRoute::pluck('route_name', 'id');
         $client = new \App\Models\Client();
-        $outletuser= \App\Models\OutletUser::where('user_id', \Auth::user()->id)->select('outlet_id')->get()->toArray();
-        if(\Auth::user()->hasRole('admins')){
-            $outlets=\App\Models\PosOutlets::pluck('name', 'id')->all();
-        }else{
-        $outlets=\App\Models\PosOutlets::whereIn('id', $outletuser)->pluck('name', 'id')->all();
+        $outletuser = \App\Models\OutletUser::where('user_id', auth()->id())->select('outlet_id')->get()->toArray();
+
+        if (\Auth::user()->hasRole('admins')) {
+            $outlets = \App\Models\PosOutlets::pluck('name', 'id')->all();
+        } else {
+            $outlets = \App\Models\PosOutlets::whereIn('id', $outletuser)->pluck('name', 'id')->all();
         }
-        $perms = $this->permission->all()??'';
-        $groups = \App\Models\CustomerGroup::select('name','id')->where('type',\Request::get('relation_type') )->pluck('name','id');
-        return view('admin.clients.create', compact('deliveryroutes','client' ,'perms','outlets' ,'page_title', 'page_description','groups','distributors'));
+        $perms = $this->permission->all() ?? '';
+        $groups = \App\Models\CustomerGroup::select('name', 'id')->where('type', \Request::get('relation_type'))->pluck('name', 'id');
+        return view('admin.clients.create', compact('deliveryroutes', 'client', 'perms', 'outlets', 'page_title', 'page_description', 'groups', 'distributors'));
     }
 
     /**
@@ -250,7 +250,7 @@ class ClientsController extends Controller
         $detail->group_id = $id;
 
         $detail->org_id = \Auth::user()->org_id;
-        $detail->user_id = \Auth::user()->id;
+        $detail->user_id = auth()->id();
 
         $detail->code = $this->getNextCodeLedgers($id);
         $detail->name = $name;
@@ -277,32 +277,28 @@ class ClientsController extends Controller
     public function store(Request $request)
     {
         $this->validate($request, [
-            'name'      => 'required',
-            'phone'     => 'min:4|max:255',
-            'email'     => 'email',
+            'name' => 'required',
+            'phone' => 'min:4|max:255',
+            'email' => 'email',
+            'outlet_id' => 'required|exists:pos_outlets,id'
         ]);
 
-            $attributes = $request->all();
+        $attributes = $request->all();
         if ($request->relation_type == 'distributor') {
             $accounting_type = $request->types ?? env('CLIENT_DISTRIBUTOR_SERVICES_LEDGER_GROUP');
-        }
-        elseif($request->relation_type == 'retailer') {
+        } elseif ($request->relation_type == 'retailer') {
             $accounting_type = $request->types ?? env('CLIENT_RETAILER_SERVICES_LEDGER_GROUP');
-        }
-        elseif($request->relation_type == 'boothman') {
+        } elseif ($request->relation_type == 'boothman') {
             $accounting_type = $request->types ?? env('CLIENT_BOOTHMAN_SERVICES_LEDGER_GROUP');
-        }
-        elseif($request->relation_type == 'direct_customer') {
+        } elseif ($request->relation_type == 'direct_customer') {
             $accounting_type = $request->types ?? env('CLIENT_DIRECT_CUSTOMER_SERVICES_LEDGER_GROUP');
-        }
-        elseif($request->relation_type == 'staff') {
+        } elseif ($request->relation_type == 'staff') {
             //219 customer group
             $accounting_type = "219";
-        }
-        elseif ($request->relation_type == 'supplier') {
+        } elseif ($request->relation_type == 'supplier') {
             $accounting_type = $request->types ??
                 \FinanceHelper::get_ledger_id('CLIENT_SUPPLIER_LEDGER_GROUP');
-        }else{
+        } else {
             $accounting_type = $request->types ?? env('CLIENT_SERVICES_LEDGER_GROUP');
         }
         // if ($request->relation_type == 'customer') {
@@ -318,13 +314,13 @@ class ClientsController extends Controller
         if (!isset($attributes['enabled'])) {
             $attributes['enabled'] = 0;
         }
-         if($request->file('image')){
-            $files=$request->file('image');
-            $doc_name= time()."".$files->getClientOriginalName();
-            $destinationPath=public_path('/clientsimage/');
-            $files->move($destinationPath,$doc_name);
-            $doc_name='/clientsimage/'.$doc_name;
-            $attributes['image']=$doc_name;
+        if ($request->file('image')) {
+            $files = $request->file('image');
+            $doc_name = time() . "" . $files->getClientOriginalName();
+            $destinationPath = public_path('/clientsimage/');
+            $files->move($destinationPath, $doc_name);
+            $doc_name = '/clientsimage/' . $doc_name;
+            $attributes['image'] = $doc_name;
         }
         $client = $this->client->create($attributes);
         if ($accounting_type) { // dont`t create ledger if accounting type is null
@@ -333,18 +329,17 @@ class ClientsController extends Controller
             $attributes['ledger_id'] = $_ledgers;
             $client->update($attributes);
         }
-        if($request->deposit_amount!="" && $request->deposit_amount){
-            $deposit['user_id'] = \Auth::user()->id;
+        if ($request->deposit_amount != "" && $request->deposit_amount) {
+            $deposit['user_id'] = auth()->id();
             $deposit['date'] = \Carbon\Carbon::now();
-            $deposit['remarks'] ="Added the deposit amount while creating";
+            $deposit['remarks'] = "Added the deposit amount while creating";
             $deposit['type'] = "Deposit";
             $deposit['client_id'] = $client->id;
-            $deposit['amount'] =$request->deposit_amount;
-            $deposit['closing'] =(float)(\App\Models\CustomerDeposit::where('client_id',$client->id)->latest()->first()->closing??0) + (float)$request->deposit_amount;
+            $deposit['amount'] = $request->deposit_amount;
+            $deposit['closing'] = (float)(\App\Models\CustomerDeposit::where('client_id', $client->id)->latest()->first()->closing ?? 0) + (float)$request->deposit_amount;
 
             \App\Models\CustomerDeposit::create($deposit);
         }
-
 
         Audit::log(Auth::user()->id, trans('admin/clients/general.audit-log.category'), trans('admin/clients/general.audit-log.msg-store', ['name' => $attributes['name']]));
         // if($request->ajax()){
@@ -360,9 +355,9 @@ class ClientsController extends Controller
     {
         $attributes = $request->all();
         $validator = \Validator::make($attributes, [
-            'name'      => 'required',
-            'phone'     => 'min:4|max:255',
-            'email'     => 'email',
+            'name' => 'required',
+            'phone' => 'min:4|max:255',
+            'email' => 'email',
         ]);
         if ($validator->fails()) {
             return ['error' => $validator->errors()];
@@ -380,9 +375,9 @@ class ClientsController extends Controller
         $attributes['ledger_id'] = $_ledgers;
         $client->update($attributes);
         Audit::log(Auth::user()->id, trans('admin/clients/general.audit-log.category'), trans('admin/clients/general.audit-log.msg-store', ['name' => $attributes['name']]));
-        $clients = \App\Models\Client::select('id', 'name','phone')->orderBy('id', DESC)->get();
+        $clients = \App\Models\Client::select('id', 'name', 'phone')->orderBy('id', DESC)->get();
         $lastcreated = $client->id;
-        return ['clients' => $clients, 'lastcreated' => $lastcreated, 'relation_type' => $request->relation_type,'lastcreatedClient'=>$client];
+        return ['clients' => $clients, 'lastcreated' => $lastcreated, 'relation_type' => $request->relation_type, 'lastcreatedClient' => $client];
     }
 
     /**
@@ -401,19 +396,19 @@ class ClientsController extends Controller
         if (!$client->isEditable() && !$client->canChangePermissions()) {
             abort(403);
         }
-        $distributors=\App\Models\Client::select('name','id')->where('relation_type','distributor')->where('org_id',\Auth::user()->org_id)->where('enabled',1)->pluck('name','id');
-        $deliveryroutes=\App\Models\DeliveryRoute::pluck('route_name','id');
+        $distributors = \App\Models\Client::select('name', 'id')->where('relation_type', 'distributor')->where('org_id', \Auth::user()->org_id)->where('enabled', 1)->pluck('name', 'id');
+        $deliveryroutes = \App\Models\DeliveryRoute::pluck('route_name', 'id');
 
         $ledger_list = \App\Models\COALedgers::all()->pluck('name', 'id');
         $groups = \App\Models\CustomerGroup::where('org_id', \Auth::user()->org_id)->pluck('name', 'id');
-        $outletuser= \App\Models\OutletUser::where('user_id', \Auth::user()->id)->select('outlet_id')->get()->toArray();
-        if(\Auth::user()->hasRole('admins')){
-            $outlets=\App\Models\PosOutlets::pluck('name', 'id')->all();
-        }else{
-        $outlets=\App\Models\PosOutlets::whereIn('id', $outletuser)->pluck('name', 'id')->all();
+        $outletuser = \App\Models\OutletUser::where('user_id', auth()->id())->select('outlet_id')->get()->toArray();
+        if (\Auth::user()->hasRole('admins')) {
+            $outlets = \App\Models\PosOutlets::pluck('name', 'id')->all();
+        } else {
+            $outlets = \App\Models\PosOutlets::whereIn('id', $outletuser)->pluck('name', 'id')->all();
         }
 
-        return view('admin.clients.edit', compact('deliveryroutes','distributors','client', 'page_title', 'page_description', 'ledger_list', 'groups', 'outlets'));
+        return view('admin.clients.edit', compact('deliveryroutes', 'distributors', 'client', 'page_title', 'page_description', 'ledger_list', 'groups', 'outlets'));
     }
 
     /**
@@ -424,20 +419,21 @@ class ClientsController extends Controller
     public function update(Request $request, $id)
     {
         $this->validate($request, [
-            'name'      => 'required',
-            'phone'     => 'min:4|max:255',
+            'name' => 'required',
+            'phone' => 'min:4|max:255',
+            'outlet_id' => 'required|exists:pos_outlets,id'
         ]);
 
         $attributes = $request->all();
         $attributes['type'] = (\App\Models\COAgroups::find($request->types))->name;
         $attributes['org_id'] = \Auth::user()->org_id;
-        if($request->file('image')){
-            $files=$request->file('image');
-            $doc_name= time()."".$files->getClientOriginalName();
-            $destinationPath=public_path('/clientsimage/');
-            $files->move($destinationPath,$doc_name);
-            $doc_name='/clientsimage/'.$doc_name;
-            $attributes['image']=$doc_name;
+        if ($request->file('image')) {
+            $files = $request->file('image');
+            $doc_name = time() . "" . $files->getClientOriginalName();
+            $destinationPath = public_path('/clientsimage/');
+            $files->move($destinationPath, $doc_name);
+            $doc_name = '/clientsimage/' . $doc_name;
+            $attributes['image'] = $doc_name;
         }
         if (!isset($attributes['enabled'])) {
             $attributes['enabled'] = 0;
@@ -452,28 +448,32 @@ class ClientsController extends Controller
 
         return redirect()->back();
     }
-    public function get_bank_deposit($id){
-        $customer=\App\Models\CustomerDeposit::where('client_id',$id)->latest()->first();
-        $data['deposit_amount']=$customer->closing??"0";
-        $data['credit_limit']=$customer->closing??"0";
-        $data['remaining_amount']=$customer->closing??"0";
+
+    public function get_bank_deposit($id)
+    {
+        $customer = \App\Models\CustomerDeposit::where('client_id', $id)->latest()->first();
+        $data['deposit_amount'] = $customer->closing ?? "0";
+        $data['credit_limit'] = $customer->closing ?? "0";
+        $data['remaining_amount'] = $customer->closing ?? "0";
         return $data;
     }
-    public function get_retailer(){
-        $parent_distributer=\Request::get('client_id');
-        $distributor=Client::find($parent_distributer);
 
-        $page_title=$distributor->name."'s Retailer";
-        $page_description="List of Retailer";
+    public function get_retailer()
+    {
+        $parent_distributer = \Request::get('client_id');
+        $distributor = Client::find($parent_distributer);
 
-        $relation_type="retailer";
+        $page_title = $distributor->name . "'s Retailer";
+        $page_description = "List of Retailer";
+
+        $relation_type = "retailer";
 
         $clients = Client::where('org_id', \Auth::user()->org_id)
             ->where('relation_type', $relation_type)
-            ->where('parent_distributor',$parent_distributer)
+            ->where('parent_distributor', $parent_distributer)
             ->where(function ($query) {
                 if (\Request::get('clients_types') && \Request::get('clients_types') != '') {
-                    return  $query->where('customer_group', \Request::get('clients_types'));
+                    return $query->where('customer_group', \Request::get('clients_types'));
                 }
             })->where(function ($query) {
                 if (\Request::get('term') && \Request::get('term') != '') {
@@ -485,24 +485,26 @@ class ClientsController extends Controller
 
 
         $groups = \App\Models\CustomerGroup::where('org_id', \Auth::user()->org_id)
-                ->get();
+            ->get();
         return view('admin.clients.distributor_retailers', compact('clients', 'page_title', 'page_description', 'groups'));
     }
-    public function get_boothman(){
-        $parent_distributer=\Request::get('client_id');
-        $distributor=Client::find($parent_distributer);
 
-        $page_title=$distributor->name."'s Boothman";
-        $page_description="List of Boothman";
+    public function get_boothman()
+    {
+        $parent_distributer = \Request::get('client_id');
+        $distributor = Client::find($parent_distributer);
 
-        $relation_type="boothman";
+        $page_title = $distributor->name . "'s Boothman";
+        $page_description = "List of Boothman";
+
+        $relation_type = "boothman";
 
         $clients = Client::where('org_id', \Auth::user()->org_id)
             ->where('relation_type', $relation_type)
-            ->where('parent_distributor',$parent_distributer)
+            ->where('parent_distributor', $parent_distributer)
             ->where(function ($query) {
                 if (\Request::get('clients_types') && \Request::get('clients_types') != '') {
-                    return  $query->where('customer_group', \Request::get('clients_types'));
+                    return $query->where('customer_group', \Request::get('clients_types'));
                 }
             })->where(function ($query) {
                 if (\Request::get('term') && \Request::get('term') != '') {
@@ -514,9 +516,10 @@ class ClientsController extends Controller
 
 
         $groups = \App\Models\CustomerGroup::where('org_id', \Auth::user()->org_id)
-                ->get();
+            ->get();
         return view('admin.clients.distributor_boothmans', compact('clients', 'page_title', 'page_description', 'groups'));
     }
+
     /**
      * @param $id
      * @return \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
@@ -548,7 +551,7 @@ class ClientsController extends Controller
     /**
      * Delete Confirm.
      *
-     * @param   int   $id
+     * @param int $id
      * @return  View
      */
     public function getModalDelete($id)
@@ -695,11 +698,20 @@ class ClientsController extends Controller
 
     public function get_client()
     {
-        $relation_type=\Request::get('relation_type');
-        if($relation_type!='' && $relation_type){
-            $clients=Client::where('relation_type',$relation_type)->where('enabled', '1')->pluck('name','id');
+        $relation_type = \Request::get('relation_type');
+        if (($relation_type != '') && $relation_type) {
+            if (request()->outlet_id && (request()->outlet_id != '')) {
+                $posOutlet = PosOutlets::find(request()->outlet_id);
+                if (isset($posOutlet)) {
+                    $project_id = $posOutlet->project_id;
+                    $outletId = PosOutlets::where('project_id', $project_id)->pluck('id')->toArray();
+                }
+            }
+            if (count($outletId) > 0)
+                $clients = Client::where('relation_type', $relation_type)->whereIn('outlet_id', $outletId)->where('enabled', '1')->pluck('name', 'id');
+            else $clients = Client::where('relation_type', $relation_type)->where('enabled', '1')->pluck('name', 'id');
             return $clients->toarray();
-        }else{
+        } else {
             $term = strtolower(\Request::get('term'));
             $contacts = Client::select('id', 'name')->where('name', 'LIKE', '%' . $term . '%')->where('enabled', '1')->groupBy('name')->take(5)->get();
             $return_array = [];
@@ -739,8 +751,8 @@ class ClientsController extends Controller
         $client = new \App\Models\Client();
         $perms = $this->permission->all();
         $groups = \App\Models\CustomerGroup::where('org_id', \Auth::user()->org_id)
-                ->where('type',\Request::get('relation_type'))
-                ->pluck('name', 'id');
+            ->where('type', \Request::get('relation_type'))
+            ->pluck('name', 'id');
 
         return view('admin.clients.modals.create', compact('client', 'perms', 'page_title', 'page_description', 'groups'));
     }

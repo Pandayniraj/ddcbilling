@@ -74,6 +74,13 @@
                     }
                 });
             });
-        })
+
+            $(document).on('click', '#btn-submit-edit', function (e) {
+                e.preventDefault();
+                if (confirm("Are you Sure!") == true) {
+                    $("#add-product-price").submit();
+                }
+            });
+        });
     </script>
 @endsection

@@ -94,12 +94,14 @@ class StockController extends Controller
                 $stockMove->remarks = $remarks[$id];
 
                 $outletIds = PosOutlets::where('project_id', $projectId)->pluck('id')->toArray();
-                $opening_stock_check_exists = StockMove::where('stock_id', $projectId)->where('tran_date', '<', $request->date)
+                $opening_stock_check_exists = StockMove::where('stock_id', $id)
+                    ->where('tran_date', '<=', $request->date)
                     ->where(function ($que) use ($outletIds) {
                         $que->whereIn('store_id', $outletIds);
                     })->orderBy('tran_date', 'desc')->first();
-                if($opening_stock_check_exists && $projectId)
-                    $stockMove->opening_stock = \App\Helpers\TaskHelper::getOpeningStock($id, $request->date, $projectId) ?? 0;
+                if($opening_stock_check_exists && $projectId) {
+                    $stockMove->opening_stock = \App\Helpers\TaskHelper::getOpeningStock($id, $request->date, $projectId)+$quantity[$id];
+                }
                 else $stockMove->opening_stock = $quantity[$id]??0;
                 $stockMove->save();
             }
@@ -254,7 +256,12 @@ class StockController extends Controller
         $stock_entries=\App\Models\StockMove::where('transaction_reference_id',$stock_id)->where('reference','store_in_'.$stock_id)->get();
         $newstock=\App\Models\NewStock::find($stock_id);
         $stores = \App\Models\PosOutlets::pluck('name', 'id')->all();
-        return view('admin.stock.stockedit',compact('stores','newstock','stock_id','stock_entries','page_title','page_description'));
+        foreach($stock_entries as $stock) {
+            $productId[] = $stock->stock_id;
+        }
+        $products=\App\Models\Product::where('org_id',\Auth::user()->org_id)->whereIn('id', $productId)->pluck('name','id');
+        return view('admin.stock.stockedit',compact('stores','newstock','stock_id','stock_entries',
+            'page_title','page_description', 'products'));
     }
 
     public function return($stock_id){
@@ -699,14 +706,14 @@ class StockController extends Controller
     {
         if ($request->has('outlet_id') && ($request->outlet_id != '')) {
             $outlet = PosOutlets::find($request->outlet_id);
-
             if (@$outlet->project_id) $projectId = $outlet->project_id;
             else $projectId = 'over-all';
         } else $projectId = 'over-all';
+
         if($request->has('product_id')) {
             $data = [];
             foreach (json_decode($request->product_id) as $productId=>$product) {
-                $data[$productId] = \App\Helpers\TaskHelper::getOpeningStock($productId, null, $projectId);
+                $data[$productId] = \App\Helpers\TaskHelper::getOpeningStock($productId, date('Y-m-d'), $projectId);
             }
             return response()->json($data, 200);
         }

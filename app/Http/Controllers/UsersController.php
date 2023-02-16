@@ -226,10 +226,11 @@ class UsersController extends Controller
         $departments = Department::get();
         $organization = Organization::get();
         $projects = \App\Models\Projects::get();
+        $projects = \App\Models\Store::get();
         $users = \App\User::orderBy('first_name','asc')->get();
 
-
-        return view('admin.users.create', compact('user', 'perms', 'themes', 'time_zones', 'tzKey', 'time_format', 'locales', 'page_title', 'page_description', 'departments', 'organization', 'projects','users'));
+        return view('admin.users.create', compact('user', 'perms', 'themes', 'time_zones', 'tzKey',
+            'locales', 'page_title', 'page_description', 'departments', 'organization', 'projects','users'));
     }
 
     /**
@@ -295,7 +296,7 @@ class UsersController extends Controller
 
         $attributes = $request->all();
 
-        Audit::log(Auth::user()->id, trans('admin/users/general.audit-log.category'), trans('admin/users/general.audit-log.msg-store', ['username' => $attributes['username']]));
+        Audit::log(\auth()->id(), trans('admin/users/general.audit-log.category'), trans('admin/users/general.audit-log.msg-store', ['username' => $attributes['username']]));
 
         if ((array_key_exists('selected_roles', $attributes)) && (!empty($attributes['selected_roles']))) {
             $attributes['role'] = explode(',', $attributes['selected_roles']);
@@ -316,9 +317,6 @@ class UsersController extends Controller
 
         return redirect('/admin/users');
     }
-
-
-
 
     /**
      * @param $id
@@ -351,7 +349,7 @@ class UsersController extends Controller
             $tzKey = null;
 
         }
-        
+
         $time_format = $user->settings()->get('time_format', null);
 
         $locales = Config::get('settings.app_supportedLocales');
@@ -359,10 +357,10 @@ class UsersController extends Controller
         $organization = Organization::get();
         $departments = Department::get();
         $projects = \App\Models\Projects::get();
+        $projects = \App\Models\Store::get();
 
         $designations = Designation::where('departments_id', $user->departments_id)->orderBy('designations_id', 'asc')->get();
         $users = \App\User::orderBy('first_name','asc')->get();
-
 
         return view('admin.users.edit', compact('user', 'roles', 'perms', 'themes', 'time_zones', 'tzKey', 'time_format', 'locales', 'page_title', 'page_description', 'departments', 'designations', 'organization', 'projects','users'));
     }

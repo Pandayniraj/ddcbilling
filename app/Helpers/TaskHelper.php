@@ -1520,7 +1520,7 @@ class TaskHelper
             $os = 0;
             if ($beforeDate) {
                 foreach ($outletIds as $outletId) {
-                    $opening_stock = StockMove::where('stock_id', $product_id)->where('tran_date', '<', $beforeDate)
+                    $opening_stock = StockMove::where('stock_id', $product_id)->where('tran_date', '<=', $beforeDate)
                         ->where(function ($que) use ($outletId) {
                             $que->where('store_id', $outletId);
                         })->orderBy('tran_date', 'desc')->first();
@@ -1535,14 +1535,15 @@ class TaskHelper
                     $os += $opening_stock->opening_stock??0;
                 }
             }
-            if ($os > 0) return @$os ?? 0;
+
+            if ($os > 0) return $os;
             else return 0;
         } else {
             $outletIds = PosOutlets::pluck('id')->toArray();
             $os = 0;
             if ($beforeDate) {
                 foreach ($outletIds as $outletId) {
-                    $opening_stock = StockMove::where('stock_id', $product_id)->where('tran_date', '<', $beforeDate)
+                    $opening_stock = StockMove::where('stock_id', $product_id)->where('tran_date', '<=', $beforeDate)
                         ->where(function ($que) use ($outletId) {
                             $que->where('store_id', $outletId);
                         })->orderBy('tran_date', 'desc')->first();
@@ -1563,7 +1564,7 @@ class TaskHelper
         $transations_In = DB::table('product_stock_moves')
             ->where('product_stock_moves.stock_id', $product_id)
             ->when($beforeDate, function ($q) use ($beforeDate) {
-                $q->where('product_stock_moves.tran_date', '<', $beforeDate);
+                $q->where('product_stock_moves.tran_date', '<=', $beforeDate);
             })
             ->leftjoin('products', 'products.id', '=', 'product_stock_moves.stock_id')
             ->leftjoin('pos_outlets', 'pos_outlets.id', '=', 'product_stock_moves.store_id')
@@ -1572,7 +1573,7 @@ class TaskHelper
         $transations_Out = DB::table('product_stock_moves')
             ->where('product_stock_moves.stock_id', $product_id)
             ->when($beforeDate, function ($q) use ($beforeDate) {
-                $q->where('product_stock_moves.tran_date', '<', $beforeDate);
+                $q->where('product_stock_moves.tran_date', '<=', $beforeDate);
             })
             ->where('product_stock_moves.qty', '<', 0)
             ->leftjoin('products', 'products.id', '=', 'product_stock_moves.stock_id')

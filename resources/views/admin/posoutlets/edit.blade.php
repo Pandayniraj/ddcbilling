@@ -115,24 +115,19 @@
                         </div>
                     </div>
                 </div>
-
             </div>
             <div class="row">
-
                 <div class="col-sm-6">
                     <div class="form-group">
-                        <label class="control-label col-sm-12">Bank Address</label>
+                        <label class="control-label col-sm-12">Branch Name</label>
                         <div class="input-group ">
                             <input type="text" name="bank_address_one" value="{{ $edit->bank_address_one }}" class="form-control" required>
-
                             <div class="input-group-addon">
                                 <a href="#"><i class="fa fa-stack-exchange"></i></a>
                             </div>
-
                         </div>
                     </div>
                 </div>
-
 
                 <div class="col-sm-6">
                     <div class="form-group">

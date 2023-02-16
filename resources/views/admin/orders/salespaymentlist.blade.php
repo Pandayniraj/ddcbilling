@@ -19,27 +19,35 @@
             {!! Form::open( array('route' => 'admin.orders.enable-selected', 'id' => 'frmClientList') ) !!}
             <div class="box box-primary">
                 <div class="box-header with-border">
-                    &nbsp;
-                    <a class="btn btn-primary btn-xs" href="#" title="Create Order" data-toggle="modal"
-                       data-target="#makePaymentModal">
-                        <i class="fa fa-plus"></i> Add Payment
-                    </a>
+                    <div class="float-right">
+                        <a class="btn btn-primary btn-sm" href="#" title="Create Order" data-toggle="modal"
+                           data-target="#makePaymentModal">
+                            <i class="fa fa-plus"></i> Receive Money
+                        </a>
+                        <a href="/admin/sales/billwisedebtorlist" class="btn btn-info btn-sm">Billwise Debtor List</a>
+                        <a href="/admin/invoice/followuplist" class="btn btn-success btn-sm">Followup</a>
+                        <a class="btn btn-light-primary btn-sm" href="/admin/invoice1" title="Close">
+                            <i class="fa fa-times"></i> Close
+                        </a>
+                    </div>
                 </div>
 
                 <div class="box-body">
                     <div class="table-responsive">
                         <table class="table table-hover table-bordered" id="orders-table">
+
                             <thead>
-                            <tr class="bg-blue">
+                            <tr class="text-start text-gray-400 fw-bold fs-7 text-uppercase gs-0">
+
                                 <th>id</th>
-                                <th>Invoice ID</th>
+                                <th>Invoice #</th>
+                                <th>Voucher#</th>
                                 <th>Client</th>
                                 <th>Date</th>
                                 <th>Reference No</th>
                                 <th>Amount</th>
-                                <th>Paid By</th>
-                                <th>Type</th>
-                                {{-- <th>Action</th>--}}
+                                <th>Received In</th>
+                                <th>Action</th>
                             </tr>
                             </thead>
 
@@ -47,71 +55,99 @@
                             @if(isset($payment_list) && !empty($payment_list))
                                 @foreach($payment_list as $o)
                                     <tr>
-                                        @php
-                                            $credit_ledger_id = \FinanceHelper::get_ledger_id('SALES_LEDGER_ID');
-                                            // $entries = \App\Models\Entry::with('entry_items')->where('ref_id', $o->invoice_id)->where('ledger_id', '!=', $credit_ledger_id)->get();
-                                        @endphp
+                                        <td>{!! $o->id !!}</td>
+                                        <td>{{@$o->invoice->outlet->short_name}}/{{@$o->invoice->fiscal_year}}/00{{@$o->invoice->bill_no??$o->invoice_id }}</td>
                                         <td>
                                             <a target="_blank"
                                                href="/admin/entries/show/{{\FinanceHelper::get_entry_type_label($o->invoice->entry->entrytype_id)}}/{{$o->invoice->entry->id}}">
-                                            {{@$o->invoice->entry->number??$o->id}}
+                                                {{@$o->invoice->entry->number??$o->id}}
                                             </a>
                                         </td>
-                                        <td>{{@$o->invoice->outlet->short_name}}/{{@$o->invoice->fiscal_year}}/00{{@$o->invoice->bill_no??$o->invoice_id }}</td>
-                                        <td>{!! $o->invoice->client->name !!}</td>
-                                        <td>{{\App\Helpers\TaskHelper::getNepaliDate($o->date)}}{{-- {!! date('dS M y', strtotime($o->date)) !!}--}}</td>
-                                        <td>{!! $o->reference_no !!}</td>
-                                        <td>{{env('APP_CURRENCY')}} {{ number_format($o->amount,2) }}</td>
-                                        <td>{!! $o->paidby->name !!}</td>
-                                        <td>{!! $o->type !!}</td>
-                                        {{-- <td>--}}
-                                        {{--     @if ( $o->isEditable() || $o->canChangePermissions() )--}}
-                                        {{--         @if($o->status == 'paid' && \Request::get('type') == 'invoice')--}}
-                                        {{--             <i class="fa fa-edit text-muted" title=""></i>--}}
-                                        {{--         @else--}}
-                                        {{--             <a href="/admin/payment/orders/{{$o->invoice_id}}/edit/{{$o->id}}"--}}
-                                        {{--                title="{{ trans('general.button.edit') }}">--}}
-                                        {{--                 <i class="fa fa-edit"></i> Need Recheck</a>--}}
-                                        {{--         @endif--}}
-                                        {{--     @else--}}
-                                        {{--         <i class="fa fa-edit text-muted"--}}
-                                        {{--            title="{{ trans('admin/orders/general.error.cant-edit-this-document') }}"></i>--}}
-                                        {{--     @endif--}}
+                                        <td>{!! @$o->invoice->client->name??'' !!}</td>
+                                        <td>{!! date('dS M y', strtotime($o->date)) !!}</td>
+                                        <td>
+                                            <a href="/admin/invoice/payment/{{$o->id}}">{!! $o->reference_no??'' !!}</a>
+                                        </td>
+                                        <td class="fw-bolder text-dark">{{env('APP_CURRENCY')}} {{ number_format($o->amount,2) }}</td>
+                                        <td>{!! $o->paidby->name??'' !!}</td>
+                                        <td>
+                                            @if ( $o->isEditable() || $o->canChangePermissions() )
+                                                @if($o->status == 'paid' && \Request::get('type') == 'invoice')
+                                                    <i class="fa fa-edit text-muted" title=""></i>
+                                                @else
+                                                    <a href="/admin/payment/orders/{{$o->invoice_id}}/edit/{{$o->id}}"
+                                                       title="{{ trans('general.button.edit') }}">
+                                                        <i class="fa fa-edit"></i></a>
+                                                @endif
+                                            @else
+                                                <i class="fa fa-edit text-muted" title="{{ trans('admin/orders/general.error.cant-edit-this-document') }}"></i>
+                                            @endif
 
-                                        {{--     @if ( $o->isDeletable() )--}}
-                                        {{--         @if($o->status == 'paid' && \Request::get('type') == 'invoice')--}}
-                                        {{--             <i class="fa fa-trash text-muted" title=""></i>--}}
-                                        {{--         @else--}}
-                                        {{--             <a href="{!! route('admin.payment.orders.confirm-delete', $o->id) !!}"--}}
-                                        {{--                data-toggle="modal" data-target="#modal_dialog"--}}
-                                        {{--                title="{{ trans('general.button.delete') }}"><i--}}
-                                        {{--                     class="fa fa-trash deletable"></i></a>--}}
-                                        {{--         @endif--}}
-                                        {{--     @else--}}
-                                        {{--         <i class="fa fa-trash text-muted"--}}
-                                        {{--            title="{{ trans('admin/orders/general.error.cant-delete-this-document') }}"></i>--}}
-                                        {{--     @endif--}}
-                                        {{-- </td>--}}
+                                            @if ( $o->isDeletable() )
+                                                @if($o->status == 'paid' && \Request::get('type') == 'invoice')
+                                                    <i class="fa fa-trash-alt text-muted" title=""></i>
+                                                @else
+                                                    <a href="{!! route('admin.payment.orders.confirm-delete', $o->id) !!}"
+                                                       data-toggle="modal"
+                                                       title="{{ trans('general.button.delete') }}">
+                                                        <i class="fa fa-trash-alt deletable"></i></a>
+                                                @endif
+                                            @else
+                                                <i class="fa fa-trash-alt text-muted"
+                                                   title="{{ trans('admin/orders/general.error.cant-delete-this-document') }}"></i>
+                                            @endif
+                                            <a target="_blank" href="/admin/invoice1/printreceipt/{{ $o->id}}"
+                                               title="Print Receipt"><i class="fa fa-lg fa-print"></i></a>
+                                        </td>
                                     </tr>
                                 @endforeach
                             @endif
                             </tbody>
-
                         </table>
                     </div>
+{{--                            <thead>--}}
+{{--                            <tr class="bg-blue">--}}
+{{--                                <th>id</th>--}}
+{{--                                <th>Invoice ID</th>--}}
+{{--                                <th>Client</th>--}}
+{{--                                <th>Date</th>--}}
+{{--                                <th>Reference No</th>--}}
+{{--                                <th>Amount</th>--}}
+{{--                                <th>Paid By</th>--}}
+{{--                                <th>Type</th>--}}
+{{--                            </tr>--}}
+{{--                            </thead>--}}
+{{--                            <tbody>--}}
+{{--                            @if(isset($payment_list) && !empty($payment_list))--}}
+{{--                                @foreach($payment_list as $o)--}}
+{{--                                    <tr>--}}
+{{--                                        @php $credit_ledger_id = \FinanceHelper::get_ledger_id('SALES_LEDGER_ID'); @endphp--}}
+{{--                                        <td>--}}
+{{--                                            <a target="_blank"--}}
+{{--                                               href="/admin/entries/show/{{\FinanceHelper::get_entry_type_label($o->invoice->entry->entrytype_id)}}/{{$o->invoice->entry->id}}">--}}
+{{--                                            {{@$o->invoice->entry->number??$o->id}}--}}
+{{--                                            </a>--}}
+{{--                                        </td>--}}
+{{--                                        <td>{{@$o->invoice->outlet->short_name}}/{{@$o->invoice->fiscal_year}}/00{{@$o->invoice->bill_no??$o->invoice_id }}</td>--}}
+{{--                                        <td>{!! $o->invoice->client->name !!}</td>--}}
+{{--                                        <td>{{\App\Helpers\TaskHelper::getNepaliDate($o->date)}}--}}{{-- {!! date('dS M y', strtotime($o->date)) !!}--}}{{--</td>--}}
+{{--                                        <td>{!! $o->reference_no !!}</td>--}}
+{{--                                        <td>{{env('APP_CURRENCY')}} {{ number_format($o->amount,2) }}</td>--}}
+{{--                                        <td>{!! $o->paidby->name !!}</td>--}}
+{{--                                        <td>{!! $o->type !!}</td>--}}
+{{--                                    </tr>--}}
+{{--                                @endforeach--}}
+{{--                            @endif--}}
+{{--                            </tbody>--}}
+
                 </div>
             </div>
             {!! Form::close() !!}
         </div>
     </div>
 
-    <link href="/bower_components/admin-lte/select2/css/select2.min.css" rel="stylesheet"/>
-    <script src="/bower_components/admin-lte/select2/js/select2.min.js"></script>
-
     <div id="makePaymentModal" class="modal fade" role="dialog">
         <div class="modal-dialog">
-
-            <!-- Modal content-->
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal">&times;</button>
@@ -139,6 +175,11 @@
             </div>
         </div>
     </div>
+@endsection
+
+@section('body_bottom')
+    <script src="/bower_components/admin-lte/select2/js/select2.min.js"></script>
+
     <script type="text/javascript">
         $('.searchable').select2({
             width: '100%',

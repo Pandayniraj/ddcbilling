@@ -55,11 +55,10 @@
              Outlet
             </label>
             <div class="col-sm-8">
-               <select name="outlet_id" class="form-control" id="outlet_id">
-
+               <select name="outlet_id" class="form-control" id="outlet_id" requried>
                 <option value="">Select</option>
                 @foreach($outlets as $key => $outlet)
-                <option value={{ $key}}>{{ $outlet }}</option>
+                <option value={{ $key}} @if(isset($client) && (old('outlet_id')??$client->outlet_id == $key)) selected @endif>{{ $outlet }}</option>
                 @endforeach
                </select>
             </div>
@@ -127,7 +126,6 @@
         @if(\Request::get('relation_type') !="distributor")
         <div class="form-group">
             <label for="inputEmail3" class="col-sm-4 control-label" style="text-transform: capitalize;">
-
                 {!! Form::label('parent_distributor', 'Distributor') !!}
             </label>
             <div class="col-sm-8">
@@ -136,7 +134,6 @@
         </div>
         <div class="form-group">
             <label for="inputEmail3" class="col-sm-4 control-label" style="text-transform: capitalize;">
-
                 {!! Form::label('route_id', 'Route') !!}
             </label>
             <div class="col-sm-8">
@@ -157,19 +154,12 @@
 
 
         <div class="form-group">
-            <label for="inputEmail3" class="col-sm-4 control-label">
-                Accounting Type
-
-
-            </label>
+            <label for="inputEmail3" class="col-sm-4 control-label">Accounting Type</label>
             <div class="col-sm-8">
-
                 <select class='form-control searchable select2 ' name="types" required>
                     @if($_GET['relation_type']=='supplier')
-
                     <optgroup label="Supplier">
                         <?php
-
                     //Sunny_deptors
                     $groups= \App\Models\COAgroups::orderBy('code', 'asc')->where('parent_id',\FinanceHelper::get_ledger_id('SUPPLIER_LEDGER_GROUP'))->where('org_id',\Auth::user()->org_id)->get();
                         foreach($groups as $grp)
@@ -216,7 +206,6 @@
                 Deposit Amount
             </label>
             <div class="col-md-8">
-
                 {!! Form::number('deposit_amount', null, ['class'=>'form-control','steps'=>'0.1']) !!}
             </div>
         </div>
@@ -228,7 +217,6 @@
             </label>
             <div class="col-md-8">
                 {!! Form::textarea('reminder', null, ['class'=>'form-control', 'rows'=>'2', 'placeholder'=> 'Will appear each time in thier related actions']) !!}
-
             </div>
         </div>
         <div class="form-group">
@@ -236,19 +224,15 @@
                 Image
             </label>
             <div class="col-md-8">
-
                 {!! Form::file('image', null, ['class'=>'form-control', 'rows'=>'2']) !!}
             </div>
-
             <img src="{{ $client->image }}">
         </div>
 
         @endif
 
         <div class="form-group">
-            <label for="inputEmail3" class="col-sm-4 control-label">
-                Notes
-            </label>
+            <label for="inputEmail3" class="col-sm-4 control-label">Notes</label>
             <div class="col-md-8">
                 {!! Form::textarea('notes', null, ['class'=>'form-control', 'rows'=>'2']) !!}
             </div>
@@ -261,7 +245,7 @@
         </label>
     </div>
 
-</div><!-- /.content -->
+</div>
 <script type="text/javascript">
     $(document).ready(function() {
         $('.searchable').select2();
@@ -273,5 +257,4 @@
             $('#locationvalue').val(ui.item.id);
         }
     });
-
 </script>

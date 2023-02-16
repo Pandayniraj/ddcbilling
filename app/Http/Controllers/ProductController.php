@@ -65,51 +65,32 @@ class ProductController extends Controller
     {
         Audit::log(Auth::user()->id, trans('admin/courses/general.audit-log.category'), trans('admin/courses/general.audit-log.msg-index'));
         $outletuser = \App\Models\OutletUser::where('user_id', \Auth::user()->id)->select('outlet_id')->get()->toArray();
-        $courses = $this->course->select('products.*', 'product_categories.name as product_categories', 'pos_outlets.name as outlet_name')->where(function ($q) use ($outletuser) {
-            if (!\Auth::user()->hasRole('admins')) {
-                $q->whereIn('products.outlet_id', $outletuser);
-            }
-        })->where(function ($query) {
+        $courses = $this->course->select('products.*', 'product_categories.name as product_categories', 'pos_outlets.name as outlet_name')
+        // ->where(function ($q) use ($outletuser) {
+        // if (!\Auth::user()->hasRole('admins')) {
+        //     $q->whereIn('products.outlet_id', $outletuser);
+        // }
+        // })
+        ->where(function ($query) {
             $terms = \Request::get('term');
-            if ($terms)
-                return $query->where('products.name', 'LIKE', '%' . $terms . '%');
-        })
-            ->where(function ($q) {
-                $q->where('parent_product_id', 0);
-                $q->orWhereNull('parent_product_id');
-            })->where(function ($query) {
+            if ($terms)return $query->where('products.name', 'LIKE', '%' . $terms . '%');
+        })->where(function ($q) {
+            $q->where('parent_product_id', 0);
+            $q->orWhereNull('parent_product_id');
+        })->where(function ($query) {
+            $type_master_id = \Request::get('product_cat_master');
+            if ($type_master_id) return $query->where('product_type_masters.id', $type_master_id);
+        })->where(function ($query) {
+            $product_cat = \Request::get('product_cat');
+            if ($product_cat) return $query->where('product_categories.id', $product_cat);
+        })->leftjoin('product_type_masters', 'products.product_type_id', '=', 'product_type_masters.id')
+        ->leftjoin('pos_outlets', 'pos_outlets.id', '=', 'products.outlet_id')
+        ->leftjoin('product_categories', 'products.category_id', '=', 'product_categories.id')
+        ->orderBy('id', 'desc');
 
-                $type_master_id = \Request::get('product_cat_master');
+        if (\Request::get('productSearch') == 'excel') return $this->downloadExcel($courses);
 
-                if ($type_master_id) {
-
-                    return $query->where('product_type_masters.id', $type_master_id);
-                }
-
-
-            })->where(function ($query) {
-
-                $product_cat = \Request::get('product_cat');
-
-                if ($product_cat) {
-
-                    return $query->where('product_categories.id', $product_cat);
-                }
-
-
-            })->leftjoin('product_type_masters', 'products.product_type_id', '=', 'product_type_masters.id')
-            ->leftjoin('pos_outlets', 'pos_outlets.id', '=', 'products.outlet_id')
-            ->leftjoin('product_categories', 'products.category_id', '=', 'product_categories.id')
-            ->orderBy('id', 'desc');
-
-        if (\Request::get('productSearch') == 'excel') {
-
-
-            return $this->downloadExcel($courses);
-
-        }
         $courses = $courses->paginate(30);
-
 
         $page_title = 'Products & Inventory';
 
@@ -119,7 +100,8 @@ class ProductController extends Controller
 
         $productCategory = \App\Models\ProductCategory::pluck('name', 'id');
 
-        return view('admin.products.index', compact('courses', 'page_title', 'page_description', 'producttypeMaster', 'productCategory'));
+        return view('admin.products.index', compact('courses', 'page_title', 'page_description',
+            'producttypeMaster', 'productCategory'));
     }
 
     /**

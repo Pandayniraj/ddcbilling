@@ -1,8 +1,6 @@
 @extends('layouts.master')
 @section('content')
-
 <link href="{{ asset("/bower_components/admin-lte/plugins/datatables/jquery.dataTables.min.css") }}" rel="stylesheet" type="text/css" />
-
     <div class='row'>
         <div class='col-md-12'>
             <!-- Box -->
@@ -81,7 +79,7 @@
                                     @endforeach
                                 </tbody>
                             </table>
-                           
+
                         </div> <!-- table-responsive -->
 
                     </div><!-- /.box-body -->
@@ -110,7 +108,7 @@
     <script>
 	$(function() {
 		$('#LeadStatus-table').DataTable({
-			
+
 		});
 	});
 	</script>

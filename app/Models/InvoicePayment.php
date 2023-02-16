@@ -19,6 +19,25 @@ class InvoicePayment extends Model
         'cheque_no', 'cc_no', 'cc_holder', 'cc_month', 'cc_year', 'cc_type', 'amount', 'currency', 'attachment', 'type',
         'note', 'pos_paid', 'pos_balance', 'approval_code', 'created_by'];
 
+
+    public function user() : BelongsTo
+    {
+        return $this->belongsTo(\App\User::class, 'created_by');
+    }
+    public function paidby() : BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Client::class, 'paid_by');
+    }
+    public function purchase() : BelongsTo
+    {
+        return $this->belongsTo(\App\Models\PurchaseOrder::class, 'purchase_id');
+    }
+    public function invoice() : BelongsTo
+    {
+        return $this->belongsTo(Invoice::class, 'invoice_id');
+    }
+
+
     /**
      * @return bool
      */
@@ -43,24 +62,5 @@ class InvoicePayment extends Model
         }
 
         return true;
-    }
-
-    public function user()
-    {
-        return $this->belongsTo(\App\User::class);
-    }
-
-    public function paidby()
-    {
-        return $this->belongsTo(\App\Models\Paymentmethod::class, 'paid_by');
-    }
-
-    public function purchase()
-    {
-        return $this->belongsTo(\App\Models\PurchaseOrder::class, 'purchase_id');
-    }
-    public function invoice() : BelongsTo
-    {
-        return $this->belongsTo(Invoice::class, 'invoice_id');
     }
 }

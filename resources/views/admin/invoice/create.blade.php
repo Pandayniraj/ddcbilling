@@ -161,7 +161,7 @@
                             <tr>
                                 <td class='p_sn'></td>
                                 <td>
-                                    <select class="form-control product_id hiddensearchable reduce" name="product_id[]">
+                                    <select class="form-control product_id hiddensearchable reduce" name="product_id[]" required>
                                         <option value="">Select Product</option>
                                         @foreach ($products as $key => $pk)
                                             <option value="{{ $pk->id }}"
@@ -172,50 +172,43 @@
                                 </td>
                                 <td class="col-sm-1">
                                     <input type="number" class="form-control input-sm quantity input-sm reduce"
-                                           name="quantity[]" placeholder="Quantity" step=".01" autocomplete="off">
+                                           name="quantity[]" placeholder="Quantity" step=".01" autocomplete="off" required>
                                 </td>
-
                                 <td>
-                                    <select name='units[]' class="form-control input-sm units reduce" readonly>
+                                    <select name='units[]' class="form-control input-sm units reduce searchable" required>
                                         <option value="">Units</option>
                                         @foreach ($prod_unit as $pu)
                                             <option value="{{ $pu->id }}">{{ $pu->symbol }}</option>
                                         @endforeach
                                     </select>
                                 </td>
-
                                 <td>
                                     <input type="text" class="form-control input-sm price input-sm reduce"
                                            name="price[]" placeholder="Rate"
                                            value="@if (isset($orderDetail->price)) {{ $orderDetail->price }} @endif"
                                            autocomplete="off" readonly>
                                 </td>
-
                                 <td>
                                     <input type="number" name="dis_amount[]"
                                            class="form-control input-sm discount_amount_line reduce"
-                                           placeholder="Discount"
-                                           step="any">
+                                           placeholder="Discount" step="any">
                                 </td>
                                 <td class="col-sm-1">
-                                    <select class="form-control input-sm tax_rate_line input-sm reduce"
-                                            name="tax_type[]" disabled>
+                                    <select class="form-control input-sm tax_rate_line input-sm reduce" name="tax_type[]" disabled>
                                         <option value="0">Exempt(0)</option>
                                         <option value="13">VAT(13)</option>
                                     </select>
                                 </td>
-
                                 <td>
                                     <input type="number" class="form-control input-sm tax_amount_line reduce"
                                            name="tax_amount[]" value="0" readonly="readonly"/>
                                 </td>
-
                                 <td>
                                     <input type="number" class="form-control input-sm total reduce" name="total[]"
                                            placeholder="Total"
                                            value="@if (isset($orderDetail->total)) {{ $orderDetail->total }} @endif"
                                            style="float:left; width:70%;" step='any' readonly>
-                                    <a href="javascript::void(1);" style="width: 10%;">
+                                    <a href="javascript:void(0);" style="width: 10%;">
                                         <i class="remove-this btn btn-xs btn-danger icon fa fa-trash deletable"
                                            style="float: right; color: #fff;"></i>
                                     </a>
@@ -278,7 +271,7 @@
                                            placeholder="Total"
                                            value="@if (isset($orderDetail->total)) {{ $orderDetail->total }} @endif"
                                            style="float:left; width:70%;" step='any'>
-                                    <a href="javascript::void(1);" style="width: 10%;">
+                                    <a href="javascript:void(0);" style="width: 10%;">
                                         <i class="remove-this btn btn-xs btn-danger icon fa fa-trash deletable"
                                            style="float: right; color: #fff;"></i>
                                     </a>
@@ -287,8 +280,8 @@
                             </tbody>
                         </table>
                     </div>
-                    <div class="form-section">
-                        <form method="POST" action="{{ route('admin.invoice.create') }}" id="create-invoice">
+                    <form method="POST" action="{{ route('admin.invoice.create') }}" id="create-invoice">
+                        <div class="form-section">
                             {{ csrf_field() }}
                             <div class="clearfix"></div>
                             <div class="col-md-12" style="margin-top: 30px;">
@@ -410,7 +403,7 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-2">
+                                <div class="col-md-2" id="due-date">
                                     <div class="form-group">
                                         <label>Due Date:</label>
                                         <div class="date">
@@ -460,7 +453,7 @@
                                     @endif
                                 </div>
 
-                                <div class="col-md-2 form-group credit" style="">
+                                <div class="col-md-2 form-group credit" id="credit-limit">
                                     <label for="credit_limit"> <i class="fa fa-credit-card"></i> Credit Limit</label>
                                     {!! Form::text('credit_limit', null, [
                                         'class' => 'form-control input-sm ',
@@ -468,7 +461,7 @@
                                         'readonly' => 'readonly',
                                     ]) !!}
                                 </div>
-                                <div class="col-md-2 form-group credit">
+                                <div class="col-md-2 form-group credit" id="remaining-amount">
                                     <label for="remaining_amount" style="white-space: nowrap"> <i
                                             class="fa fa-money"></i> Remaining Amount</label>
                                     {!! Form::text('remaining_amount', null, [
@@ -596,14 +589,14 @@
                                     @if (isset($orderDetail->address)) {{ $orderDetail->address }} @endif
                                 </textarea>
                             </div>
-                    </div>
-                    <div class="panel-footer footer">
-                        <button type="submit" class="btn btn-social btn-foursquare" id="submit">
-                            <i class="fa fa-save"></i>Save {{ $_GET['type'] }}
-                        </button>
-                        <a class="btn btn-social btn-foursquare" href="/admin/invoice1"> <i class="fa fa-times"></i>
-                            Cancel </a>
-                    </div>
+                        </div>
+                        <div class="panel-footer footer">
+                            <button type="submit" class="btn btn-social btn-foursquare" id="submit">
+                                <i class="fa fa-save"></i>Save {{ $_GET['type'] }}
+                            </button>
+                            <a class="btn btn-social btn-foursquare" href="/admin/invoice1"> <i class="fa fa-times"></i>
+                                Cancel </a>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -739,7 +732,7 @@
 
         $(document).on('change', '.product_id', function () {
             var parentDiv = $(this).parent().parent();
-            if (this.value != 'NULL') {
+            if (this.value != '') {
                 var _token = $('meta[name="csrf-token"]').attr('content');
                 $.ajax({
                     type: "POST",
@@ -751,7 +744,7 @@
                         if (result.client_type) var client_type = String(result.client_type);
                         else var client_type = $('#customer_type').val();
                         if (obj != null) {
-                            console.log(obj, client_type);
+                            // console.log(obj, client_type, 'test');
                             price = 0;
                             if (client_type == "distributor") {
                                 price = obj.distributor_price;
@@ -761,35 +754,36 @@
                                 if (obj.direct_customer_price) price = obj.direct_customer_price;
                                 else price = obj.customer_price;
                             }
+
                             parentDiv.find('.price').val(price);
                             parentDiv.find('.quantity').attr('max', stock);
                             parentDiv.find('.units').val(obj.product_unit).change();
                             if (obj.is_vat == 1) {
                                 parentDiv.find('.tax_rate_line').val("13").change();
-                            } else {
-                                parentDiv.find('.tax_rate_line').val("0").change();
-                            }
+                            } else parentDiv.find('.tax_rate_line').val("0").change();
+
                             if (isNumeric(parentDiv.find('.quantity').val()) && parentDiv.find('.quantity').val() != '') {
                                 var total = Number(parentDiv.find('.quantity').val()) * Number(price);
-                            } else {
-                                var total = price;
-                            }
+                            } else var total = price;
+
                             var tax = parentDiv.find('.tax_rate_line').val();
                             if (isNumeric(tax) && tax != 0 && (total != 0 || total != '')) {
                                 tax_amount = Number(total) * Number(tax) / 100;
                                 parentDiv.find('.tax_amount_line').val(tax_amount);
-                                total = total;
-                            } else
-                                parentDiv.find('.tax_amount_line').val('0');
+                                var total = total;
+                            } else parentDiv.find('.tax_amount_line').val(0);
+
                             parentDiv.find('.total').val(total.toFixed(2));
                             calcTotal();
                         } else {
-                            parentDiv.find('.price').val('');
+                            parentDiv.find('.price').val(0);
                             parentDiv.find('.quantity').attr('max', 0);
                             parentDiv.find('.tax_rate_line').val(0);
                             parentDiv.find('.tax_amount_line').val(0);
                             parentDiv.find('.total').val('');
                         }
+                    }, error: function (error) {
+                        // console.log(error, 'error');
                     }
                 });
             } else {
@@ -844,8 +838,8 @@
         $(document).on('change', '#outlet_id', function () {
             let getoutlet = $(this).val();
             $(".product_id").trigger('change');
+            $("#customer_type").trigger('change');
 
-            // console.log(getoutlet);
             $.get("/admin/get/randomcustomer/outlet?id=" + getoutlet, function (data) {
                 if (data.data.forrandomcustomer == 1) {
                     document.getElementById("long").style.display = "none";
@@ -868,8 +862,13 @@
                 opt.disabled = true;
             });
             let customer_type = $(this).val();
-
+            $("#due-date").css('display', 'block');
+            $("#credit-limit").css('display', 'block');
+            $("#remaining-amount").css('display', 'block');
             if (customer_type == "random_customer") {
+                $("#due-date").css('display', 'none');
+                $("#credit-limit").css('display', 'none');
+                $("#remaining-amount").css('display', 'none');
                 document.getElementById("onclienttype").style.display = "none";
                 document.getElementById("show").style.display = "block";
                 document.getElementById("pan_no").removeAttribute('readonly');
@@ -891,7 +890,7 @@
                 document.getElementById("bill_type").style.display = "block";
                 document.getElementById("forrandom").style.display = "none";
             }
-            $.get('/admin/getClients?relation_type=' + customer_type, function (data, status) {
+            $.get('/admin/getClients?relation_type=' + customer_type + '&outlet_id=' + $('#outlet_id').val(), function (data, status) {
 
                 $("#client_id").empty();
                 var newOption = new Option('SELECT', '', false, false);
@@ -929,7 +928,7 @@
                 document.getElementById("bill_type").style.display = "block";
                 document.getElementById("forrandom").style.display = "none";
             }
-            $.get('/admin/getClients?relation_type=' + customer_type, function (data, status) {
+            $.get('/admin/getClients?relation_type=' + customer_type + '&outlet_id=' + $('#outlet_id').val(), function (data, status) {
 
                 $("#client_id").empty();
                 var newOption = new Option('SELECT', '', false, false);
@@ -949,6 +948,13 @@
                     e.preventDefault();
                     alert('Please select client');
                 }
+            }
+        });
+
+        $(document).on('click', '#submit', function (e) {
+            e.preventDefault();
+            if (confirm("Are you Sure!") == true) {
+                $("#create-invoice").submit();
             }
         });
 
@@ -1026,13 +1032,13 @@
 
         $(document).on('change', '.quantity', function () {
             var parentDiv = $(this).parent().parent();
-            if (isNumeric(this.value) && this.value != '') {
+            if (isNumeric(this.value) && (this.value != '')) {
                 if (isNumeric(parentDiv.find('.quantity').val()) && parentDiv.find('.quantity').val() != '') {
                     var total = parentDiv.find('.price').val() * this.value;
                 } else
-                    var total = '';
+                    var total = 0;
             } else {
-                var total = '';
+                var total = 0;
             }
             var tax = parentDiv.find('.tax_rate_line').val();
             if (isNumeric(tax) && tax != 0 && (total != 0 || total != '')) {
@@ -1041,6 +1047,7 @@
                 total = total;
             } else
                 parentDiv.find('.tax_amount_line').val('0');
+
             parentDiv.find('.total').val(total.toFixed(2));
             adjustTax($(this));
             calcTotal();
@@ -1052,9 +1059,9 @@
                 if (isNumeric(parentDiv.find('.quantity').val()) && parentDiv.find('.quantity').val() != '') {
                     var total = parentDiv.find('.quantity').val() * this.value;
                 } else
-                    var total = '';
+                    var total = 0;
             } else
-                var total = '';
+                var total = 0;
 
             var tax = parentDiv.find('.tax_rate_line').val();
             if (isNumeric(tax) && tax != 0 && (total != 0 || total != '')) {
@@ -1077,9 +1084,9 @@
                 if (isNumeric(parentDiv.find('.quantity').val()) && parentDiv.find('.quantity').val() != '') {
                     var price = total / parentDiv.find('.quantity').val();
                 } else
-                    var price = '';
+                    var price = 0;
             } else
-                var price = '';
+                var price = 0;
 
             var tax = parentDiv.find('.tax_rate_line').val();
             if (isNumeric(tax) && tax != 0 && (total != 0 || total != '')) {
@@ -1100,7 +1107,7 @@
             if (isNumeric(parentDiv.find('.quantity').val()) && parentDiv.find('.quantity').val() != '') {
                 var total = parentDiv.find('.price').val() * Number(parentDiv.find('.quantity').val());
             } else
-                var total = '';
+                var total = 0;
 
             var tax = $(this).val();
             if (isNumeric(tax) && tax != 0 && (total != 0 || total != '')) {
@@ -1114,23 +1121,17 @@
             calcTotal();
         });
 
-
         function getSn() {
             var count = 0;
             $('#multipleDiv tr').each(function (index, val) {
                 count++;
-
                 if (index > 0) {
                     $(this).find('.p_sn').html(index);
-
-
                 }
-
             });
             if (count == 16) {
                 $('#addMore').toggleClass('disabled');
             }
-
         }
 
         $(document).ready(function () {
@@ -1161,10 +1162,8 @@
             });
             let pid = $(".multipleDiv").next('tr').find('.product_id');
             pid.select2('destroy');
-            pid.select2({
-                width: '100%',
-            });
-            $(".multipleDiv").next('tr').find('.quantity').val('1');
+            pid.select2({width: '100%'});
+            // $(".multipleDiv").next('tr').find('.quantity').val('1');
 
             getSn();
             $('#addmorProducts').show(300);
@@ -1188,7 +1187,6 @@
         });
 
         function calcTotal() {
-
             adjustTotalNonTaxable();
             var subTotal = 0;
             var taxableAmount = 0;
@@ -1212,7 +1210,6 @@
             var discount_amount = $('#discount_amount').val();
 
             var vat_type = $('#vat_type').val();
-
 
             //anamol
             $('#total_tax_amount').val(tax_amount);
@@ -1240,8 +1237,6 @@
                 $(':button[type="submit"]').prop('disabled', true);
             }
             // }
-
-
         }
 
         $(document).on('keyup', '#discount_amount', function () {
@@ -1251,7 +1246,6 @@
 
     <script type="text/javascript">
         $(document).ready(function () {
-
             $('.project_id').select2();
         });
     </script>
@@ -1263,7 +1257,6 @@
                 sideBySide: true,
                 allowInputToggle: true
             });
-
         });
     </script>
 
@@ -1273,9 +1266,7 @@
         $("#reference_no_write").val(refNo);
 
         $(document).on('keyup', '#reference_no', function () {
-
             var val = $(this).val();
-
             if (val == null || val == '') {
                 $("#errMsg").html("Already Exists");
                 $('#btnSubmit').attr('disabled', 'disabled');
@@ -1455,6 +1446,8 @@
                         } else {
                             price = obj.customer_price;
                         }
+
+                        $("#customer_type").trigger('change');
                         parentDiv.find('.price').val(price);
                         parentDiv.find('.units').val("");
                         parentDiv.find('.units').val(result.units?.id);
