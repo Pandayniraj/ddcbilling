@@ -28,8 +28,8 @@
 @section('content')
     <section class="content-header" style="margin-top: -35px; margin-bottom: 20px">
         <h1>
-            Daily Sales Report
-            <small>Product Wise Sales Report</small>
+            {{ $page_title??'Stock Report' }}
+            <small>{{ $page_description??'Stock Wise Sales Report' }}</small>
         </h1>
         {!! MenuBuilder::renderBreadcrumbTrail(null, 'root', false) !!}
     </section>
@@ -37,7 +37,7 @@
         <div class='col-md-12'>
             <div class="box">
                 <div class="box-body">
-                    {!! Form::open(['route' => 'admin.reports.dailysales_report', 'id' => 'dailysales_report' , 'method'=>'GET']) !!}
+                    {!! Form::open(['route' => 'admin.reports.stock-wise', 'method'=>'GET']) !!}
                     <div class="col-md-12">
                         <div class="row">
                             <div class="col-md-2">
@@ -156,35 +156,15 @@
                                 <th rowspan=2>Particular</th>
                                 <th rowspan=2>Opening Stock</th>
                                 <th rowspan=2>Cold Store</th>
-                                <th rowspan=2>Total</th>
-                                <th colspan="3">Distributor</th>
-                                <th colspan="3">Retailer</th>
-                                <th colspan="3">Boothman</th>
-                                <th colspan="3">Direct Customer</th>
-                                <th colspan="3">Staff</th>
-                                <th rowspan="2">Coldstore Return</th>
+                                <th rowspan=2>Total Stock</th>
+                                <th rowspan="2">Cold-store Return</th>
                                 <th rowspan="2">Closing Stock</th>
                                 <th colspan="3">Total Sales</th>
                             </tr>
                             <tr>
                                 <th>Qty</th>
                                 <th>Amount</th>
-                                <th>VAT</th>
-                                <th>Qty</th>
-                                <th>Amount</th>
-                                <th>VAT</th>
-                                <th>Qty</th>
-                                <th>Amount</th>
-                                <th>VAT</th>
-                                <th>Qty</th>
-                                <th>Amount</th>
-                                <th>VAT</th>
-                                <th>Qty</th>
-                                <th>Amount</th>
-                                <th>VAT</th>
-                                <th>Qty</th>
-                                <th>Amount</th>
-                                <th>VAT</th>
+                                <th>Vat</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -228,10 +208,7 @@
                                             $dist_col_vat+=$value->tax_amount;
                                         }
                                     @endphp
-                                    <td>{{ $dist_qty }}</td>
-                                    <td>{{ $dist_amount }}</td>
-                                    <td>{{ $dist_vat }}</td>
-                                    {{-- //retailer --}}
+
                                     @php
                                         $retailerdata=$data[$productid]['retailer'];
                                         $retailer_qty=0;
@@ -246,10 +223,7 @@
                                           $retail_col_vat+=$value->tax_amount;
                                         }
                                     @endphp
-                                    <td>{{ $retailer_qty }}</td>
-                                    <td>{{ $retailer_amount }}</td>
-                                    <td>{{ $retailer_vat }}</td>
-                                    {{-- boothman --}}
+
                                     @php
                                         $boothmandata=$data[$productid]['boothman'];
                                         $boothman_qty=0;
@@ -264,10 +238,7 @@
                                           $boothman_col_vat+=$value->tax_amount;
                                         }
                                     @endphp
-                                    <td>{{ $boothman_qty }}</td>
-                                    <td>{{ $boothman_amount }}</td>
-                                    <td>{{ $boothman_vat }}</td>
-                                    {{-- direct_customer --}}
+
                                     @php
                                         $direct_customerdata=$data[$productid]['direct_customer'];
                                         $direct_customer_qty=0;
@@ -282,10 +253,7 @@
                                           $dc_col_vat+=$value->tax_amount;
                                         }
                                     @endphp
-                                    <td>{{ $direct_customer_qty }}</td>
-                                    <td>{{ $direct_customer_amount }}</td>
-                                    <td>{{ $direct_customer_vat }}</td>
-                                    {{-- staff --}}
+
                                     @php
                                         $staffdata=$data[$productid]['staff'];
                                         $staff_qty=0;
@@ -300,9 +268,7 @@
                                           $staff_col_vat+=$value->tax_amount;
                                         }
                                     @endphp
-                                    <td>{{ $staff_qty }}</td>
-                                    <td>{{ $staff_amount }}</td>
-                                    <td>{{ $staff_vat }}</td>
+
                                     <td></td>
                                     <td>{{ $total -($dist_qty + $retailer_qty + $boothman_qty + $direct_customer_qty + $staff_qty)}}</td>
                                     <td>{{ $dist_qty + $retailer_qty + $boothman_qty + $direct_customer_qty + $staff_qty}}</td>
@@ -312,24 +278,7 @@
                                 </tr>
                             @endforeach
                             <tr>
-                                <th colspan="6">Total</th>
-                                <th>{{ $dist_col_amount }}</th>
-                                <th>{{ $dist_col_vat }}</th>
-                                <th></th>
-                                <th>{{ $retail_col_amount }}</th>
-                                <th>{{ $retail_col_vat }}</th>
-                                <th></th>
-                                <th>{{ $boothman_col_amount }}</th>
-                                <th>{{ $boothman_col_vat }}</th>
-                                <th></th>
-                                <th>{{ $dc_col_amount }}</th>
-                                <th>{{ $dc_col_vat }}</th>
-                                <th></th>
-                                <th>{{ $staff_col_amount }}</th>
-                                <th>{{ $staff_col_vat }}</th>
-                                <th></th>
-                                <th></th>
-                                <th></th>
+                                <th colspan="8">Total</th>
                                 <th>{{ $dist_col_amount + $retail_col_amount +  $boothman_col_amount + $dc_col_amount + $staff_col_amount }}</th>
                                 <th>{{ $dist_col_vat + $retail_col_vat + $boothman_col_vat + $dc_col_vat +$staff_col_vat }}</th>
                             </tr>
@@ -340,15 +289,15 @@
                 </div>
 
                 <div class="row">
-                    <div class="col col-xs-3" style="padding-top:20px">Submitted By</div>
-                    <div class="col col-xs-3" style="padding-top:20px">Marketing Officer</div>
-                    <div class="col col-xs-3" style="padding-top:20px">Project Manager</div>
+                    <div class="col col-xs-4" style="padding-top:20px">Submitted By</div>
+                    <div class="col col-xs-4" style="padding-top:20px">Marketing Officer</div>
+                    <div class="col col-xs-4" style="padding-top:20px">Project Manager</div>
                 </div>
 
                 <div class="row">
-                    <div class="col-xs-3" style="padding-top:40px">_______________</div>
-                    <div class="col-xs-3" style="padding-top:40px">_______________</div>
-                    <div class="col-xs-3" style="padding-top:40px">_______________</div>
+                    <div class="col-xs-4" style="padding-top:40px">_______________</div>
+                    <div class="col-xs-4" style="padding-top:40px">_______________</div>
+                    <div class="col-xs-4" style="padding-top:40px">_______________</div>
                 </div>
             @endif
         </div>

@@ -2581,6 +2581,7 @@ Route::group(['middleware' =>  ['iptracker' , 'authorize']], function () {
 
 
         Route::get('reports/dailysalesproductwise', ['as' => 'admin.reports.dailysales_report', 'uses' => 'InvoiceController@productwisereport']);
+        Route::get('reports/stockwise', ['as' => 'admin.reports.stock-wise', 'uses' => 'InvoiceController@stockwiseReport']);
         Route::get('reports/transactionreports', ['as' => 'admin.reports.transactionreports', 'uses' => 'InvoiceController@transactionreports']);
         Route::get('reports/download-transaction-reports', ['as' => 'admin.reports.download-transactionreports', 'uses' => 'InvoiceController@downloadTransactionReports']);
         Route::get('reports/transactiondetailreports', ['as' => 'admin.reports.customerwisedetailreports', 'uses' => 'InvoiceController@customerwisedetailreports']);

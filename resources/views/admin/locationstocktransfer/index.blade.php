@@ -55,14 +55,12 @@
                     <a href="/admin/location/stocktransfer/pdf/{{$att->id}}" title="download"><i class="fa fa-download"></i></a>
                 </td>
 		        <td>
-
+                    @if(\Auth::user()->hasRole(['admins']))
 		            <a href="/admin/location/stocktransfer/{{$att->id}}/edit"><i class="fa fa-edit"></i></a>
-
+                    @endif
 		            <a href="{!! route('admin.location.stocktransfer.confirm-delete', $att->id) !!}" data-toggle="modal" data-target="#modal_dialog" title="{{ trans('general.button.delete') }}"><i class="fa fa-trash-o deletable"></i></a>
-
 		        </td>
 		    </tr>
-
 		    @endforeach
 
       </tbody>

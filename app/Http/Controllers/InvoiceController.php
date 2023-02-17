@@ -1491,9 +1491,14 @@ class InvoiceController extends Controller
     public function productwisereport(Request $request)
     {
         $projects = Store::orderBy('id')->get();
-        if ($request->has('project_id') && ($request->project_id != '') && ($request->project_id != 'over-all'))
+        if ($request->has('project_id') && ($request->project_id != '') && ($request->project_id != 'over-all')) {
             $outlets = \App\Models\PosOutlets::where('project_id', $request->project_id)->select('name', 'id')->get();
+        }
         else $outlets = \App\Models\PosOutlets::select('name', 'id')->get();
+
+        if (!\Auth::user()->hasRole('admins'))
+            $outlets = \App\Models\PosOutlets::where('project_id', \auth()->user()->project_id)->select('name', 'id')->get();
+
         $page_title = "Product-wise Report";
         if ($request->has('type')) {
             if ($request->type == 'export') $op = "excel";
@@ -1503,11 +1508,9 @@ class InvoiceController extends Controller
         $data = [];
         if ($request->startdate && $request->startdate != "") {
             $startdate = $request->startdate;
-            $endddate = $request->startdate;
 
-            if ($request->enddate && $request->enddate != "") {
-                $enddate = $request->enddate;
-            }
+            if ($request->enddate && $request->enddate != "") $enddate = $request->enddate;
+
             $nepalistartdate = \App\Helpers\TaskHelper::getNepaliDate($startdate);
             $nepalienddate = \App\Helpers\TaskHelper::getNepaliDate($enddate);
             $data = \App\Models\Invoice::where('org_id', \Auth::user()->org_id)
@@ -1515,10 +1518,16 @@ class InvoiceController extends Controller
                 ->where(function ($query) use ($request) {
                     if ($request->has('outletid') && ($request->outletid != '')) {
                         $query->where('outlet_id', $request->outletid);
-                    }
-                    elseif ($request->has('project_id') && ($request->project_id != '') && ($request->project_id != 'over-all')) {
-                        $outletId = PosOutlets::where('project_id', $request->project_id)->pluck('id')->toArray();
-                        $query->whereIn('outlet_id', $outletId);
+                    } else {
+                        if (\Auth::user()->hasRole('admins')) {
+                            if ($request->has('project_id') && ($request->project_id != '') && ($request->project_id != 'over-all')) {
+                                $outletId = PosOutlets::where('project_id', $request->project_id)->pluck('id')->toArray();
+                                $query->whereIn('outlet_id', $outletId);
+                            } else {
+                                $outletId = PosOutlets::where('project_id', \auth()->user()->project_id)->pluck('id')->toArray();
+                                $query->whereIn('outlet_id', $outletId);
+                            }
+                        }
                     }
                 })->where('org_id', \Auth::user()->org_id)
                 ->when($startdate, function ($q) use($startdate) {
@@ -1565,12 +1574,101 @@ class InvoiceController extends Controller
         return view('admin.reports.dailysalesreport', compact('page_title', 'outlets', 'projects'));
     }
 
+    public function stockwiseReport(Request $request)
+    {
+        $projects = Store::orderBy('id')->get();
+        if ($request->has('project_id') && ($request->project_id != '') && ($request->project_id != 'over-all')) {
+            $outlets = \App\Models\PosOutlets::where('project_id', $request->project_id)->select('name', 'id')->get();
+        }
+        else $outlets = \App\Models\PosOutlets::select('name', 'id')->get();
+
+        if (!\Auth::user()->hasRole('admins'))
+            $outlets = \App\Models\PosOutlets::where('project_id', \auth()->user()->project_id)->select('name', 'id')->get();
+
+        $page_title = "Stock Report";
+        $page_description = "Stock Wise Sales Report";
+        if ($request->has('type')) {
+            if ($request->type == 'export') $op = "excel";
+            elseif ($request->type == 'print') $op = "pdf";
+        }
+
+        $data = [];
+        if ($request->startdate && $request->startdate != "") {
+            $startdate = $request->startdate;
+            if ($request->enddate && $request->enddate != "") $enddate = $request->enddate;
+
+            $nepalistartdate = \App\Helpers\TaskHelper::getNepaliDate($startdate);
+            $nepalienddate = \App\Helpers\TaskHelper::getNepaliDate($enddate);
+            $data = \App\Models\Invoice::where('org_id', \Auth::user()->org_id)
+                ->leftJoin('invoice_detail', 'invoice.id', '=', 'invoice_detail.invoice_id')
+                ->where(function ($query) use ($request) {
+                    if ($request->has('outletid') && ($request->outletid != '')) {
+                        $query->where('outlet_id', $request->outletid);
+                    } else {
+                        if (\Auth::user()->hasRole('admins')) {
+                            if ($request->has('project_id') && ($request->project_id != '') && ($request->project_id != 'over-all')) {
+                                $outletId = PosOutlets::where('project_id', $request->project_id)->pluck('id')->toArray();
+                                $query->whereIn('outlet_id', $outletId);
+                            } else {
+                                $outletId = PosOutlets::where('project_id', \auth()->user()->project_id)->pluck('id')->toArray();
+                                $query->whereIn('outlet_id', $outletId);
+                            }
+                        }
+                    }
+                })->where('org_id', \Auth::user()->org_id)
+                ->when($startdate, function ($q) use($startdate) {
+                    $q->where('invoice.bill_date', '>=', $startdate);
+                })->when($enddate, function ($q) use($enddate) {
+                    $q->where('invoice.bill_date', '<=', $enddate);
+                })->get();
+            $data = $data->groupby(['product_id', 'client_type']);
+            $products = \App\Models\Product::where('org_id', \Auth::user()->org_id)->pluck('name', 'id');
+            $organization = \Auth::user()->organization;
+            $stock_entries = \App\Models\StockMove::select('stock_id', DB::raw('SUM(qty) as quantity'))
+                ->where('org_id', $organization->id)
+                ->where('tran_date', '>=', $startdate)
+                ->where('tran_date', '<=', $enddate)
+                ->where('order_reference', null)
+                ->where(function ($query) use ($request) {
+                    if ($request->has('outletid') && ($request->outletid != '')) {
+                        $query->where('store_id', $request->outletid);
+                    }
+                    elseif ($request->has('project_id') && ($request->project_id != '') && ($request->project_id != 'over-all')) {
+                        $outletId = PosOutlets::where('project_id', $request->project_id)->pluck('id')->toArray();
+                        $query->whereIn('store_id', $outletId);
+                    }
+                })->groupby('stock_id')->get();
+            $stock = $stock_entries->groupby('stock_id');
+            $outletname = \App\Models\PosOutlets::where('id', $request->outletid??'')->select('name')->first();
+            $file = $startdate . '_' . $enddate . '_' . str_replace(' ', '_', $organization->organization_name);
+
+            if ($op == "excel") {
+                return \Excel::download(new \App\Exports\Reports\StockWiseSalesReport($stock, $data, $products,
+                    $nepalistartdate, $outletname, $nepalienddate, $organization), $file.'.xls');
+            } elseif ($op == "pdf") {
+                $pdf = \PDF::loadView('admin.reports.pdf.stockwiseSalesReportPDF', compact('stock', 'data', 'products',
+                    'nepalistartdate', 'outletname', 'nepalienddate', 'organization'))->setPaper('a3', 'landscape');
+                $f = $file . '.pdf';
+                if (\File::exists('reports/' . $f)) {
+                    \File::Delete('reports/' . $f);
+                }
+                return $pdf->download($f);
+            }
+            return view('admin.reports.stockreport', compact('page_title', 'page_description', 'outlets', 'projects', 'stock',
+                'data', 'products', 'nepalistartdate', 'outletname', 'nepalienddate', 'organization', 'startdate', 'enddate'));
+        }
+        return view('admin.reports.stockreport', compact('page_title', 'page_description', 'outlets', 'projects'));
+    }
+
     public function transactionreports(Request $request)
     {
         $projects = Store::orderBy('id')->get();
         if ($request->has('project_id') && ($request->project_id != '') && ($request->project_id != 'over-all'))
             $outlets = \App\Models\PosOutlets::where('project_id', $request->project_id)->select('name', 'id')->get();
         else $outlets = \App\Models\PosOutlets::select('name', 'id')->get();
+
+        if (!\Auth::user()->hasRole('admins'))
+            $outlets = \App\Models\PosOutlets::where('project_id', \auth()->user()->project_id)->select('name', 'id')->get();
         $op = "not assign";
         if ($request->has('type')) {
             if ($request->type == 'export') $op = "excel";
@@ -1580,12 +1678,10 @@ class InvoiceController extends Controller
 
         if ($request->startdate && ($request->startdate != "")) {
             $startdate = $request->startdate;
-            $enddate = $request->startdate;
             if ($request->enddate && $request->enddate != "") $enddate = $request->enddate;
 
-            if ($request->outletid && $request->outletid != '') {
-                $outlet = $request->outletid;
-            }
+            if ($request->outletid && $request->outletid != '') $outlet = $request->outletid;
+
             $nepalistartdate = \App\Helpers\TaskHelper::getNepaliDate($startdate);
             $nepalienddate = \App\Helpers\TaskHelper::getNepaliDate($enddate);
             $groupId =FinanceHelper::get_group_id('Customer Group');
@@ -1595,9 +1691,16 @@ class InvoiceController extends Controller
             $detail_transaction = \App\Models\Invoice::select('client_id', DB::raw('SUM(subtotal) as dr_total'), DB::raw('SUM(tax_amount) as dr_vat'))
                 ->where(function ($query) use ($request) {
                     if ($request->has('outletid') && ($request->outletid != '')) $query->where('outlet_id', $request->outletid);
-                    elseif ($request->has('project_id') && ($request->project_id != '') && ($request->project_id != 'over-all')) {
-                        $outletId = PosOutlets::where('project_id', $request->project_id)->pluck('id')->toArray();
-                        $query->whereIn('outlet_id', $outletId);
+                    else {
+                        if (\Auth::user()->hasRole('admins')) {
+                            if ($request->has('project_id') && ($request->project_id != '') && ($request->project_id != 'over-all')) {
+                                $outletId = PosOutlets::where('project_id', $request->project_id)->pluck('id')->toArray();
+                                $query->whereIn('outlet_id', $outletId);
+                            }
+                        } else {
+                            $outletId = PosOutlets::where('project_id', \auth()->user()->project_id)->pluck('id')->toArray();
+                            $query->whereIn('outlet_id', $outletId);
+                        }
                     }
                 })->where('org_id', \Auth::user()->org_id)
                 ->when($startdate, function ($q) use($startdate) {
@@ -1637,6 +1740,10 @@ class InvoiceController extends Controller
         if ($request->has('project_id') && ($request->project_id != '') && ($request->project_id != 'over-all'))
             $outlets = \App\Models\PosOutlets::where('project_id', $request->project_id)->select('name', 'id')->get();
         else $outlets = \App\Models\PosOutlets::select('name', 'id')->get();
+
+        if (!\Auth::user()->hasRole('admins'))
+            $outlets = \App\Models\PosOutlets::where('project_id', \auth()->user()->project_id)->select('name', 'id')->get();
+
         $page_title = "Customer-Wise-Detail Report";
         $page_description = "Detail Report";
         $data = [];
@@ -1659,9 +1766,16 @@ class InvoiceController extends Controller
             $clients = \App\Models\Client::where('org_id', \Auth::user()->org_id)->select('name', 'id', 'relation_type')->get();
             $detail_transaction = \App\Models\Invoice::where(function ($query) use ($request) {
                     if ($request->has('outletid') && ($request->outletid != '')) $query->where('outlet_id', $request->outletid);
-                    elseif ($request->has('project_id') && ($request->project_id != '') && ($request->project_id != 'over-all')) {
-                        $outletId = PosOutlets::where('project_id', $request->project_id)->pluck('id')->toArray();
-                        $query->whereIn('outlet_id', $outletId);
+                    else {
+                        if (\Auth::user()->hasRole('admins')) {
+                            if ($request->has('project_id') && ($request->project_id != '') && ($request->project_id != 'over-all')) {
+                                $outletId = PosOutlets::where('project_id', $request->project_id)->pluck('id')->toArray();
+                                $query->whereIn('outlet_id', $outletId);
+                            }
+                        } else {
+                            $outletId = PosOutlets::where('project_id', \auth()->user()->project_id)->pluck('id')->toArray();
+                            $query->whereIn('outlet_id', $outletId);
+                        }
                     }
                 })->where('org_id', \Auth::user()->org_id)
                 ->when($startdate, function ($q) use($startdate) {
@@ -1692,7 +1806,7 @@ class InvoiceController extends Controller
                 return $pdf->download($f);
             }
             return view('admin.reports.customerwisedetailreport', compact('page_title', 'page_description', 'data', 'created_by',
-                'detail_transaction', 'clients', 'outletname', 'startdate', 'enddate', 'nepalistartdate', 'nepalienddate', 'organization', 'projects'));
+                'detail_transaction', 'clients', 'outletname', 'startdate', 'enddate', 'nepalistartdate', 'nepalienddate', 'organization', 'outlets', 'projects'));
         }
         return view('admin.reports.customerwisedetailreport', compact('page_title', 'page_description', 'outlets', 'projects'));
     }

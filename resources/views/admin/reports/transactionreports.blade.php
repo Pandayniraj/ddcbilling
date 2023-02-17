@@ -119,11 +119,20 @@
                                     </div>
                                 </div>
                             @else
-                                @php
-                                    $outlet_user= \App\Models\OutletUser::where('user_id', \Auth::user()->id)->first();
-                                    $outletid= \App\Models\PosOutlets::where('id',$outlet_user->outlet_id)->first();
-                                @endphp
-                                <input type="hidden" name="outletid" value="{{ $outletid->id}}" class="form-control">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Outlet</label>
+                                        <div class="input-group">
+                                            <select name="outletid" class="form-control searchable" id="outlet-id">
+                                                <option value="" disableSelected> Select Outlets</option>
+                                                @foreach($outlets as $key=> $value)
+                                                    <option value="{{ $value->id}}"
+                                                            @if((request()->outletid??'') == $value->id) selected @endif>{{$value->name}}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
                             @endif
 
                             <div class="col-md-2">

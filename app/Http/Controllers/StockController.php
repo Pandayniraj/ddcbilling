@@ -50,7 +50,7 @@ class StockController extends Controller
         $outletuser=\App\Models\OutletUser::where('user_id', auth()->id())->select('outlet_id')->get()->toArray();
 
         if( \Auth::user()->hasRole('admins')) $stores = \App\Models\PosOutlets::select('name', 'id')->get();
-        else $stores = \App\Models\PosOutlets::whereIn('id', $outletuser)->select('name', 'id')->get();
+        else $stores = \App\Models\PosOutlets::where('project_id', auth()->user()->project_id)->select('name', 'id')->get();
 
         $date=\Carbon\Carbon::now()->format('Y-m-d');
         return view('admin.stock.addstock',compact('products','date','stores'));
