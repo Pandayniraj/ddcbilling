@@ -5,7 +5,6 @@
 @endsection
 
 @section('content')
-
     <section class="content-header" style="margin-top: -35px; margin-bottom: 20px">
         <h1>
             Stock List
@@ -40,9 +39,9 @@
                                 <td>
                                     <a href="/admin/stock/details?stock_id={{$stock->id}}" class="btn btn-default"><i
                                             class="fa fa-eye"></i></a>
+                                    @if (\Auth::user()->hasRole('admins'))
                                     <a href="/admin/stock/edit?stock_id={{$stock->id}}" class="btn btn-primary" title="Edit Stock"><i
                                             class="fa fa-edit"></i></a>
-                                    @if(auth()->user()->username == 'root')
                                     <a href="/admin/stock/destory?stock_id={{$stock->id}}" class="btn btn-danger"
                                        onclick="return confirm('Are you sure you want to delete this item?');"><i
                                             class="fa fa-trash"></i></a>
@@ -54,13 +53,9 @@
                         @endforeach
                         </tbody>
                     </table>
-
-
                 </div>
-
-            </div><!-- /.box-body -->
-        </div><!-- /.col -->
-
-    </div><!-- /.row -->
+            </div>
+        </div>
+    </div>
 @endsection
 

@@ -653,7 +653,7 @@
 
         $('.customer_id').select2();
         $('.customer_type').select2();
-        $('.searchable').select2();
+        // $('.searchable').select2();
 
         function adjustTotalNonTaxable() {
             var taxableAmount = 0;
@@ -699,7 +699,6 @@
             });
             $('#discount-amount').text(totalDiscount);
             $('#discount_amount').val(totalDiscount);
-
         }
 
         function adjustTax(ev) {
@@ -724,7 +723,6 @@
             let parent = $(this).parent().parent();
             parent.find('.quantity').trigger('change');
         })
-
 
         function isNumeric(n) {
             return !isNaN(parseFloat(n)) && isFinite(n);
@@ -774,6 +772,8 @@
                             } else parentDiv.find('.tax_amount_line').val(0);
 
                             parentDiv.find('.total').val(total.toFixed(2));
+                            // parentDiv.find('.total').val((Number(total)).toFixed(2));
+
                             calcTotal();
                         } else {
                             parentDiv.find('.price').val(0);
@@ -953,29 +953,35 @@
 
         $(document).on('click', '#submit', function (e) {
             e.preventDefault();
-            if (confirm("Are you Sure!") == true) {
-                $("#create-invoice").submit();
+            if ($("#outlet_id").val() == '') {
+                alert('Please Select Outlet')
+            } else {
+                if (confirm("Are you Sure!") == true) {
+                    $("#create-invoice").submit();
+                }
             }
         });
 
         $(document).on('change', '#client_id', function () {
-            $.ajax({
-                type: "POST",
-                contentType: "application/json; charset=utf-8",
-                url: "/admin/invoice-check-unpaid-bill/" + $(this).val(),
-                success: function (response) {
-                    if ((response.status === 'unpaid') || (response.status === 'partial')) {
-                        alert('Please pay previous bill first to continue');
-                        $('#submit').attr('disabled', true);
-                        $('#create-invoice').bind('submit', function (e) {
-                            e.preventDefault();
-                        });
-                    } else {
-                        $("#submit").removeAttr('disabled', false);
-                        $('#create-invoice').unbind('submit');
+            if($("#customer_type").val() != 'random_customer') {
+                $.ajax({
+                    type: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    url: "/admin/invoice-check-unpaid-bill/" + $(this).val(),
+                    success: function (response) {
+                        if ((response.status === 'unpaid') || (response.status === 'partial')) {
+                            alert('Please pay previous bill first to continue');
+                            $('#submit').attr('disabled', true);
+                            $('#create-invoice').bind('submit', function (e) {
+                                e.preventDefault();
+                            });
+                        } else {
+                            $("#submit").removeAttr('disabled', false);
+                            $('#create-invoice').unbind('submit');
+                        }
                     }
-                }
-            });
+                });
+            }
         });
 
         $(document).on('change', '#bill_type', function () {
@@ -1136,12 +1142,11 @@
 
         $(document).ready(function () {
             for (let i = 1; i < 4; i++) {
-
                 $(".multipleDiv").after($('#orderFields #more-tr').html());
                 $(".multipleDiv").next('tr').find('.product_id').select2({
                     width: '100%'
                 });
-                let pid = $(".multipleDiv").next('tr').find('.product_id');
+                let pid = $(".multipleDiv").next('tr').find('.product_id, .units');
                 pid.select2('destroy');
                 pid.select2({
                     width: '100%',
@@ -1157,7 +1162,7 @@
             // $(".multipleDiv").after($('#orderFields #more-tr').html());
             $("#multipleDiv tr:last").after($('#orderFields #more-tr').html());
             // $(".multipleDiv").next('tr').find('.product_id').select2({
-            $("#multipleDiv tr:last").find('.product_id').select2({
+            $("#multipleDiv tr:last").find('.product_id, .units').select2({
                 width: '100%'
             });
             let pid = $(".multipleDiv").next('tr').find('.product_id');
