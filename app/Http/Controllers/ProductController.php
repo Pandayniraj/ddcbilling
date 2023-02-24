@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Entry;
 use App\Models\Fiscalyear;
 use App\Models\Entryitem;
+use App\Models\Invoice;
+use App\Models\Product;
 use App\Models\ProductPrice;
 use App\Models\StockAdjustmentDetail;
 use App\Models\StockMove;
@@ -1644,4 +1646,31 @@ class ProductController extends Controller
         return view('admin.products.storeoverview', compact('outlet_name', 'page_description', 'page_title', 'outlets', 'allFiscalYear', 'fiscal_year', 'records', 'title', 'startdate', 'enddate', 'categories', 'filter_category_name'));
     }
 
+    public function checkQuotaAccess(Request $request)
+    {
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'staff_id' => 'required|exists:clients,id',
+        ]);
+        $product = Product::findOrFail($request->product_id);
+        if ($product->staff_quota_frequent == 'monthly') {
+            $monthStartDate = date('Y-m-d', strtotime(date('Y-m')));
+            $monthEndDate = date('Y-m-d', strtotime('last day of this month', strtotime($monthStartDate)));
+        } elseif ($product->staff_quota_frequent == 'weekly') {
+            $monthStartDate = date('Y-m-d', strtotime(date('Y-m')));
+            $monthEndDate = date('Y-m-d', strtotime('last day of this month', strtotime($monthStartDate)));
+        } elseif ($product->staff_quota_frequent == 'daily') {
+            $monthStartDate = date('Y-m-d', strtotime(date('Y-m')));
+            $monthEndDate = date('Y-m-d', strtotime('last day of this month', strtotime($monthStartDate)));
+        } else {
+            $monthStartDate = date('Y-m-d', strtotime(date('Y-m')));
+            $monthEndDate = date('Y-m-d', strtotime('last day of this month', strtotime($monthStartDate)));
+        }
+
+        $invoice = Invoice::where('client_id', $request->staff_id)->where('bill_date', '>=', $monthStartDate)
+            ->where('bill_date', '<=', $monthEndDate)->where('client_type', 'staff')->orderBy('created_at', 'desc')->first();
+
+        if (isset($invoice)) return response()->json(['status' => 'false', 'msg' => 'Sorry you have already taken('.$invoice->bill_date.') this product.']);
+        else return response()->json(['status' => 'true', 'msg' => 'You can have only '.$product->staff_quota.' quantity']);
+    }
 }

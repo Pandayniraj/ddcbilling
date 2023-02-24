@@ -74,39 +74,52 @@ scratch. This page gets rid of all links and provides the needed markup only.
             padding-right: 1.3cm;
             padding-top: 1.3cm;
         }
-        .white-unit{
+
+        .white-unit {
             border-right: 1px solid #d2d6de !important;
         }
+
         @media print {
             .pagebreak {
                 page-break-before: always;
             }
+
             .footer {
                 position: fixed;
                 bottom: 55px;
                 /*margin-bottom: 10px;*/
             }
-            .white-unit{
+
+            .white-unit {
                 border-right: 1px solid #fff !important;
             }
+
             /* page-break-after works, as well */
         }
 
         .page-header {
             border-bottom: none;
         }
+
         .table > tbody > tr > td, .table > tbody > tr > th, .table > tfoot > tr > td, .table > tfoot > tr > th, .table > thead > tr > td, .table > thead > tr > th {
             padding: 2px !important;
         }
+
         label {
             margin-bottom: 0px !important;
         }
+
         .page-header {
             margin: -25px 0 20px 0 !important;
         }
+
         .invoice {
             padding: 15px !important;
             margin: 0px !important;
+        }
+
+        .bank-detail-row {
+            margin-top: 130px;
         }
     </style>
 </head>
@@ -237,12 +250,12 @@ function numberFomatter($number)
                                 <h5 style="margin-bottom: -7px;">{{ \Auth::user()->organization->email }}
                                     / {{ $outlet_code->email??'' }}</h5>
                                 <h5 style="margin-bottom: -7px;">{{ $outlet_code->phone }}</h5>
-                                <h5 style="margin-bottom: -8px;"> <b>
-                                    @if($print_no == 0 && $key <= 1)
-                                        TAX Invoice
-                                    @else
-                                        Invoice
-                                    @endif
+                                <h5 style="margin-bottom: -8px;"><b>
+                                        @if($print_no == 0 && $key <= 1)
+                                            TAX Invoice
+                                        @else
+                                            Invoice
+                                        @endif
                                     </b>
                                 </h5>
                                 <h5>
@@ -275,11 +288,26 @@ function numberFomatter($number)
                 <!-- /.col -->
                 <div class="col-xs-4 invoice-col">
                     <p>
-                        <Strong>Invoice No:</Strong>{{$outlet_code->short_name}}/{{$ord->fiscal_year}}
-                        /00{{ $ord->bill_no }}<br>
-                        <strong>Printed Date:</strong><span>{{ date('Y-m-d') }}<br><strong>Invoice Date:</strong><span>{{ $ord->bill_date??'' }}<br>
-                        <strong>Due Date:</strong><span>{{ $ord->due_date??'' }}<br>
-                        <strong> Mode of Payment:</strong>{{ $ord->bill_type }}<br></span></p>
+                        <Strong>Invoice No:</Strong>{{$outlet_code->short_name}}/{{$ord->fiscal_year}}/00{{ $ord->bill_no }}<br>
+                        <strong>Printed Date:</strong><span>{{ date('Y-m-d') }}</span><br>
+                        <strong>Invoice Date:</strong><span>{{ $ord->bill_date??'' }}</span><br>
+                        <strong>Due Date:</strong><span>{{ $ord->due_date??'' }}</span><br>
+                        <strong> Mode of Payment:</strong><span>{{ $ord->bill_type }}</span><br>
+                        @if ($oed->client_type == 'distributor')
+                            @php $type = 'Distributor'; @endphp
+                        @elseif($oed->client_type == 'staffghee')
+                            @php $type = 'Staff Ghee'; @endphp
+                        @elseif($oed->client_type == 'staff')
+                            @php $type = 'Staff Milk'; @endphp
+                        @elseif($oed->client_type == 'boothman')
+                            @php $type = 'Boothman'; @endphp
+                        @elseif($oed->client_type == 'retailer')
+                            @php $type = 'Retailer'; @endphp
+                        @else
+                            @php $type = 'Random Customer'; @endphp
+                        @endif
+                        <strong> Type:</strong><span>{{ $type }}</span><br>
+                    </p>
                 </div>
             </div>
             <br/>
@@ -288,13 +316,13 @@ function numberFomatter($number)
                     <table class="table table-striped">
                         <thead class="bg-gray">
                         <tr class="">
-                            <th style="width: 5%;">S.No</th>
-                            <th style="width: 30%;">Particulars</th>
+                            <th style="width: 3%;">S.No</th>
+                            <th style="width: 44%;">Particulars</th>
                             <th style="width: 6%; text-align: center;">Vat</th>
                             <th style="width: 8%; text-align: center;" class="white-unit">Unit</th>
                             <th style="width: 1%;"></th>
-                            <th style="width: 15%; text-align: center">Quantity</th>
-                            <th style="width: 15%; text-align: center">Rate</th>
+                            <th style="width: 8%; text-align: center">Quantity</th>
+                            <th style="width: 10%; text-align: center">Rate</th>
                             <th style="width: 20%; text-align: center">Amount</th>
                         </tr>
                         </thead>
@@ -318,22 +346,23 @@ function numberFomatter($number)
                             </tr>
                         @endforeach
                         <tr>
-                            <td colspan="8" style="border-left: 1px solid #fff !important; border-right: 1px solid #fff !important;padding: 5px !important;"></td>
+                            <td colspan="8"
+                                style="border-left: 1px solid #fff !important; border-right: 1px solid #fff !important;padding: 5px !important;"></td>
                         </tr>
                         <tr>
                             <th colspan="4" rowspan="4">Remarks</th>
                             <td style="border-top: 1px solid #fff !important; border-bottom: 1px solid #fff !important;"></td>
-                            <th colspan="2">Subtotal: </th>
+                            <th colspan="2">Subtotal:</th>
                             <th style="text-align: right;">{{ number_format($ord->total_amount-$ord->tax_amount,2) }}</th>
                         </tr>
                         <tr>
                             <td></td>
-                            <th colspan="2">Discount: </th>
+                            <th colspan="2">Discount:</th>
                             <th style="text-align: right;">{{ number_format($ord->discount_amount,2) }}</th>
                         </tr>
                         <tr>
                             <td style="border-top: 1px solid #fff !important; border-bottom: 1px solid #fff !important;"></td>
-                            <th colspan="2">Non Taxable Amount: </th>
+                            <th colspan="2">Non Taxable Amount:</th>
                             @if($ord->total_amount-$ord->taxable_amount-$ord->tax_amount >= 1)
                                 <td style="text-align: right;">{{ number_format($ord->total_amount-$ord->taxable_amount-$ord->tax_amount,2) }}</td>
                             @else
@@ -342,7 +371,7 @@ function numberFomatter($number)
                         </tr>
                         <tr>
                             <td></td>
-                            <th colspan="2">Taxable Amount: </th>
+                            <th colspan="2">Taxable Amount:</th>
                             <th style="text-align: right;">{{ number_format($ord->taxable_amount,2) }}</th>
                         </tr>
                         <tr>
@@ -350,19 +379,19 @@ function numberFomatter($number)
                                 In Words: <?php echo numberFomatter($ord->total_amount); ?>
                             </th>
                             <td style="border-top: 1px solid #fff !important; border-bottom: 1px solid #fff !important;"></td>
-                            <th colspan="2">Vat Amount: </th>
+                            <th colspan="2">Vat Amount:</th>
                             <th style="text-align: right;">{{ number_format($ord->tax_amount,2) }}</th>
                         </tr>
                         <tr>
                             <td style="border-bottom: 1px solid #fff !important;"></td>
-                            <th colspan="2">Total Amount: </th>
+                            <th colspan="2">Total Amount:</th>
                             <th style="text-align: right;">{{ number_format($ord->total_amount,2) }}</th>
                         </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
-            <div class="row">
+            <div class="row bank-detail-row">
                 <div class="col-xs-12">
                     <p style="margin-bottom:-2px;"><b>Bank Account Detail For Electronic Payment</b></p>
                     {{-- <li>@if(isset($ord->outlet->bank_ac_name_one)) {{ $ord->outlet->bank_ac_name_one??'' }},@endif--}}
@@ -374,31 +403,47 @@ function numberFomatter($number)
                         <table class="table table-striped">
                             <thead class="bg-gray">
                             <tr>
-                                <th style="width: 30%">Particulars</th>
-                                <th style="width: 30%">Bank One</th>
-                                <th style="width: 30%">Bank Two</th>
+                                <th style="width: 23%">Particulars</th>
+                                <th style="width: 36%">Bank One</th>
+                                <th style="width: 36%">Bank Two</th>
                             </tr>
                             </thead>
                             <tbody>
                             <tr>
                                 <td>Bank A/C Name</td>
-                                <td>@if(isset($ord->outlet->bank_ac_name_one)) {{ $ord->outlet->bank_ac_name_one??'' }} @endif</td>
-                                <td>@if(isset($ord->outlet->bank_ac_name_two)) {{ $ord->outlet->bank_ac_name_two??'' }} @endif</td>
+                                <td>@if(isset($ord->outlet->bank_ac_name_one))
+                                        {{ $ord->outlet->bank_ac_name_one??'' }}
+                                    @endif</td>
+                                <td>@if(isset($ord->outlet->bank_ac_name_two))
+                                        {{ $ord->outlet->bank_ac_name_two??'' }}
+                                    @endif</td>
                             </tr>
                             <tr>
                                 <td>Bank A/C No.</td>
-                                <td>@if(isset($ord->outlet->bank_account_one)) {{ $ord->outlet->bank_account_one??'' }} @endif</td>
-                                <td>@if(isset($ord->outlet->bank_account_two)) {{ $ord->outlet->bank_account_two??'' }} @endif</td>
+                                <td>@if(isset($ord->outlet->bank_account_one))
+                                        {{ $ord->outlet->bank_account_one??'' }}
+                                    @endif</td>
+                                <td>@if(isset($ord->outlet->bank_account_two))
+                                        {{ $ord->outlet->bank_account_two??'' }}
+                                    @endif</td>
                             </tr>
                             <tr>
                                 <td>Bank Name</td>
-                                <td>@if(isset($ord->outlet->bank_name_one)) {{ $ord->outlet->bank_name_one??'' }} @endif</td>
-                                <td>@if(isset($ord->outlet->bank_name_two)) {{ $ord->outlet->bank_name_two??'' }} @endif</td>
+                                <td>@if(isset($ord->outlet->bank_name_one))
+                                        {{ $ord->outlet->bank_name_one??'' }}
+                                    @endif</td>
+                                <td>@if(isset($ord->outlet->bank_name_two))
+                                        {{ $ord->outlet->bank_name_two??'' }}
+                                    @endif</td>
                             </tr>
                             <tr>
                                 <td>Branch</td>
-                                <td>@if(isset($ord->outlet->bank_address_one)) {{ $ord->outlet->bank_address_one??'' }} @endif</td>
-                                <td>@if(isset($ord->outlet->bank_address_two)) {{ $ord->outlet->bank_address_two??'' }} @endif</td>
+                                <td>@if(isset($ord->outlet->bank_address_one))
+                                        {{ $ord->outlet->bank_address_one??'' }}
+                                    @endif</td>
+                                <td>@if(isset($ord->outlet->bank_address_two))
+                                        {{ $ord->outlet->bank_address_two??'' }}
+                                    @endif</td>
                             </tr>
                             </tbody>
                         </table>

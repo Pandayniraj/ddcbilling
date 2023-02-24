@@ -84,23 +84,24 @@
                                             {{-- <input type="radio" id="credit" name="payment_type" class="payment-type" value="Credit" @if($purchase_order->bill_type == 'Credit') checked @endif>--}}
                                             {{-- <label for="credit">Credit</label><br>--}}
                                         </label>
-                                        <div class="col-md-8">
+                                        <div class="col-md-8" style="padding: 0">
                                             {{-- <div class="col-md-8" @if($purchase_order->bill_type == 'Credit') style="display: none;" @endif id="cash-ledger">--}}
-                                            {{--     <select class='form-control searchable select2' name='payment_method'>--}}
-                                            {{--         <?php $groups = \App\Models\COALedgers::orderBy('code', 'asc')->where('group_id', '13')->where('org_id', \Auth::user()->org_id)->get();--}}
-                                            {{--         foreach ($groups as $grp) {--}}
-                                            {{--             echo '<option value="' . $grp->id . '"' . ((isset($purchase_order) && ($grp->name == $purchase_order->type)) ? 'selected' : "") .'>'. $grp->name . '</option>';--}}
-                                            {{--         }--}}
-                                            {{--         ?>--}}
-                                            {{--     </select>--}}
+                                                 <select class='form-control searchable select2' name='payment_method'>
+                                                     <?php $groups = \App\Models\COALedgers::orderBy('code', 'asc')->where('group_id', '13')->get();
+                                                     foreach ($groups as $grp) {
+                                                         // echo '<option value="' . $grp->id . '"' . ((isset($purchase_order) && ($grp->name == $purchase_order->type)) ? 'selected' : "") .'>'. $grp->name . '</option>';
+                                                         echo '<option value="' . $grp->id . '"' . (($grp->id == 4) ? 'selected' : "") .'>'. $grp->name . '</option>';
+                                                     }
+                                                     ?>
+                                                 </select>
                                             {{-- </div>--}}
-                                            <select class='form-control searchable select2' name='payment_method'>
-                                                <?php $groups = \App\Models\COALedgers::orderBy('code', 'asc')->where('group_id', '219')->where('org_id', \Auth::user()->org_id)->get();
-                                                foreach ($groups as $grp) {
-                                                    echo '<option value="' . $grp->id . '"' . ((isset($purchase_order) && ($grp->id == $purchase_order->client->ledger_id)) ? 'selected' : "disabled") .'>'. $grp->name . '</option>';
-                                                }
-                                                ?>
-                                            </select>
+                                            {{-- <select class='form-control searchable select2' name='payment_method'>--}}
+                                            {{--     <?php $groups = \App\Models\COALedgers::orderBy('code', 'asc')->where('group_id', '219')->where('org_id', \Auth::user()->org_id)->get();--}}
+                                            {{--     foreach ($groups as $grp) {--}}
+                                            {{--         echo '<option value="' . $grp->id . '"' . ((isset($purchase_order) && ($grp->id == $purchase_order->client->ledger_id)) ? 'selected' : "disabled") .'>'. $grp->name . '</option>';--}}
+                                            {{--     }--}}
+                                            {{--     ?>--}}
+                                            {{-- </select>--}}
                                         </div>
                                     </div>
                                 </div>

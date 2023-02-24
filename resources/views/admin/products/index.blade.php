@@ -138,9 +138,11 @@
                                             @foreach($course->productPrices as $productPrice)
                                                 @if($productPrice->project_id == auth()->user()->project_id??0)
                                                     @php $displayPrice = 1; @endphp
-                                                    <td>{!! number_format($productPrice->distributor_price,2) !!}</td>
-                                                    <td>{!! number_format($productPrice->retailer_price,2) !!}</td>
-                                                    <td>{!! number_format($productPrice->customer_price,2) !!} &nbsp;
+
+                                                    @if($course->is_vat == 1) @php $vatCal=0.13; @endphp @else @php $vatCal=0; @endphp @endif
+                                                    <td>{!! number_format(($productPrice->distributor_price+$productPrice->distributor_price*$vatCal),2) !!}</td>
+                                                    <td>{!! number_format(($productPrice->retailer_price+$productPrice->retailer_price*$vatCal),2) !!}</td>
+                                                    <td>{!! number_format(($productPrice->customer_price+$productPrice->customer_price*$vatCal),2) !!}</td>
                                                         <a href="{{route('admin.product-pricing.index',$course->id)}}">
                                                             <i class="fa fa-pencil" title="Edit Product Price"></i>
                                                         </a>

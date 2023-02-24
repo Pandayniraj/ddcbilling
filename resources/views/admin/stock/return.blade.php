@@ -5,7 +5,6 @@
 @endsection
 
 @section('content')
-
     <section class="content-header" style="margin-top: -35px; margin-bottom: 20px">
         <h1>
             Edit Stock
@@ -18,16 +17,14 @@
         <div class='col-md-12'>
             <div class="box box-header">
                 <div class="content">
-
                     {!! Form::open( ['route'=>'admin.stock.save_return', 'class' => 'form-horizontal', 'id' => 'form_edit_client','files'=>'true'] ) !!}
                     <div class="col-sm-6">
                         <label class="control-label">Outlets</label>
-                        {!! Form::select('store_id',[''=>'Select Outlets']+$stores, $newstock->store_id ?? null, ['class'=>'form-control']) !!}
+                        {!! Form::select('store_id', $stores, $newstock->store_id ?? null, ['class'=>'form-control']) !!}
                     </div>
                     <div class="col-sm-6 ">
                         <label class="control-label"> Recevice From Store Date</label>
-                        <input type="date" name="date" class="form-control datepicker date-toggle-nep-eng"
-                               value="{{$newstock->date}}">
+                        <input type="date" name="date" class="form-control datepicker date-toggle-nep-eng" value="{{$newstock->date}}">
                     </div>
 
                     {{-- <div class="form-group">
@@ -57,7 +54,7 @@
                                 <td>{{$loop->index+1}}</td>
                                 <td>{{$stock->product_details->name}}</td>
                                 <td><input type="number" id="quantity" name="quantity[{{$key}}]" value="{{$stock->buy_qty}}" readonly></td>
-                                <td><input type="number" id="return_quantity" name="return_quantity[{{$key}}]" max="{{$stock->return_qty}}" placeholder="Previuos return {{$stock->return_qty}}"></td>
+                                <td><input type="number" id="return_quantity" name="return_quantity[{{$key}}]" max="{{$stock->buy_qty}}" placeholder="Previuos return {{$stock->return_qty}}"></td>
                                 <td><input type="number" id="opening-stock" name="opening_stock[{{$key}}]" readonly value="{{$stock->opening_stock}}"></td>
                                 <td><input type="text" id="remarks" name="remarks[{{$key}}]" value="{{$stock->remarks}}"></td>
                             </tr>

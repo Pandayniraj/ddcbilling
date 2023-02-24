@@ -21,7 +21,7 @@ class Invoice extends Model
         'bank_deposit','bill_type','client_type', 'ship_date', 'require_date', 'sales_tax', 'status', 'paid',
         'bill_date', 'due_date', 'subtotal', 'discount_amount', 'discount_percent', 'discount_note', 'total_amount',
         'comment', 'org_id', 'customer_pan', 'customer_name', 'tax_amount', 'terms', 'taxable_amount', 'bill_no', 'fiscal_year',
-        'is_renewal', 'fiscal_year_id', 'from_stock_location', 'entry_id','outlet_id', 'payment_status'
+        'is_renewal', 'fiscal_year_id', 'from_stock_location', 'entry_id','outlet_id', 'payment_status', 'roundoff_amount'
     ];
 
     public function user()

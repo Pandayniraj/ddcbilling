@@ -268,8 +268,6 @@
     </script>
 
     <script>
-
-
         $(function () {
             $('#start_date').datepicker({
                 //format: 'YYYY-MM-DD',
@@ -281,10 +279,8 @@
                 //format: 'YYYY-MM-DD',
                 dateFormat: 'yy-m-d',
                 sideBySide: true,
-
             });
         });
-
     </script>
 
     <script type="text/javascript">

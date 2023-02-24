@@ -22,7 +22,7 @@
                     {!! Form::open( ['route'=>'admin.stock.updatestock', 'class' => 'form-horizontal', 'id' => 'form_edit_client','files'=>'true'] ) !!}
                     <div class="col-sm-6">
                         <label class="control-label">Outlets</label>
-                        {!! Form::select('store_id',[''=>'Select Outlets']+$stores, $newstock->store_id ?? null, ['class'=>'form-control']) !!}
+                        {!! Form::select('store_id', $stores, $newstock->store_id ?? null, ['class'=>'form-control']) !!}
                     </div>
                     <div class="col-sm-6 ">
                         <label class="control-label"> Recevice From Store Date</label>

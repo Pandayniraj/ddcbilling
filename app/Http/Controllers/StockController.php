@@ -13,6 +13,7 @@ use App\Models\StockCategory;
 use App\Models\StockMove;
 use App\Models\StockReturn;
 use App\Models\StockSubCategory;
+use App\Models\Store;
 use App\User;
 use Flash;
 use Illuminate\Http\Request;
@@ -169,6 +170,7 @@ class StockController extends Controller
     }
 
     public function saveReturn(Request $request) {
+        // dd($request->all());
         $request->validate([
             'quantity' => 'array|required',
             'return_quantity' => 'array|required',
@@ -238,17 +240,73 @@ class StockController extends Controller
         return redirect(route('admin.stock.stocklists'));
     }
 
-    public function list_stocks(){
+    public function list_stocks(Request $request){
         $page_title="Stock Entries List";
         $page_description="List of stock entries";
         $outletuser=\App\Models\OutletUser::where('user_id', auth()->id())->select('outlet_id')->get()->toArray();
-        if(\Auth::user()->hasRole('admins')){
-            $stock_lists=\App\Models\NewStock::where('org_id',\Auth::user()->org_id)->orderby('id','desc')->paginate(25);
-        }else{
-            $stock_lists=\App\Models\NewStock::where('org_id',\Auth::user()->org_id)->whereIn('store_id', $outletuser)->orderby('id','desc')->paginate(25);
+//        $outletId = PosOutlets::where('project_id', auth()->user()->project_id)->pluck('id')->toArray();
+//        if(\Auth::user()->hasRole('admins')) $stock_lists=\App\Models\NewStock::where('org_id',\Auth::user()->org_id)->orderby('id','desc')->paginate(25);
+//        else $stock_lists=\App\Models\NewStock::where('org_id',\Auth::user()->org_id)->whereIn('store_id', $outletId)->orderby('id','desc')->paginate(25);
+
+
+
+
+
+        $projects = Store::orderBy('id')->get();
+        if ($request->has('project_id') && ($request->project_id != '') && ($request->project_id != 'over-all')) {
+            $outlets = \App\Models\PosOutlets::where('project_id', $request->project_id)->select('name', 'id')->get();
         }
-        return view('admin.stock.stocklist',compact('stock_lists','','page_title','page_description'));
+        else $outlets = \App\Models\PosOutlets::select('name', 'id')->get();
+
+        if (!\Auth::user()->hasRole('admins'))
+            $outlets = \App\Models\PosOutlets::where('project_id', \auth()->user()->project_id)->select('name', 'id')->get();
+
+        if ($request->start_date && $request->start_date != "") {
+            $startdate = $request->start_date;
+            if ($request->end_date && $request->end_date != "") $enddate = $request->end_date;
+            else $enddate = $request->start_date;
+
+            $stock_lists=\App\Models\NewStock::where('org_id',\Auth::user()->org_id)
+                ->where(function ($query) use ($request) {
+                    if (\Auth::user()->hasRole('admins')) {
+                        if ($request->has('outletid') && ($request->outletid != '')) {
+                            $query->where('store_id', $request->outletid);
+                        } elseif ($request->has('project_id') && ($request->project_id != '') && ($request->project_id != 'over-all')) {
+                            $outletId = PosOutlets::where('project_id', $request->project_id)->pluck('id')->toArray();
+                            $query->whereIn('store_id', $outletId);
+                        }
+                    } else {
+                        $outletId = PosOutlets::where('project_id', \auth()->user()->project_id)->pluck('id')->toArray();
+                        $query->whereIn('store_id', $outletId);
+                    }
+
+                    // if ($request->has('outletid') && ($request->outletid != '')) {
+                    //     $query->where('store_id', $request->outletid);
+                    // } else {
+                    //     if (\Auth::user()->hasRole('admins')) {
+                    //         if ($request->has('project_id') && ($request->project_id != '') && ($request->project_id != 'over-all')) {
+                    //             $outletId = PosOutlets::where('project_id', $request->project_id)->pluck('id')->toArray();
+                    //             $query->whereIn('store_id', $outletId);
+                    //         } else {
+                    //             $outletId = PosOutlets::where('project_id', \auth()->user()->project_id)->pluck('id')->toArray();
+                    //             $query->whereIn('store_id', $outletId);
+                    //         }
+                    //     } else {
+                    //         $outletId = PosOutlets::where('project_id', \auth()->user()->project_id)->pluck('id')->toArray();
+                    //         $query->whereIn('store_id', $outletId);
+                    //     }
+                    // }
+                })->when($startdate, function ($q) use($startdate) {
+                    $q->where('date', '>=', $startdate);
+                })->when($enddate, function ($q) use($enddate) {
+                    $q->where('date', '<=', $enddate);
+                })->orderby('date')->paginate(25);
+        }
+
+
+        return view('admin.stock.stocklist',compact('stock_lists','','page_title','page_description', 'projects', 'outlets'));
     }
+
     public function stockedit(){
         $stock_id=\Request::get('stock_id');
         $page_title="Stock Entries Edit";
@@ -256,6 +314,8 @@ class StockController extends Controller
         $stock_entries=\App\Models\StockMove::where('transaction_reference_id',$stock_id)->where('reference','store_in_'.$stock_id)->get();
         $newstock=\App\Models\NewStock::find($stock_id);
         $stores = \App\Models\PosOutlets::pluck('name', 'id')->all();
+        $stores = \App\Models\PosOutlets::where('id', $newstock->store_id)->pluck('name', 'id')->all();
+
         foreach($stock_entries as $stock) {
             $productId[] = $stock->stock_id;
         }
@@ -269,7 +329,8 @@ class StockController extends Controller
         $page_description="Editing stock entries";
         $stock_entries=\App\Models\StockMove::where('transaction_reference_id',$stock_id)->where('reference','store_in_'.$stock_id)->get();
         $newstock=\App\Models\NewStock::find($stock_id);
-        $stores = \App\Models\PosOutlets::pluck('name', 'id')->all();
+        $stores = \App\Models\PosOutlets::where('id', $newstock->store_id)->pluck('name', 'id')->all();
+
         return view('admin.stock.return',compact('stores','newstock','stock_id','stock_entries','page_title','page_description'));
     }
 
@@ -277,7 +338,7 @@ class StockController extends Controller
         $stock_id=\Request::get('stock_id');
         $page_title="Stock Entries Detail View";
         $page_description="Editing stock entries";
-        $stock_entries=\App\Models\StockMove::where('transaction_reference_id',$stock_id)->get();
+        $stock_entries=\App\Models\StockMove::where('transaction_reference_id',$stock_id)->where('reference', 'like', 'store_in_'.'%')->get();
         $newstock=\App\Models\NewStock::find($stock_id);
         return view('admin.stock.stockview',compact('newstock','stock_id','stock_entries','page_title','page_description'));
     }

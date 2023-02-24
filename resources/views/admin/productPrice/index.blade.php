@@ -40,9 +40,10 @@
                                 <tr>
                                     <td>{{$loop->iteration}}</td>
                                     <td>{{ $productPrice->project_name??'' }}</td>
-                                    <td>{{ $productPrice->distributor_price??'' }}</td>
-                                    <td>{{ $productPrice->retailer_price??'' }}</td>
-                                    <td>{{ $productPrice->customer_price??'' }}</td>
+                                    @if($productPrice->product->is_vat == 1) @php $vatCal=0.13; @endphp @else @php $vatCal=0; @endphp @endif
+                                    <td>{{ ($productPrice->distributor_price+$vatCal*$productPrice->distributor_price)??'' }}</td>
+                                    <td>{{ ($productPrice->retailer_price+$vatCal*$productPrice->retailer_price)??'' }}</td>
+                                    <td>{{ ($productPrice->customer_price+$vatCal*$productPrice->customer_price)??'' }}</td>
                                     <td>
                                         @if ( $productPrice->isEditable() || $productPrice->canChangePermissions() )
                                             @if(\Auth::user()->hasRole('admins'))

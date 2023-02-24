@@ -8,6 +8,7 @@ use App\Models\Audit as Audit;
 use App\Models\Client;
 use App\Models\Contact;
 use App\Models\PosOutlets;
+use App\Models\Product;
 use App\Models\Proposal;
 use App\Models\Role as Permission;
 use App\User;
@@ -292,7 +293,7 @@ class ClientsController extends Controller
             $accounting_type = $request->types ?? env('CLIENT_BOOTHMAN_SERVICES_LEDGER_GROUP');
         } elseif ($request->relation_type == 'direct_customer') {
             $accounting_type = $request->types ?? env('CLIENT_DIRECT_CUSTOMER_SERVICES_LEDGER_GROUP');
-        } elseif ($request->relation_type == 'staff') {
+        } elseif ($request->relation_type == 'staff' || $request->relation_type == 'staff-milk') {
             //219 customer group
             $accounting_type = "219";
         } elseif ($request->relation_type == 'supplier') {
@@ -414,7 +415,7 @@ class ClientsController extends Controller
     /**
      * @param Request $request
      * @param $id
-     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
+     * @return string
      */
     public function update(Request $request, $id)
     {
@@ -425,7 +426,24 @@ class ClientsController extends Controller
         ]);
 
         $attributes = $request->all();
-        $attributes['type'] = (\App\Models\COAgroups::find($request->types))->name;
+        if ($request->relation_type == 'distributor') {
+            $accounting_type = $request->types ?? env('CLIENT_DISTRIBUTOR_SERVICES_LEDGER_GROUP');
+        } elseif ($request->relation_type == 'retailer') {
+            $accounting_type = $request->types ?? env('CLIENT_RETAILER_SERVICES_LEDGER_GROUP');
+        } elseif ($request->relation_type == 'boothman') {
+            $accounting_type = $request->types ?? env('CLIENT_BOOTHMAN_SERVICES_LEDGER_GROUP');
+        } elseif ($request->relation_type == 'direct_customer') {
+            $accounting_type = $request->types ?? env('CLIENT_DIRECT_CUSTOMER_SERVICES_LEDGER_GROUP');
+        } elseif ($request->relation_type == 'staff' || $request->relation_type == 'staff-milk') {
+            $accounting_type = "219"; // 219 customer group
+        } elseif ($request->relation_type == 'supplier') {
+            $accounting_type = $request->types ??
+                \FinanceHelper::get_ledger_id('CLIENT_SUPPLIER_LEDGER_GROUP');
+        } else {
+            $accounting_type = $request->types ?? env('CLIENT_SERVICES_LEDGER_GROUP');
+        }
+
+        $attributes['type'] = (\App\Models\COAgroups::find((int)$accounting_type))->name;
         $attributes['org_id'] = \Auth::user()->org_id;
         if ($request->file('image')) {
             $files = $request->file('image');
@@ -435,9 +453,8 @@ class ClientsController extends Controller
             $doc_name = '/clientsimage/' . $doc_name;
             $attributes['image'] = $doc_name;
         }
-        if (!isset($attributes['enabled'])) {
-            $attributes['enabled'] = 0;
-        }
+        if (!isset($attributes['enabled'])) $attributes['enabled'] = 0;
+
         $clients = $this->client->find($id);
         if ($clients->isEditable()) {
             $clients->update($attributes);
@@ -707,9 +724,9 @@ class ClientsController extends Controller
                     $outletId = PosOutlets::where('project_id', $project_id)->pluck('id')->toArray();
                 }
             }
-            if (count($outletId) > 0)
-                $clients = Client::where('relation_type', $relation_type)->whereIn('outlet_id', $outletId)->where('enabled', '1')->pluck('name', 'id');
+            if (count($outletId) > 0) $clients = Client::where('relation_type', $relation_type)->whereIn('outlet_id', $outletId)->where('enabled', '1')->pluck('name', 'id');
             else $clients = Client::where('relation_type', $relation_type)->where('enabled', '1')->pluck('name', 'id');
+
             return $clients->toarray();
         } else {
             $term = strtolower(\Request::get('term'));
@@ -717,13 +734,21 @@ class ClientsController extends Controller
             $return_array = [];
 
             foreach ($contacts as $v) {
-                if (strpos(strtolower($v->name), $term) !== false) {
-                    $return_array[] = ['value' => $v->name, 'id' => $v->id];
-                }
+                if (strpos(strtolower($v->name), $term) !== false) $return_array[] = ['value' => $v->name, 'id' => $v->id];
             }
 
             return \Response::json($return_array);
         }
+    }
+
+    public function getProducts()
+    {
+        $relation_type = \Request::get('relation_type');
+        if (($relation_type != '') && $relation_type && $relation_type == 'staff') {
+            $products = Product::select('id', 'name')->whereIn('staff_quota_frequent', ['monthly', 'daily'])->pluck('name', 'id');
+        } else $products = Product::select('id', 'name')->where('org_id', \Auth::user()->org_id)->pluck('name', 'id');
+
+        return $products;
     }
 
     public function get_client_info(Request $request)

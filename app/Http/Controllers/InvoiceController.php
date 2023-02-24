@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Helpers\FinanceHelper;
 use App\Models\Audit;
 use App\Models\Client;
+use App\Models\COAgroups;
 use App\Models\COALedgers;
 use App\Models\Invoice;
 use App\Models\InvoiceDetail;
@@ -142,6 +143,17 @@ class InvoiceController extends Controller
      */
     public function create()
     {
+        // $ledgers = COALedgers::where('code', 'like', '01-01-01-01'.'%')->get();
+        // foreach ($ledgers as $key=>$ledger) {
+        //     $code = explode('01-01-01-01', $ledger->code);
+        //     $newCode = '01-01-07'.$code[1];
+        //     $ledger->code = $newCode;
+        //     $ledger->save();
+        // }
+        // $group = COAgroups::where('name', 'Milk Supply Scheme')->first();
+        // $group->code = '01-01-07';
+        // $group->save();
+
         $page_title = 'Invoice';
         $page_description = 'Add invoice';
         $order = null;
@@ -200,14 +212,13 @@ class InvoiceController extends Controller
         $order_attributes['deposit_amount'] = $request->deposit_amount;
         $order_attributes['customer_name'] = $request->customer_name;
         $order_attributes['remaining_amount'] = $request->remaining_amount;
-        if ($request->client_type && $request->client_type != '') {
-            $order_attributes['client_type'] = $request->client_type;
-        } else {
-            $order_attributes['client_type'] = $request->client_type_one;
-        }
-        $order_attributes['client_type'] = $request->client_type;
+
+        if ($request->client_type && $request->client_type != '') $order_attributes['client_type'] = $request->client_type;
+        else $order_attributes['client_type'] = $request->client_type_one;
+
         $order_attributes['tax_amount'] = $request->taxable_tax;
         $order_attributes['total_amount'] = $request->final_total;
+        $order_attributes['roundoff_amount'] = $request->roundoff_amount;
         $order_attributes['bill_no'] = $bill_no;
         $order_attributes['fiscal_year'] = $ckfiscalyear->fiscal_year;
         $order_attributes['is_bill_active'] = 1;
@@ -221,6 +232,35 @@ class InvoiceController extends Controller
         } else {
             $order_attributes['client_id'] = $request->customer_id;
             $order_attributes['ledger_id'] = \App\Models\Client::find($request->customer_id)->ledger_id??0;
+        }
+
+        $productIds = $request->product_id;
+        if ($order_attributes['client_type'] == 'staff') {
+            foreach ($productIds as $key=>$value) {
+                $product = Product::findOrFail($productIds[$key]);
+                if ($product->staff_quota_frequent == 'monthly') {
+                    $monthStartDate = date('Y-m-d', strtotime(date('Y-m')));
+                    $monthEndDate = date('Y-m-d', strtotime('last day of this month', strtotime($monthStartDate)));
+                } elseif ($product->staff_quota_frequent == 'weekly') {
+                    $monthStartDate = date('Y-m-d', strtotime(date('Y-m')));
+                    $monthEndDate = date('Y-m-d', strtotime('last day of this month', strtotime($monthStartDate)));
+                } elseif ($product->staff_quota_frequent == 'daily') {
+                    $monthStartDate = date('Y-m-d', strtotime(date('Y-m')));
+                    $monthEndDate = date('Y-m-d', strtotime('last day of this month', strtotime($monthStartDate)));
+                } else {
+                    $monthStartDate = date('Y-m-d', strtotime(date('Y-m')));
+                    $monthEndDate = date('Y-m-d', strtotime('last day of this month', strtotime($monthStartDate)));
+                }
+
+                $invoice = Invoice::where('client_id', $order_attributes['client_id'])->where('bill_date', '>=', $monthStartDate)
+                    ->where('bill_date', '<=', $monthEndDate)->where('client_type', 'staff')->orderBy('created_at', 'desc')->first();
+
+                if (isset($invoice) || ($request->quantity[$key] > $product->staff_quota)) {
+                    DB::rollBack();
+                    Flash::error('Please select only valid product with quantity or something else.');
+                    return redirect()->back();
+                }
+            }
         }
 
         $invoice = $this->invoice->create($order_attributes);
@@ -454,6 +494,7 @@ class InvoiceController extends Controller
         $order_attributes['client_id'] = $request->customer_id;
         $order_attributes['tax_amount'] = $request->taxable_tax;
         $order_attributes['total_amount'] = $request->final_total;
+        $order_attributes['roundoff_amount'] = $request->roundoff_amount;
         $order_attributes['is_bill_active'] = 1;
         $invoice->update($order_attributes);
         $this->updateentries($id, $request);
@@ -534,6 +575,21 @@ class InvoiceController extends Controller
         $imagepath = \Auth::user()->organization->logo;
 
         return view('admin.invoice.previewPrint', compact('ord', 'imagepath', 'orderDetails'));
+    }
+
+    public function downloadPrintInvoice($id)
+    {
+        $ord = $this->invoice->find($id);
+        // \TaskHelper::authorizeOrg($ord);
+        $orderDetails = InvoiceDetail::where('invoice_id', $id)->get();
+
+        $imagepath = \Auth::user()->organization->logo;
+
+        // return view('admin.invoice.download-print', compact('ord', 'imagepath', 'orderDetails'));
+        $pdf = \PDF::loadView('admin.invoice.download-print', compact('ord', 'imagepath', 'orderDetails'))->setPaper('a3', 'landscape');
+        $file = 'invoice_'.date('Y_m_d'). '.pdf';
+
+        return $pdf->download($file);
     }
 
     public function printInvoice($id)
@@ -901,7 +957,7 @@ class InvoiceController extends Controller
                 $entry_item = \App\Models\Entryitem::create([
                     'entry_id' => $entry->id,
                     'dc' => 'D',
-                    'ledger_id' => 465, // cash_sales ledger id
+                    'ledger_id' => $customer_ledger??465, // cash_sales ledger id
                     'amount' => $invoice->total_amount,
                     'narration' => 'Cash payment on Sales being made',
                 ]);

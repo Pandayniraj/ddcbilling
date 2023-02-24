@@ -300,6 +300,7 @@ Route::group(['middleware' =>  ['iptracker' , 'authorize']], function () {
         Route::post('products/barcode/{id}/post', ['as' => 'admin.product.barcode.post', 'uses' => 'ProductController@barcodePost']);
 
         Route::get('/products/barcode/getprintproduct', ['as' => 'admin.product.getproduct.ajax', 'uses' => 'ProductController@getPrintProduct']);
+        Route::post('/products/check-quota-access', ['as' => 'admin.product.check-quota-access', 'uses' => 'ProductController@checkQuotaAccess']);
 
         Route::get('product/int-purch/{id}', ['as' => 'admin.products.int_purch', 'uses' => 'ProductController@int_purch']);
         Route::put('product/int-purchUpdate/{id}', ['as' => 'admin.products.int_purch_update', 'uses' => 'ProductController@int_purch_update']);
@@ -984,6 +985,7 @@ Route::group(['middleware' =>  ['iptracker' , 'authorize']], function () {
         Route::get('getContacts', ['as' => 'admin.getcontacts', 'uses' => 'ContactsController@get_contact']);
         // For autocomplete of Clients
         Route::get('getClients', ['as' => 'admin.getclients', 'uses' => 'ClientsController@get_client']);
+        Route::get('get-products', ['uses' => 'ClientsController@getProducts']);
         //niraj-irddetail route
         Route::get('irddetail', ['as' => 'admin.irddetail', 'uses' => 'IrdDetailController@index']);
         Route::get('irddetail/edit/{Id}', ['as' => 'admin.irddetail.edit', 'uses' => 'IrdDetailController@edit']);
@@ -1365,6 +1367,7 @@ Route::group(['middleware' =>  ['iptracker' , 'authorize']], function () {
         Route::get('invoice/print/{id}', ['as' => 'admin.invoice.print',  'uses' => 'InvoiceController@printInvoice']);
         Route::get('invoice/thermalprint/{id}', ['as' => 'admin.invoice.thermalprint',  'uses' => 'InvoiceController@thermalprintInvoice']);
         Route::get('invoice/preview-print/{id}', ['as' => 'admin.invoice.preview-print',  'uses' => 'InvoiceController@previewPrintInvoice']);
+        Route::get('invoice/download-print/{id}', ['as' => 'admin.invoice.download-print',  'uses' => 'InvoiceController@downloadPrintInvoice']);
         Route::get('invoice/preview-thermalprint/{id}', ['as' => 'admin.invoice.preview-thermalprint',  'uses' => 'InvoiceController@previewThermalprintInvoice']);
         Route::get('invoice/generatePDF/{id}', ['as' => 'admin.invoice.generatePDF',   'uses' => 'InvoiceController@generatePDF']);
         Route::get('invoice/payment/{id}', ['as' => 'admin.invoice.payment',   'uses' => 'InvoiceController@makepayment']);

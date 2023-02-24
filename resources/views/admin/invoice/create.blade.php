@@ -175,7 +175,7 @@
                                            name="quantity[]" placeholder="Quantity" step=".01" autocomplete="off" required>
                                 </td>
                                 <td>
-                                    <select name='units[]' class="form-control input-sm units reduce searchable" required>
+                                    <select name='units[]' class="form-control form-control-solid input-sm units reduce" required>
                                         <option value="">Units</option>
                                         @foreach ($prod_unit as $pu)
                                             <option value="{{ $pu->id }}">{{ $pu->symbol }}</option>
@@ -293,11 +293,10 @@
                                             'class' => 'form-control label-success searchable',
                                             'placeholder' => 'Please Select',
                                             'id' => 'outlet_id',
-                                            'required',
+                                            'required'
                                         ]) !!}
                                     @else
-                                        <select name="outlet_id" class="form-control searchable" id="outlet_id"
-                                                required>
+                                        <select name="outlet_id" class="form-control searchable" id="outlet_id" required>
                                             <option value="">select</option>
                                             @foreach ($outlets as $outlet)
                                                 @if ($outlet)
@@ -310,7 +309,7 @@
                                 </div>
                                 <div class="col-md-2" style="display:block;" id="long">
                                     <div class="callout">
-                                        <label id='select_label'>Client Type<span style="color:red">(*)</span></label>
+                                        <label>Client Type<span style="color:red">(*)</span></label>
                                         <select class="customer_type select2 form-control" name="client_type"
                                                 required id='customer_type' style="display: block;">
                                             <option value="">--SELECT TYPE--</option>
@@ -318,8 +317,8 @@
                                             <option value="retailer">Retailer</option>
                                             <option value="boothman">BoothMan</option>
                                             {{-- <option value="direct_customer">Direct Customer</option>--}}
-                                            <option value="staff">Staff Milk</option>
-                                            <option value="staffghee">Staff Ghee</option>
+                                            <option value="staff-milk">Staff Milk</option>
+                                            <option value="staff">Staff Ghee</option>
                                             {{-- <option value="customer">Customer</option>--}}
                                             <option value="random_customer">Random Customer</option>
                                         </select>
@@ -327,9 +326,8 @@
                                 </div>
                                 <div class="col-md-2" style="display:none" id="short">
                                     <div class="callout">
-                                        <label id='select_label'>Client Type <span style="color:red"> (*)</span></label>
-                                        <select class="customer_type select2 form-control" name="client_type_one"
-                                                id='customers_type'>
+                                        <label>Client Type <span style="color:red"> (*)</span></label>
+                                        <select class="customer_type select2 form-control" name="client_type_one" id='customers_type'>
                                             <option value="">--SELECT TYPE--</option>
                                             <option value="random_customer">Random Customer</option>
                                         </select>
@@ -338,10 +336,9 @@
 
                                 <div class="col-md-2" id="onclienttype" style="display: block;">
                                     <div class="callout">
-                                        <label id='select_label'><span>Select Clients</span> <i class="imp"
-                                                                                                style="color:red">(*)</i>
-                                            <span
-                                                id='create_lead_or_clients'>
+                                        <label><span>Select Clients</span>
+                                            <i class="imp" style="color:red">(*)</i>
+                                            <span id='create_lead_or_clients'>
                                                 <a href="#" onClick="openwindow('client')"><i
                                                         class="fa fa-plus plusicon"></i></a>
                                             </span></label>
@@ -358,11 +355,8 @@
                                 </div>
                                 <div class="col-md-2" id="show" style="display: none;">
                                     <div class="callout">
-                                        <label id='select_label'><span>Client Name</span> <i class="imp"
-                                                                                             style="color:red">(*)</i>
-                                            <span
-                                                id='create_lead_or_clients'>
-                                            </span></label>
+                                        <label><span>Client Name</span> <i class="imp" style="color:red">(*)</i>
+                                            <span id='create_lead_or_clients'></span></label>
                                         <input type="text" name="customer_name" class="form-control" value="Cash">
                                     </div>
                                 </div>
@@ -567,6 +561,7 @@
                                             <input type="hidden" name="total_tax_amount" id="total_tax_amount"
                                                    value="0">
                                             <input type="hidden" name="final_total" id="total_" value="0">
+                                            <input type="hidden" name="roundoff_amount" id="roundoff-amount" value="0">
                                         </td>
                                     </tr>
                                     </tfoot>
@@ -591,7 +586,7 @@
                             </div>
                         </div>
                         <div class="panel-footer footer">
-                            <button type="submit" class="btn btn-social btn-foursquare" id="submit">
+                            <button type="submit" class="btn btn-social btn-foursquare" id="submit2">
                                 <i class="fa fa-save"></i>Save {{ $_GET['type'] }}
                             </button>
                             <a class="btn btn-social btn-foursquare" href="/admin/invoice1"> <i class="fa fa-times"></i>
@@ -600,10 +595,9 @@
                     </form>
                 </div>
             </div>
-
         </div>
-        <!-- /.box-body -->
     </div>
+
     <div class='supplier_options' style="display: none;">
         <div id='_supplier'>
             <option value="">Select Supplier</option>
@@ -651,28 +645,18 @@
         $('select[name=customer_id]').prop('required', true);
         @endif
 
+
         $('.customer_id').select2();
         $('.customer_type').select2();
-        // $('.searchable').select2();
-
+        $('.searchable').select2();
         function adjustTotalNonTaxable() {
-            var taxableAmount = 0;
-
-            var nontaxableAmount = 0;
-
             var taxAmount = 0;
-
             var taxableAmount = 0;
-
             var nontaxableAmount = 0;
             $('.tax_rate_line').each(function () {
-
                 let parent = $(this).parent().parent();
-
                 let tax_rate = Number(parent.find('.tax_amount_line').val());
-
                 var total = Number(parent.find('.total').val());
-
                 if ($(this).val() == 0) {
                     nontaxableAmount += total;
                 } else {
@@ -742,7 +726,6 @@
                         if (result.client_type) var client_type = String(result.client_type);
                         else var client_type = $('#customer_type').val();
                         if (obj != null) {
-                            // console.log(obj, client_type, 'test');
                             price = 0;
                             if (client_type == "distributor") {
                                 price = obj.distributor_price;
@@ -756,6 +739,14 @@
                             parentDiv.find('.price').val(price);
                             parentDiv.find('.quantity').attr('max', stock);
                             parentDiv.find('.units').val(obj.product_unit).change();
+                            // $('.units').each(function(){
+                            //     $('.units option').each(function() {
+                            //         if(!this.selected) {
+                            //             $(this).attr('disabled', true);
+                            //         }
+                            //     });
+                            // });
+
                             if (obj.is_vat == 1) {
                                 parentDiv.find('.tax_rate_line').val("13").change();
                             } else parentDiv.find('.tax_rate_line').val("0").change();
@@ -767,7 +758,7 @@
                             var tax = parentDiv.find('.tax_rate_line').val();
                             if (isNumeric(tax) && tax != 0 && (total != 0 || total != '')) {
                                 tax_amount = Number(total) * Number(tax) / 100;
-                                parentDiv.find('.tax_amount_line').val(tax_amount);
+                                parentDiv.find('.tax_amount_line').val(tax_amount.toFixed(2));
                                 var total = total;
                             } else parentDiv.find('.tax_amount_line').val(0);
 
@@ -792,6 +783,25 @@
                 parentDiv.find('.tax_amount_line').val('');
                 calcTotal();
             }
+
+            if (($("#customer_type").val() == 'staff') && ($("#client_id").val() != '') && ($(this).val() != '')) {
+                $.ajax({
+                    type:'post',
+                    url:"{{route('admin.product.check-quota-access')}}",
+                    data: {'_token':'{{csrf_token()}}', 'product_id': $(this).val(), 'staff_id': $("#client_id").val()},
+                    success:function(response) {
+                        if (response.status == 'true') {
+                            toastr.success(response.msg);
+                            $("#submit2").attr('disabled', false);
+                        } else {
+                            toastr.error(response.msg);
+                            $("#submit2").attr('disabled', true);
+                        }
+                    }, error: function (e) {
+                        toastr.error("Please check selected product or staff.");
+                    }
+                });
+            }
         });
 
         $(document).on('change', '.customer_id', function () {
@@ -806,7 +816,7 @@
                     var tax = parentDiv.find('.tax_rate_line').val();
                     if (isNumeric(tax) && tax != 0 && (total != 0 || total != '')) {
                         tax_amount = total * Number(tax) / 100;
-                        parentDiv.find('.tax_amount_line').val(tax_amount);
+                        parentDiv.find('.tax_amount_line').val(tax_amount.toFixed(2));
                         total = total;
                     } else
                         parentDiv.find('.tax_amount').val('0');
@@ -818,9 +828,9 @@
                 });
                 let customer_id = $(this).val();
                 $.get('/admin/customer/depositamount/' + customer_id, function (data, status) {
-                    $('#bank_deposit').val(data.deposit_amount.toFixed(2));
-                    $('#credit_limit').val(data.credit_limit.toFixed(2));
-                    $('#remaining_amount').val(data.remaining_amount.toFixed(2));
+                    $('#bank_deposit').val(data.deposit_amount);
+                    $('#credit_limit').val(data.credit_limit);
+                    $('#remaining_amount').val(data.remaining_amount);
                 });
             } else {
                 $('.total').val('0');
@@ -849,6 +859,7 @@
                     document.getElementById("short").style.display = "none";
                 }
             });
+            $(".product_id").trigger('change');
         });
 
         $(document).ready(function () {
@@ -865,6 +876,7 @@
             $("#due-date").css('display', 'block');
             $("#credit-limit").css('display', 'block');
             $("#remaining-amount").css('display', 'block');
+            $("#addMore").css('display', 'block');
             if (customer_type == "random_customer") {
                 $("#due-date").css('display', 'none');
                 $("#credit-limit").css('display', 'none');
@@ -876,11 +888,28 @@
                 document.getElementById("forrandom").style.display = "block";
                 $('#bill_type').hide();
             } else if (customer_type == "staff") {
+                $("#due-date").css('display', 'none');
+                $("#credit-limit").css('display', 'none');
+                $("#remaining-amount").css('display', 'none');
                 document.getElementById("onclienttype").style.display = "block";
                 document.getElementById("show").style.display = "none";
                 document.getElementById("pan_no").removeAttribute('readonly');
                 document.getElementById("billshow").style.display = "block";
                 document.getElementById("bill_type").style.display = "none";
+                $("#billshow").val('Staff');
+                document.getElementById("forrandom").style.display = "none";
+                $("#multipleDiv").find("tr:gt(1)").remove();
+                document.getElementById("addMore").style.display = "none";
+
+            } else if (customer_type == "staff-milk") {
+                $("#due-date").css('display', 'none');
+                $("#credit-limit").css('display', 'none');
+                $("#remaining-amount").css('display', 'none');
+                document.getElementById("onclienttype").style.display = "block";
+                document.getElementById("show").style.display = "none";
+                document.getElementById("pan_no").removeAttribute('readonly');
+                document.getElementById("bill_type").style.display = "block";
+                document.getElementById("billshow").style.display = "none";
                 document.getElementById("forrandom").style.display = "none";
             } else {
                 document.getElementById("onclienttype").style.display = "block";
@@ -891,74 +920,50 @@
                 document.getElementById("forrandom").style.display = "none";
             }
             $.get('/admin/getClients?relation_type=' + customer_type + '&outlet_id=' + $('#outlet_id').val(), function (data, status) {
-
-                $("#client_id").empty();
-                var newOption = new Option('SELECT', '', false, false);
-                $('#client_id').append(newOption);
+                $("#client_id").html('');
+                // var newOption = new Option('SELECT', '', false, false);
+                // $('#client_id').append(newOption);
+                $('#client_id').append(`<option value=''>Select Client </option>`);
                 $.each(data, function (i, item) {
                     var newOption = new Option(item, i, false, false);
                     $('#client_id').append(newOption);
                 });
-                document.querySelectorAll("#client_id option").forEach(opt => {
-                    opt.disabled = false;
-                });
+                // document.querySelectorAll("#client_id option").forEach(opt => {
+                //     opt.disabled = false;
+                // });
+                $('#client_id').trigger('change');
             });
-        });
-        $(document).on('change', '#customers_type', function () {
-            let customer_type = $(this).val();
-
-            if (customer_type == "random_customer") {
-                document.getElementById("onclienttype").style.display = "none";
-                document.getElementById("show").style.display = "block";
-                document.getElementById("pan_no").removeAttribute('readonly');
-                document.getElementById("billshow").style.display = "none";
-                document.getElementById("forrandom").style.display = "block";
-                $('#bill_type').hide();
-            } else if (customer_type == "staff") {
-                document.getElementById("onclienttype").style.display = "block";
-                document.getElementById("show").style.display = "none";
-                document.getElementById("pan_no").removeAttribute('readonly');
-                document.getElementById("billshow").style.display = "block";
-                document.getElementById("bill_type").style.display = "none";
-            } else {
-                document.getElementById("onclienttype").style.display = "block";
-                document.getElementById("show").style.display = "none";
-                document.getElementById("pan_no").setAttribute('readonly', true);
-                document.getElementById("billshow").style.display = "none";
-                document.getElementById("bill_type").style.display = "block";
-                document.getElementById("forrandom").style.display = "none";
-            }
-            $.get('/admin/getClients?relation_type=' + customer_type + '&outlet_id=' + $('#outlet_id').val(), function (data, status) {
-
-                $("#client_id").empty();
-                var newOption = new Option('SELECT', '', false, false);
-                $('#client_id').append(newOption);
+            $.get('/admin/get-products?relation_type=' + customer_type + '&outlet_id=' + $('#outlet_id').val(), function (data, status) {
+                $(".product_id").html('');
+                $('.product_id').append(`<option value=''>Select Product </option>`);
                 $.each(data, function (i, item) {
                     var newOption = new Option(item, i, false, false);
-                    $('#client_id').append(newOption);
+                    $('.product_id').append(newOption);
                 });
             });
+            $(".product_id").val('');
+            $(".quantity").val('');
+            $(".units").val('');
+            $(".discount_amount_line").val('');
+            $(".product_id").trigger('change');
+            $(".units").trigger('change');
         });
 
-        $("#create-invoice").submit(function(e) {
+        $(document).on('click', '#submit2', function (e) {
+            e.preventDefault();
             var customer_type = $("#customer_type").val();
             var client_id = $("#client_id").val();
-            if(customer_type != 'random_customer') {
-                if(client_id == '') {
-                    e.preventDefault();
+            if ($("#outlet_id").val() == '' || (customer_type != 'random_customer' && (client_id == ''))) {
+                if ($("#outlet_id").val() == '') {
+                    alert('Please Select Outlet')
+                } else {
                     alert('Please select client');
                 }
-            }
-        });
-
-        $(document).on('click', '#submit', function (e) {
-            e.preventDefault();
-            if ($("#outlet_id").val() == '') {
-                alert('Please Select Outlet')
             } else {
-                if (confirm("Are you Sure!") == true) {
-                    $("#create-invoice").submit();
-                }
+                if ($("#total_").val() > 0) {
+                    if (confirm("Are you Sure!") == true) $("#create-invoice").submit();
+                } else alert('Select any product.')
+                // $("#create-invoice").submit();
             }
         });
 
@@ -971,13 +976,13 @@
                     success: function (response) {
                         if ((response.status === 'unpaid') || (response.status === 'partial')) {
                             alert('Please pay previous bill first to continue');
-                            $('#submit').attr('disabled', true);
-                            $('#create-invoice').bind('submit', function (e) {
-                                e.preventDefault();
-                            });
+                            $("#submit2").attr('disabled', true);
+                            // $('#create-invoice').bind('submit', function (e) {
+                            //     e.preventDefault();
+                            // });
                         } else {
-                            $("#submit").removeAttr('disabled', false);
-                            $('#create-invoice').unbind('submit');
+                            $("#submit2").attr('disabled', false);
+                            // $('#create-invoice').unbind('submit');
                         }
                     }
                 });
@@ -1049,7 +1054,7 @@
             var tax = parentDiv.find('.tax_rate_line').val();
             if (isNumeric(tax) && tax != 0 && (total != 0 || total != '')) {
                 tax_amount = total * Number(tax) / 100;
-                parentDiv.find('.tax_amount_line').val(tax_amount);
+                parentDiv.find('.tax_amount_line').val(tax_amount.toFixed(2));
                 total = total;
             } else
                 parentDiv.find('.tax_amount_line').val('0');
@@ -1072,7 +1077,7 @@
             var tax = parentDiv.find('.tax_rate_line').val();
             if (isNumeric(tax) && tax != 0 && (total != 0 || total != '')) {
                 tax_amount = total * Number(tax) / 100;
-                parentDiv.find('.tax_amount_line').val(tax_amount);
+                parentDiv.find('.tax_amount_line').val(tax_amount.toFixed(2));
                 total = total;
             } else
                 parentDiv.find('.tax_amount_line').val('0');
@@ -1097,7 +1102,7 @@
             var tax = parentDiv.find('.tax_rate_line').val();
             if (isNumeric(tax) && tax != 0 && (total != 0 || total != '')) {
                 tax_amount = total * Number(tax) / 100;
-                parentDiv.find('.tax_amount_line').val(tax_amount);
+                parentDiv.find('.tax_amount_line').val(tax_amount.toFixed(2));
                 total = total;
             } else
                 parentDiv.find('.tax_amount_line').val('0');
@@ -1118,7 +1123,7 @@
             var tax = $(this).val();
             if (isNumeric(tax) && tax != 0 && (total != 0 || total != '')) {
                 tax_amount = Math.round(total * Number(tax) / 100);
-                parentDiv.find('.tax_amount_line').val(tax_amount);
+                parentDiv.find('.tax_amount_line').val(tax_amount.toFixed(2));
                 total = Math.round(total);
             } else
                 parentDiv.find('.tax_amount_line').val('0');
@@ -1207,7 +1212,7 @@
                     tax_amount = Math.round(Number(tax_amount) + Number($(this).val()));
             });
             $('#sub-total').html(subTotal.toLocaleString());
-            $('#subtotal').val(subTotal);
+            $('#subtotal').val(subTotal.toFixed(2));
 
             total = Number($('#nontaxableamount').val()) + Number($("#taxableamount").val()) +
                 Number($('#taxabletax').val());
@@ -1217,10 +1222,11 @@
             var vat_type = $('#vat_type').val();
 
             //anamol
-            $('#total_tax_amount').val(tax_amount);
+            $('#total_tax_amount').val(tax_amount.toFixed(2));
 
             $('#total').html(total.toLocaleString());
-            $('#total_').val(total.toFixed(2));
+            $('#total_').val(total.toFixed(0));
+            $('#roundoff-amount').val((total.toFixed(0)-total.toFixed(2)).toFixed(3));
             let credit_limit = $('#credit_limit').val();
             var remaining_amount = Number(credit_limit) - Number(total);
             $('#remaining_amount').val(remaining_amount.toFixed(2));
@@ -1234,7 +1240,6 @@
             //     }else{
             //     $(':button[type="submit"]').prop('disabled', true);
             // }
-
             // }else{
             if (total != '') {
                 $(':button[type="submit"]').prop('disabled', false);
@@ -1465,7 +1470,7 @@
                         var tax = parentDiv.find('.tax_rate_line').val();
                         if (isNumeric(tax) && tax != 0 && (total != 0 || total != '')) {
                             tax_amount = total * Number(tax) / 100;
-                            parentDiv.find('.tax_amount_line').val(tax_amount);
+                            parentDiv.find('.tax_amount_line').val(tax_amount.toFixed(2));
                             total = total;
                         } else
                             parentDiv.find('.tax_amount_line').val('0');
