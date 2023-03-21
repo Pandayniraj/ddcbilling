@@ -2,9 +2,11 @@
 
 namespace App\Helpers;
 
+use App\Models\Client;
 use App\Models\COAgroups;
 use App\Models\COALedgers;
 use App\Models\Entry;
+use App\Models\Entryitem;
 use App\Models\Fiscalyear;
 use Illuminate\Support\Facades\DB;
 
@@ -350,5 +352,36 @@ class FinanceHelper
         return $result . ' Rupees' . $points;
     }
 
+    public static function depositEntry($attributes)
+    {
+        $client = Client::find($attributes['client_id']);
+        $attributes['entrytype_id'] = FinanceHelper::get_entry_type_id('cash'); //cash
+        $attributes['tag_id'] = '1'; //Deposit
+        $attributes['user_id'] = auth()->id();
+        $attributes['org_id'] = auth()->user()->org_id;
+        $attributes['number'] = FinanceHelper::get_last_entry_number($attributes['entrytype_id']);
+        $attributes['date'] = \Carbon\Carbon::today();
+        $attributes['dr_total'] = $attributes['amount'];
+        $attributes['cr_total'] = $attributes['amount'];
+        $attributes['source'] = "Customer Deposit";
+        $attributes['fiscal_year_id'] = FinanceHelper::cur_fisc_yr()->id;
+        $entry = Entry::create($attributes);
+        Entryitem::where('entry_id', $entry->id)->delete();
 
+        Entryitem::create([
+            'entry_id' => $entry->id,
+            'dc' => 'D',
+            'ledger_id' => FinanceHelper::get_ledger_id('DEPOSIT_LEDGER'),
+            'amount' => $attributes['amount'],
+            'narration' => 'Deposit Being Made',
+        ]);
+        Entryitem::create([
+            'entry_id' => $entry->id,
+            'dc' => 'C',
+            'ledger_id' => $client->ledger_id,
+            'amount' => $attributes['amount'],
+            'narration' => 'Deposit Amount',
+        ]);
+        return $entry->id;
+    }
 }

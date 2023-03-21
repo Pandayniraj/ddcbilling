@@ -2874,6 +2874,20 @@ class TaskHelper
         }
         return $outlets;
     }
+    public static function getUserOutlets2()
+    {
+        if (\Auth::user()->hasRole('admins')) {
+            $outlets = \App\Models\PosOutlets::orderBy('id', 'asc')->select('name', 'id', 'forrandomcustomer')->get();
+        } else {
+            $outletuser = \App\Models\OutletUser::with('outlet')->where('user_id', \Auth::user()->id)->get();
+            $outlets = [];
+            foreach ($outletuser as $user) {
+                $check = \App\Models\PosOutlets::where('id', $user->outlet_id)->select('name', 'id')->first();
+                if ($check) $outlets[] = \App\Models\PosOutlets::orderBy('id', 'asc')->where('id', $user->outlet_id)->select('name', 'id', 'forrandomcustomer')->first();
+            }
+        }
+        return $outlets;
+    }
 
     public static function is_line_manager($id)
     {

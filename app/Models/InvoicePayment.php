@@ -17,7 +17,7 @@ class InvoicePayment extends Model
      */
     protected $fillable = ['date', 'invoice_id', 'return_id', 'purchase_id', 'reference_no', 'transaction_id', 'paid_by',
         'cheque_no', 'cc_no', 'cc_holder', 'cc_month', 'cc_year', 'cc_type', 'amount', 'currency', 'attachment', 'type',
-        'note', 'pos_paid', 'pos_balance', 'approval_code', 'created_by'];
+        'note', 'pos_paid', 'pos_balance', 'approval_code', 'created_by', 'client_id', 'entry_id'];
 
 
     public function user() : BelongsTo
@@ -26,7 +26,10 @@ class InvoicePayment extends Model
     }
     public function paidby() : BelongsTo
     {
-        return $this->belongsTo(\App\Models\Client::class, 'paid_by');
+        return $this->belongsTo(\App\Models\COALedgers::class, 'paid_by');
+    }
+    public function client(){
+        return $this->belongsTo(Client::class, 'client_id');
     }
     public function purchase() : BelongsTo
     {
@@ -62,5 +65,9 @@ class InvoicePayment extends Model
         }
 
         return true;
+    }
+    public function entry()
+    {
+        return $this->belongsTo(\App\Models\Entry::class, 'entry_id');
     }
 }

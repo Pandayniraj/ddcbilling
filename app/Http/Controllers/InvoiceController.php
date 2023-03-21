@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\FinanceHelper;
+use App\Helpers\TaskHelper;
 use App\Models\Audit;
 use App\Models\Client;
 use App\Models\COAgroups;
 use App\Models\COALedgers;
+use App\Models\CustomerDeposit;
 use App\Models\Invoice;
 use App\Models\InvoiceDetail;
 use App\Models\InvoicePayment;
@@ -64,7 +66,6 @@ class InvoiceController extends Controller
                 return $query->where('bill_date', '>=', $start_date)
                     ->where('bill_date', '<=', $end_date);
             }
-
         })
             ->where(function ($q) use ($outletuser) {
                 if (!\Auth::user()->hasRole('admins')) {
@@ -88,7 +89,6 @@ class InvoiceController extends Controller
                 if ($fiscal_year) {
                     return $query->where('fiscal_year', $fiscal_year);
                 }
-
             })->where(function ($query) {
 
                 $outlet_id = \Request::get('outlet_id');
@@ -97,7 +97,6 @@ class InvoiceController extends Controller
 
                     return $query->where('outlet_id', $outlet_id);
                 }
-
             })
             ->where('org_id', \Auth::user()->org_id)
             ->orderBy('id', 'desc')
@@ -143,17 +142,6 @@ class InvoiceController extends Controller
      */
     public function create()
     {
-        // $ledgers = COALedgers::where('code', 'like', '01-01-01-01'.'%')->get();
-        // foreach ($ledgers as $key=>$ledger) {
-        //     $code = explode('01-01-01-01', $ledger->code);
-        //     $newCode = '01-01-07'.$code[1];
-        //     $ledger->code = $newCode;
-        //     $ledger->save();
-        // }
-        // $group = COAgroups::where('name', 'Milk Supply Scheme')->first();
-        // $group->code = '01-01-07';
-        // $group->save();
-
         $page_title = 'Invoice';
         $page_description = 'Add invoice';
         $order = null;
@@ -166,15 +154,21 @@ class InvoiceController extends Controller
         $prod_unit = \App\Models\ProductsUnit::orderBy('id', 'desc')->get();
         //$clients = Client::select('id', 'name', 'location')->orderBy('id', DESC)->get();
         $clients = \App\Models\Client::select('id', 'name', 'location')->where('org_id', \Auth::user()->org_id)->where('enabled', 1)->orderBy('id', 'DESC')->get();
-
-        $outlets = \App\Helpers\TaskHelper::getUserOutlets();
+        if (\Auth::user()->hasRole('admins')) {
+            $outlets = \App\Models\PosOutlets::orderBy('id', 'asc')->select('name', 'id', 'forrandomcustomer')->get();
+        } else {
+            $outlets = \App\Models\PosOutlets::orderBy('id', 'asc')->where('project_id', auth()->user()->project_id)->select('name', 'id', 'forrandomcustomer', 'project_id')->get();
+        }
+        $outlets = TaskHelper::getUserOutlets2();
+        // dd(auth()->user()->project_id, $outlets->toArray());
+        // $outlets = \App\Helpers\TaskHelper::getUserOutlets();
 
         return view('admin.invoice.create', compact('page_title', 'users', 'page_description', 'order', 'prod_unit', 'orderDetail', 'products', 'clients', 'productlocation', 'outlets'));
     }
 
     public function forrandomcustomer_outlet(Request $request)
     {
-        $randomcustomer_outlet = \App\Models\PosOutlets::where('id', $request->id)->first();
+        $randomcustomer_outlet = \App\Models\PosOutlets::select('forrandomcustomer')->where('id', $request->id)->first();
         return ['data' => $randomcustomer_outlet];
     }
 
@@ -213,30 +207,32 @@ class InvoiceController extends Controller
         $order_attributes['customer_name'] = $request->customer_name;
         $order_attributes['remaining_amount'] = $request->remaining_amount;
 
-        if ($request->client_type && $request->client_type != '') $order_attributes['client_type'] = $request->client_type;
-        else $order_attributes['client_type'] = $request->client_type_one;
+        if ($request->client_type && $request->client_type != '') {
+            $order_attributes['client_type'] = $request->client_type;
+        } else {
+            $order_attributes['client_type'] = $request->client_type_one;
+        }
 
         $order_attributes['tax_amount'] = $request->taxable_tax;
         $order_attributes['total_amount'] = $request->final_total;
-        $order_attributes['roundoff_amount'] = $request->roundoff_amount;
+        $order_attributes['roundoff_amount'] = 0;
         $order_attributes['bill_no'] = $bill_no;
         $order_attributes['fiscal_year'] = $ckfiscalyear->fiscal_year;
         $order_attributes['is_bill_active'] = 1;
         $order_attributes['fiscal_year_id'] = $ckfiscalyear->id;
         $order_attributes['outlet_id'] = $request->outlet_id;
-        if($request->client_type=="random_customer") {
+        if ($request->client_type == "random_customer") {
             $client = Client::where('name', 'Random Customers')->first();
-
             $order_attributes['ledger_id'] = \App\Helpers\FinanceHelper::get_ledger_id("RANDOM_CUSTOMER");
-            $order_attributes['client_id'] = @$client->id??0;
+            $order_attributes['client_id'] = @$client->id ?? 0;
+            $order_attributes['client_type'] = 'direct_customer';
         } else {
             $order_attributes['client_id'] = $request->customer_id;
-            $order_attributes['ledger_id'] = \App\Models\Client::find($request->customer_id)->ledger_id??0;
+            $order_attributes['ledger_id'] = \App\Models\Client::find($request->customer_id)->ledger_id ?? 0;
         }
-
         $productIds = $request->product_id;
         if ($order_attributes['client_type'] == 'staff') {
-            foreach ($productIds as $key=>$value) {
+            foreach ($productIds as $key => $value) {
                 $product = Product::findOrFail($productIds[$key]);
                 if ($product->staff_quota_frequent == 'monthly') {
                     $monthStartDate = date('Y-m-d', strtotime(date('Y-m')));
@@ -272,6 +268,7 @@ class InvoiceController extends Controller
         $deposit_deduct['type'] = "Deduct";
         $deposit_deduct['client_id'] = $request->customer_id;
         $deposit_deduct['amount'] = $request->final_total;
+        $deposit_deduct['balance'] = -$request->final_total;
         $deposit_deduct['closing'] = (float)(\App\Models\CustomerDeposit::where('client_id', $request->customer_id)->latest()->first()->closing ?? 0) - (float)$request->final_total;
 
         \App\Models\CustomerDeposit::create($deposit_deduct);
@@ -287,7 +284,7 @@ class InvoiceController extends Controller
         $tax_amount = $request->tax_amount;
         $total = $request->total;
         foreach ($product_id as $key => $value) {
-            if (($value != '') && ($quantity[$key] != '') && ($quantity[$key]>0)) {
+            if (($value != '') && ($quantity[$key] != '') && ($quantity[$key] > 0)) {
                 $detail = new InvoiceDetail();
                 $detail->client_id = $request->customer_id;
                 $detail->invoice_id = $invoice->id;
@@ -312,6 +309,7 @@ class InvoiceController extends Controller
                 $stockMove->reference = 'store_out_' . $bill_no;
                 $stockMove->transaction_reference_id = $bill_no;
                 $stockMove->qty = '-' . $quantity[$key];
+                $stockMove->unit = $unit[$key];
                 $stockMove->trans_type = OTHERSALESINVOICE;
                 $stockMove->order_no = $bill_no;
                 $stockMove->store_id = $request->outlet_id;
@@ -365,7 +363,10 @@ class InvoiceController extends Controller
             Flash::warning('Bill not synced with ird');
         }
         \DB::commit();
-        return \redirect()->route('admin.payment.invoice.create', $invoice->id);
+        if ($request->bill_type == 'Cash') {
+            return \redirect()->route('admin.payment.invoice.create', $invoice->id)->with('printbill', 'true');
+        }
+        return redirect('/admin/invoice1');
         // php artisan return redirect('/admin/invoice1');
     }
 
@@ -494,7 +495,7 @@ class InvoiceController extends Controller
         $order_attributes['client_id'] = $request->customer_id;
         $order_attributes['tax_amount'] = $request->taxable_tax;
         $order_attributes['total_amount'] = $request->final_total;
-        $order_attributes['roundoff_amount'] = $request->roundoff_amount;
+        $order_attributes['roundoff_amount'] = 0;
         $order_attributes['is_bill_active'] = 1;
         $invoice->update($order_attributes);
         $this->updateentries($id, $request);
@@ -584,10 +585,10 @@ class InvoiceController extends Controller
         $orderDetails = InvoiceDetail::where('invoice_id', $id)->get();
 
         $imagepath = \Auth::user()->organization->logo;
-
-        // return view('admin.invoice.download-print', compact('ord', 'imagepath', 'orderDetails'));
-        $pdf = \PDF::loadView('admin.invoice.download-print', compact('ord', 'imagepath', 'orderDetails'))->setPaper('a3', 'landscape');
-        $file = 'invoice_'.date('Y_m_d'). '.pdf';
+        $print_no = \App\Models\Invoiceprint::where('invoice_id', $id)->count();
+        // return view('admin.invoice.download-print', compact('ord', 'imagepath', 'orderDetails', 'print_no'));
+        $pdf = \PDF::loadView('admin.invoice.download-print', compact('ord', 'imagepath', 'orderDetails', 'print_no'))->setPaper('a4', 'portrait');
+        $file = 'invoice_' . date('Y_m_d') . '.pdf';
 
         return $pdf->download($file);
     }
@@ -860,7 +861,7 @@ class InvoiceController extends Controller
         \TaskHelper::authorizeOrg($order_detail);
         $lead_name = $order_detail->lead->name;
         $page_title = 'Invoice Payment List';
-        $page_description = 'Receipt List Of ' . $lead_name . ' Invoice # ' . $order_detail->outlet->short_name.'/'.$order_detail->fiscal_year.'/00'.$order_detail->bill_no;
+        $page_description = 'Receipt List Of ' . $lead_name . ' Invoice # ' . $order_detail->outlet->short_name . '/' . $order_detail->fiscal_year . '/00' . $order_detail->bill_no;
 
         $purchase_total = $order_detail->total_amount;
         $paid_amount = \App\Models\InvoicePayment::where('invoice_id', $id)->where('type', '!=', 'credit')->sum('amount');
@@ -872,124 +873,220 @@ class InvoiceController extends Controller
     public function invoicePaymentcreate($id)
     {
         $page_title = 'Receive Payment ';
-        $page_description = 'create payments of purchase';
         $invoice_id = $id;
 
         $payment_method = \App\Models\Paymentmethod::orderby('id')->pluck('name', 'id');
 
         $purchase_order = \App\Models\Invoice::where('id', $id)->first();
         $purchase_total = $purchase_order->total_amount;
-        $paid_amount = \App\Models\InvoicePayment::where('invoice_id', $id)->where('type', '!=', 'credit')->sum('amount');
+        $paid_amount = \App\Models\InvoicePayment::where('invoice_id', $id)->sum('amount');
         $payment_remain = $purchase_total - $paid_amount;
+        $groups = \App\Models\COALedgers::orderBy('code', 'asc')->where('group_id', '13')->get();
+        $deositClosing = isset($purchase_order->client)?$purchase_order->client->depositClosing():0;
+        $page_description = "create receipt of invoice to {$purchase_order->client->name}";
 
-        return view('admin.invoice.paymentcreate', compact('page_title', 'page_description', 'invoice_id',
-            'payment_method', 'payment_remain', 'purchase_order'));
+        return view('admin.invoice.paymentcreate', compact(
+            'page_title',
+            'page_description',
+            'invoice_id',
+            'payment_method',
+            'payment_remain',
+            'purchase_order',
+            'groups',
+            'deositClosing'
+        ));
+    }
+    public function multipleInvoicePaymentcreate(Request $request)
+    {
+        if (!$request->orders) {
+            Flash::error('Please select orders first');
+            return back();
+        }
+        $page_title = 'Receive Payment';
+        $page_description = 'create payments of multiple invoices';
+        $payment_method = \App\Models\Paymentmethod::orderby('id')->pluck('name', 'id');
+        $purchase_orders = Invoice::whereIn('id', $request->orders)->get();
+        $purchase_total = $purchase_orders->sum('total_amount');
+        $paid_amount = \App\Models\InvoicePayment::whereIn('invoice_id', $request->orders)->where('type', '!=', 'credit')->sum('amount');
+        $payment_remain = $purchase_total - $paid_amount;
+        $groups = \App\Models\COALedgers::orderBy('code', 'asc')->where('group_id', '13')->get();
+        return view('admin.invoice.multiplepaymentcreate', compact(
+            'page_title',
+            'page_description',
+            'payment_method',
+            'payment_remain',
+            'purchase_orders',
+            'groups'
+        ));
     }
 
+    public function multipleInvoicePaymentStore(Request $request)
+    {
+        DB::beginTransaction();
+        foreach ($request->orders as $key => $order) {
+            $purchaseOrder = Invoice::find($order);
+            $paidAmount = \App\Models\InvoicePayment::where('invoice_id', $order)->sum('amount');
+            $attributes = $request->only('date', 'paid_by', 'note');
+            $attributes['invoice_id'] = $order;
+            $attributes['amount'] = $purchaseOrder->total_amount - $paidAmount;
+            $attributes['reference_no'] = $request->reference_no[$key];
+            $attributes['created_by'] = auth()->id();
+            $attributes['type'] = "Cash";
+            $attributes['payment_status'] = 'Paid';
+            $rand = $purchaseOrder->client_type == 'random_customer';
+            $attributes['client_id'] = $rand ? 38 : $purchaseOrder->client_id;
+            $ip = InvoicePayment::create($attributes);
+            $ledgerId = $rand ? FinanceHelper::get_ledger_id("RANDOM_CUSTOMER") : $purchaseOrder->client_id;
+
+            if (!$ledgerId) {
+                Flash::error("Create customer Ledger first !!");
+                return redirect()->back();
+            }
+            //ENTRY FOR Total AMOUNT
+            $attributes['entrytype_id'] = FinanceHelper::get_entry_type_id('receipt'); //receipt
+            $attributes['tag_id'] = '19'; //Invoice Payment
+            $attributes['user_id'] = auth()->id();
+            $attributes['org_id'] = auth()->user()->org_id;
+            $attributes['number'] = FinanceHelper::get_last_entry_number($attributes['entrytype_id']);
+            $attributes['date'] = \Carbon\Carbon::today();
+            $attributes['dr_total'] = $attributes['amount'];
+            $attributes['cr_total'] = $attributes['amount'];
+            $attributes['source'] = "Invoice Cash Payment";
+            $attributes['fiscal_year_id'] = FinanceHelper::cur_fisc_yr()->id;
+            $attributes['ref_id'] = $purchaseOrder->id;
+            $entry = \App\Models\Entry::create($attributes);
+            \App\Models\Entryitem::where('entry_id', $entry->id)->delete();
+
+            \App\Models\Entryitem::create([
+                'entry_id' => $entry->id,
+                'dc' => 'D',
+                'ledger_id' => $request->paid_by,
+                'amount' => $attributes['amount'],
+                'narration' => 'Receipt being made',
+            ]);
+            \App\Models\Entryitem::create([
+                'entry_id' => $entry->id,
+                'dc' => 'C',
+                'ledger_id' => $ledgerId, //Sales Ledger 39
+                'amount' => $attributes['amount'],
+                'narration' => 'Sales Invoice Amount',
+            ]);
+            $customerdeposit['user_id'] = auth()->id();
+            $customerdeposit['date'] = \Carbon\Carbon::today();
+            $customerdeposit['remarks'] = "Payment Made from Invoice payement";
+            $customerdeposit['type'] = "Deposit";
+            if ($purchaseOrder->client_type == 'random_customer') $customerdeposit['client_id'] = 38;
+            else $customerdeposit['client_id'] = $purchaseOrder->client->id;
+            $customerdeposit['amount'] = $attributes['amount'];
+            $customerdeposit['balance'] = 0;
+            $customerdeposit['closing'] = (float)(\App\Models\CustomerDeposit::where('client_id', $customerdeposit['client_id'])->latest()->first()->closing ?? 0) + (float)$attributes['amount'];
+            $customerdeposit['reference_no'] = $ip->reference_no;
+            \App\Models\CustomerDeposit::create($customerdeposit);
+
+            $invoiceDeposit = CustomerDeposit::where('reference_no', $purchaseOrder->bill_no)->first();
+            $invoiceDeposit->balance = $invoiceDeposit->balance + $request->amount;
+            $invoiceDeposit->save();
+            $ip->update(['entry_id'=> $entry->id]);
+        }
+        DB::commit();
+        Flash::success('Receipt Created');
+
+        return redirect('/admin/sales/billwisedebtorlist');
+    }
     public function InvoicePaymentPost(Request $request, $id)
     {
         DB::beginTransaction();
         $attributes = $request->all();
         $attributes['created_by'] = \auth()->id();
         $invoice = \App\Models\Invoice::find($id);
-        if ($request->payment_type != 'Credit') {
-            $attributes['type'] = "Cash";
+        $attributes['type'] = "Cash";
 
-            if ($request->file('attachment')) {
-                $stamp = time();
-                $file = $request->file('attachment');
-
-                $destinationPath = public_path() . '/attachment/';
-                $filename = $file->getClientOriginalName();
-                $request->file('attachment')->move($destinationPath, $stamp . '_' . $filename);
-
-                $attributes['attachment'] = $stamp . '_' . $filename;
-            }
-            $invoicePayment = InvoicePayment::create($attributes);
-
-            $paid_amount = InvoicePayment::where('invoice_id', $id)->where('type', 'Cash')->sum('amount');
-
-            if ($invoice->client_type == 'random_customer') $customer_ledger = \App\Helpers\FinanceHelper::get_ledger_id("RANDOM_CUSTOMER");
-            else {
-                $invoicePayment->paid_by = $invoice->client->id??null;
-                $invoicePayment->save();
-                $customer_ledger = $invoice->client->ledger_id ?? 465;
-            }
-
-            if ($request->payment_type == 'Cash') {
-                $attributes_purchase['type'] = 'Cash';
-                if ($paid_amount >= $invoice->total_amount) {
-                    $attributes_purchase['payment_status'] = 'Paid';
-                    $invoice->update($attributes_purchase);
-                } elseif ($paid_amount <= $invoice->total_amount && $paid_amount > 0) {
-                    $attributes_purchase['payment_status'] = 'Partial';
-                    $invoice->update($attributes_purchase);
-                } else {
-                    $attributes_purchase['payment_status'] = 'Pending';
-                    $invoice->update($attributes_purchase);
-                }
-            }
-            if (!$customer_ledger) {
-                Flash::error("Create custome Ledger first !!");
-                return redirect()->back();
-            }
-
-            //ENTRY FOR Total AMOUNT
-            $attributes['entrytype_id'] = \FinanceHelper::get_entry_type_id('receipt'); //receipt
-            $attributes['tag_id'] = '19'; //Invoice Payment
-            $attributes['user_id'] = \auth()->id();
-            $attributes['org_id'] = \Auth::user()->org_id;
-            $attributes['number'] = \FinanceHelper::get_last_entry_number($attributes['entrytype_id']);
-            $attributes['date'] = \Carbon\Carbon::today();
-            $attributes['dr_total'] = $request->amount;
-            $attributes['cr_total'] = $request->amount;
-            if ($request->payment_type == 'Credit') $attributes['source'] = "Credit Invoice";
-            else $attributes['source'] = "Invoice Cash Payment";
-            $attributes['fiscal_year_id'] = \FinanceHelper::cur_fisc_yr()->id;
-            $attributes['ref_id'] = $invoice->id;
-            $entry = \App\Models\Entry::create($attributes);
-
-            if ($invoice->client_type == 'random_customer') $ledgerId = \App\Helpers\FinanceHelper::get_ledger_id("RANDOM_CUSTOMER");
-            $ledgerId = \App\Models\Client::find($invoice->client_id)->ledger_id ?? 465;
-
-            \App\Models\Entryitem::where('entry_id', $entry->id)->delete();
-            if ($request->payment_type == 'Cash') {
-                $entry_item = \App\Models\Entryitem::create([
-                    'entry_id' => $entry->id,
-                    'dc' => 'D',
-                    'ledger_id' => $customer_ledger??465, // cash_sales ledger id
-                    'amount' => $invoice->total_amount,
-                    'narration' => 'Cash payment on Sales being made',
-                ]);
-
-                $entry_item = \App\Models\Entryitem::create([
-                    'entry_id' => $entry->id,
-                    'dc' => 'C',
-                    'ledger_id' => $ledgerId, //Sales Ledger 39
-                    'amount' => $invoice->total_amount,
-                    'narration' => 'Sales Amount',
-                ]);
-            }
-
-            $customerdeposit['user_id'] = \auth()->id();
-            $customerdeposit['date'] = \Carbon\Carbon::today();
-            $customerdeposit['remarks'] = "Payment Made from Invoice payement";
-            $customerdeposit['type'] = "Deposit";
-            if ($invoice->client_type == 'random_customer') $customerdeposit['client_id'] = 38;
-            else $customerdeposit['client_id'] = $invoice->client->id;
-            $customerdeposit['amount'] = $request->amount;
-            $customerdeposit['closing'] = (float)(\App\Models\CustomerDeposit::where('client_id', $customerdeposit['client_id'])->latest()->first()->closing ?? 0) + (float)$request->amount;
-
-            \App\Models\CustomerDeposit::create($customerdeposit);
-
-            DB::commit();
-            Flash::success('Receipt Created');
-
-            return redirect('/admin/invoice/payment/' . $id . '');
-        } else {
-            Flash::success('Fail to create Receipt');
-            return redirect('/admin/invoice/payment/' . $id . '');
+        if ($request->file('attachment')) {
+            $stamp = time();
+            $file = $request->file('attachment');
+            $destinationPath = public_path() . '/attachment/';
+            $filename = $file->getClientOriginalName();
+            $request->file('attachment')->move($destinationPath, $stamp . '_' . $filename);
+            $attributes['attachment'] = $stamp . '_' . $filename;
         }
+        $rand = $invoice->client_type == 'random_customer';
+        $attributes['client_id'] = $rand ? 38 : $invoice->client_id;
+        $ip = InvoicePayment::create($attributes);
+        $customer_ledger = $rand ? FinanceHelper::get_ledger_id("RANDOM_CUSTOMER") : $invoice->client->ledger_id;
+        $paid_amount = InvoicePayment::where('invoice_id', $id)->where('type', 'Cash')->sum('amount');
+
+        $attributes_purchase['type'] = 'Cash';
+        if ($paid_amount >= $invoice->total_amount) {
+            $attributes_purchase['payment_status'] = 'Paid';
+            $invoice->update($attributes_purchase);
+        } elseif ($paid_amount <= $invoice->total_amount && $paid_amount > 0) {
+            $attributes_purchase['payment_status'] = 'Partial';
+            $invoice->update($attributes_purchase);
+        } else {
+            $attributes_purchase['payment_status'] = 'Pending';
+            $invoice->update($attributes_purchase);
+        }
+        if (!$customer_ledger) {
+            Flash::error("Create customer Ledger first !!");
+            return redirect()->back();
+        }
+
+        //ENTRY FOR Total AMOUNT
+        $attributes['entrytype_id'] = FinanceHelper::get_entry_type_id('receipt'); //receipt
+        $attributes['tag_id'] = '19'; //Invoice Payment
+        $attributes['user_id'] = auth()->id();
+        $attributes['org_id'] = auth()->user()->org_id;
+        $attributes['number'] = FinanceHelper::get_last_entry_number($attributes['entrytype_id']);
+        $attributes['date'] =   \Carbon\Carbon::today();
+        $attributes['dr_total'] = $request->amount;
+        $attributes['cr_total'] = $request->amount;
+        $attributes['source'] = "Invoice Cash Payment";
+        $attributes['fiscal_year_id'] = FinanceHelper::cur_fisc_yr()->id;
+        $attributes['ref_id'] = $invoice->id;
+        $entry = \App\Models\Entry::create($attributes);
+
+        \App\Models\Entryitem::where('entry_id', $entry->id)->delete();
+        \App\Models\Entryitem::create([
+            'entry_id' => $entry->id,
+            'dc' => 'D',
+            'ledger_id' => $request->paid_by,
+            'amount' => $invoice->total_amount,
+            'narration' => 'Receipt being made',
+        ]);
+        \App\Models\Entryitem::create([
+            'entry_id' => $entry->id,
+            'dc' => 'C',
+            'ledger_id' => $customer_ledger,
+            'amount' => $invoice->total_amount,
+            'narration' => 'Sales Invoice Amount',
+        ]);
+
+        $customerdeposit['user_id'] = auth()->id();
+        $customerdeposit['date'] = \Carbon\Carbon::today();
+        $customerdeposit['remarks'] = "Payment Made from Invoice payement";
+        $customerdeposit['type'] = "Deposit";
+        if ($invoice->client_type == 'random_customer') {
+            $customerdeposit['client_id'] = 38;
+        } else {
+            $customerdeposit['client_id'] = $invoice->client->id;
+        }
+        $customerdeposit['amount'] = $request->amount;
+        $customerdeposit['balance'] = 0;
+        $customerdeposit['closing'] = (float)(\App\Models\CustomerDeposit::where('client_id', $customerdeposit['client_id'])->latest()->first()->closing ?? 0) + (float)$request->amount;
+        $customerdeposit['reference_no'] = $ip->reference_no;
+
+        \App\Models\CustomerDeposit::create($customerdeposit);
+
+        $invoiceDeposit = CustomerDeposit::where('reference_no', $invoice->bill_no)->first();
+
+        $invoiceDeposit->balance = $invoiceDeposit->balance + $request->amount;
+        $invoiceDeposit->save();
+        $ip->update(['entry_id'=> $entry->id]);
+
+        DB::commit();
+        Flash::success('Receipt Created');
+
+        return redirect('/admin/invoice/payment/' . $id . '');
     }
 
     public function invoicePaymentshow($id)
@@ -1024,7 +1121,7 @@ class InvoiceController extends Controller
             ];
             $entry->update($attributes);
             if ($invoice->client_type == 'random_customer') $ledgerId = \App\Helpers\FinanceHelper::get_ledger_id("RANDOM_CUSTOMER");
-            $ledgerId = \App\Models\Client::find($invoice->client_id)->ledger_id??465;
+            $ledgerId = \App\Models\Client::find($invoice->client_id)->ledger_id ?? 465;
 
             \App\Models\Entryitem::where('entry_id', $entry->id)->delete();
 
@@ -1045,12 +1142,12 @@ class InvoiceController extends Controller
                 'narration' => 'Sales Amount',
             ]);
 
-            if ($request->total_tax_amount > 0) {
+            if ($request->taxable_tax > 0) {
                 $entry_item = \App\Models\Entryitem::create([
                     'entry_id' => $entry->id,
                     'dc' => 'C',
                     'ledger_id' => \FinanceHelper::get_ledger_id('SALES_TAX_LEDGER'), //Sales Tax Ledger
-                    'amount' => $request->total_tax_amount,
+                    'amount' => $request->taxable_tax,
                     'narration' => 'Tax to pay',
                 ]);
             }
@@ -1071,7 +1168,7 @@ class InvoiceController extends Controller
                 'source' => 'Tax Invoice',
             ]);
             if ($invoice->client_type == 'random_customer') $ledgerId = \App\Helpers\FinanceHelper::get_ledger_id("RANDOM_CUSTOMER");
-            else $ledgerId = \App\Models\Client::find($invoice->client_id)->ledger_id??465;
+            else $ledgerId = \App\Models\Client::find($invoice->client_id)->ledger_id ?? 465;
 
             //send amount before tax to customer ledger
             $entry_item = \App\Models\Entryitem::create([
@@ -1090,12 +1187,12 @@ class InvoiceController extends Controller
                 'narration' => 'Sales Amount',
             ]);
 
-            if ($request->total_tax_amount > 0) {
+            if ($request->taxable_tax > 0) {
                 $entry_item = \App\Models\Entryitem::create([
                     'entry_id' => $entry->id,
                     'dc' => 'C',
                     'ledger_id' => \FinanceHelper::get_ledger_id('SALES_TAX_LEDGER'), //Sales Tax Ledger
-                    'amount' => $request->total_tax_amount,
+                    'amount' => $request->taxable_tax,
                     'narration' => 'Tax to pay',
                 ]);
             }
@@ -1130,8 +1227,8 @@ class InvoiceController extends Controller
 
         if ($invoice) {
             if ($invoice->client) {
-                $guest_name = @$invoice->client->name??'';
-                $buyer_pan = @$invoice->client->vat??'';
+                $guest_name = @$invoice->client->name ?? '';
+                $buyer_pan = @$invoice->client->vat ?? '';
             } else {
                 $guest_name = $invoice->name;
                 $buyer_pan = $invoice->customer_pan;
@@ -1145,18 +1242,20 @@ class InvoiceController extends Controller
             // $bill_today_date_nep = new DateTime($bill_today_date_n.' '.date('H:i:s A'));
             $irddetail = IrdDetail::first();
 
-            $data = json_encode(['username' => @$irddetail->username, 'password' => @$irddetail->username, 'seller_pan' => @$irddetail->seller_pan??'',
+            $data = json_encode([
+                'username' => @$irddetail->username, 'password' => @$irddetail->username, 'seller_pan' => @$irddetail->seller_pan ?? '',
                 'buyer_pan' => $buyer_pan, 'fiscal_year' => $invoice->fiscal_year, 'buyer_name' => $guest_name,
                 'invoice_number' => $invoice->outlet->short_name . '/' . $invoice->fiscal_year . '/' . '00' . $invoice->bill_no,
                 'invoice_date' => $bill_date_nepali, 'total_sales' => $invoice->total_amount, 'taxable_sales_vat' => $invoice->taxable_amount,
                 'vat' => $invoice->tax_amount, 'excisable_amount' => 0, 'excise' => 0, 'taxable_sales_hst' => 0, 'hst' => 0,
                 'amount_for_esf' => 0, 'esf' => 0, 'export_sales' => 0, 'tax_exempted_sales' => 0, 'isrealtime' => true,
-                'datetimeClien' => $bill_today_date_nep]);
+                'datetimeClien' => $bill_today_date_nep
+            ]);
 
             // $data = json_encode(['username' => env('IRD_USERNAME'), 'password' => env('IRD_PASSWORD'), 'seller_pan' => env('SELLER_PAN'), 'buyer_pan' => $buyer_pan, 'fiscal_year' => $invoice->fiscal_year, 'buyer_name' => $guest_name, 'invoice_number' => env('SALES_BILL_PREFIX').$invoice->bill_no, 'invoice_date' => $bill_date_nepali, 'total_sales' => $invoice->total_amount, 'taxable_sales_vat' => $invoice->taxable_amount, 'vat' => $invoice->tax_amount, 'excisable_amount' => 0, 'excise' => 0, 'taxable_sales_hst' => 0, 'hst' => 0, 'amount_for_esf' => 0, 'esf' => 0, 'export_sales' => 0, 'tax_exempted_sales' => 0, 'isrealtime' => true, 'datetimeClient' => $bill_today_date_nep]);
 
             $irdsync = new \App\Models\NepalIRDSync();
-            $response = $irdsync->postbill($data, @$irddetail->api_link??'');
+            $response = $irdsync->postbill($data, @$irddetail->api_link ?? '');
 
             if ($response == 200) {
                 \App\Models\InvoiceMeta::where('invoice_id', $invoice->id)->first()->update(['sync_with_ird' => 1, 'is_realtime' => 1]);
@@ -1228,23 +1327,23 @@ class InvoiceController extends Controller
         if (count($invoice) == 1) {
             if ($invoice->client) {
                 $guest_name = $invoice->client->name;
-                $guest_pan = $invoice->client->vat??'0';
+                $guest_pan = $invoice->client->vat ?? '0';
             } else {
                 $guest_name = $invoice->name;
-                $guest_pan = $invoice->customer_pan??'0';
+                $guest_pan = $invoice->customer_pan ?? '0';
             }
 
             $bill_date_nepali = $this->convertdateTime($invoice->bill_date);
             $cancel_date = $this->convertdate($request->cancel_date);
 
-            $bill_today_date_nep = $this->convertdateTime(date('Y-m-d')).' '.date('H:i:s');
+            $bill_today_date_nep = $this->convertdateTime(date('Y-m-d')) . ' ' . date('H:i:s');
             $bill_today_date_nep = date('Y-m-d H:i:s');
             $irddetail = IrdDetail::first();
 
             //POSTING DATA TO IRD
-            if($guest_pan == '') $guest_pan = '0';
+            if ($guest_pan == '') $guest_pan = '0';
 
-            $data = json_encode(['username' => $irddetail->ird_username, 'password' => $irddetail->ird_password, 'seller_pan' => $irddetail->seller_pan, 'buyer_pan' => $guest_pan??"0", 'fiscal_year' => $invoice->fiscal_year, 'buyer_name' => $guest_name, 'ref_invoice_number' => $invoice->outlet->short_name . '/' . $invoice->fiscal_year . '/' . '00' . $invoice->bill_no, 'credit_note_date' => $cancel_date, 'credit_note_number' => $request->credit_note_no, 'reason_for_return' => $request->void_reason, 'total_sales' => $invoice->total_amount, 'taxable_sales_vat' => $invoice->taxable_amount, 'vat' => $invoice->tax_amount, 'excisable_amount' => 0, 'excise' => 0, 'taxable_sales_hst' => 0, 'hst' => 0, 'amount_for_esf' => 0, 'esf' => 0, 'export_sales' => 0, 'tax_exempted_sales' => 0, 'isrealtime' => true, 'datetimeClien' => $bill_today_date_nep]);
+            $data = json_encode(['username' => $irddetail->ird_username, 'password' => $irddetail->ird_password, 'seller_pan' => $irddetail->seller_pan, 'buyer_pan' => $guest_pan ?? "0", 'fiscal_year' => $invoice->fiscal_year, 'buyer_name' => $guest_name, 'ref_invoice_number' => $invoice->outlet->short_name . '/' . $invoice->fiscal_year . '/' . '00' . $invoice->bill_no, 'credit_note_date' => $cancel_date, 'credit_note_number' => $request->credit_note_no, 'reason_for_return' => $request->void_reason, 'total_sales' => $invoice->total_amount, 'taxable_sales_vat' => $invoice->taxable_amount, 'vat' => $invoice->tax_amount, 'excisable_amount' => 0, 'excise' => 0, 'taxable_sales_hst' => 0, 'hst' => 0, 'amount_for_esf' => 0, 'esf' => 0, 'export_sales' => 0, 'tax_exempted_sales' => 0, 'isrealtime' => true, 'datetimeClien' => $bill_today_date_nep]);
             $irdsync = new \App\Models\NepalIRDSync();
             $response = $irdsync->returnbill($data, $irddetail->api_return_link);
             if ($response == 200) {
@@ -1549,8 +1648,7 @@ class InvoiceController extends Controller
         $projects = Store::orderBy('id')->get();
         if ($request->has('project_id') && ($request->project_id != '') && ($request->project_id != 'over-all')) {
             $outlets = \App\Models\PosOutlets::where('project_id', $request->project_id)->select('name', 'id')->get();
-        }
-        else $outlets = \App\Models\PosOutlets::select('name', 'id')->get();
+        } else $outlets = \App\Models\PosOutlets::select('name', 'id')->get();
 
         if (!\Auth::user()->hasRole('admins'))
             $outlets = \App\Models\PosOutlets::where('project_id', \auth()->user()->project_id)->select('name', 'id')->get();
@@ -1586,9 +1684,9 @@ class InvoiceController extends Controller
                         }
                     }
                 })->where('org_id', \Auth::user()->org_id)
-                ->when($startdate, function ($q) use($startdate) {
+                ->when($startdate, function ($q) use ($startdate) {
                     $q->where('invoice.bill_date', '>=', $startdate);
-                })->when($enddate, function ($q) use($enddate) {
+                })->when($enddate, function ($q) use ($enddate) {
                     $q->where('invoice.bill_date', '<=', $enddate);
                 })->get();
             $data = $data->groupby(['product_id', 'client_type']);
@@ -1602,30 +1700,55 @@ class InvoiceController extends Controller
                 ->where(function ($query) use ($request) {
                     if ($request->has('outletid') && ($request->outletid != '')) {
                         $query->where('store_id', $request->outletid);
-                    }
-                    elseif ($request->has('project_id') && ($request->project_id != '') && ($request->project_id != 'over-all')) {
+                    } elseif ($request->has('project_id') && ($request->project_id != '') && ($request->project_id != 'over-all')) {
                         $outletId = PosOutlets::where('project_id', $request->project_id)->pluck('id')->toArray();
                         $query->whereIn('store_id', $outletId);
                     }
                 })->groupby('stock_id')->get();
             $stock = $stock_entries->groupby('stock_id');
-            $outletname = \App\Models\PosOutlets::where('id', $request->outletid??'')->select('name')->first();
+            $outletname = \App\Models\PosOutlets::where('id', $request->outletid ?? '')->select('name')->first();
             $file = $startdate . '_' . $enddate . '_' . str_replace(' ', '_', $organization->organization_name);
 
             if ($op == "excel") {
-                return \Excel::download(new \App\Exports\Reports\ProductWiseSalesReport($stock, $data, $products,
-                    $nepalistartdate, $outletname, $nepalienddate, $organization), $file.'.xls');
+                return \Excel::download(new \App\Exports\Reports\ProductWiseSalesReport(
+                    $stock,
+                    $data,
+                    $products,
+                    $nepalistartdate,
+                    $outletname,
+                    $nepalienddate,
+                    $organization
+                ), $file . '.xls');
             } elseif ($op == "pdf") {
-                $pdf = \PDF::loadView('admin.reports.pdf.productwisereportPDF', compact('stock', 'data', 'products',
-                    'nepalistartdate', 'outletname', 'nepalienddate', 'organization'))->setPaper('a3', 'landscape');
+                $pdf = \PDF::loadView('admin.reports.pdf.productwisereportPDF', compact(
+                    'stock',
+                    'data',
+                    'products',
+                    'nepalistartdate',
+                    'outletname',
+                    'nepalienddate',
+                    'organization'
+                ))->setPaper('a3', 'landscape');
                 $f = $file . '.pdf';
                 if (\File::exists('reports/' . $f)) {
                     \File::Delete('reports/' . $f);
                 }
                 return $pdf->download($f);
             }
-            return view('admin.reports.dailysalesreport', compact('page_title', 'outlets', 'projects', 'stock',
-                'data', 'products', 'nepalistartdate', 'outletname', 'nepalienddate', 'organization', 'startdate', 'enddate'));
+            return view('admin.reports.dailysalesreport', compact(
+                'page_title',
+                'outlets',
+                'projects',
+                'stock',
+                'data',
+                'products',
+                'nepalistartdate',
+                'outletname',
+                'nepalienddate',
+                'organization',
+                'startdate',
+                'enddate'
+            ));
         }
         return view('admin.reports.dailysalesreport', compact('page_title', 'outlets', 'projects'));
     }
@@ -1635,8 +1758,7 @@ class InvoiceController extends Controller
         $projects = Store::orderBy('id')->get();
         if ($request->has('project_id') && ($request->project_id != '') && ($request->project_id != 'over-all')) {
             $outlets = \App\Models\PosOutlets::where('project_id', $request->project_id)->select('name', 'id')->get();
-        }
-        else $outlets = \App\Models\PosOutlets::select('name', 'id')->get();
+        } else $outlets = \App\Models\PosOutlets::select('name', 'id')->get();
 
         if (!\Auth::user()->hasRole('admins'))
             $outlets = \App\Models\PosOutlets::where('project_id', \auth()->user()->project_id)->select('name', 'id')->get();
@@ -1672,9 +1794,9 @@ class InvoiceController extends Controller
                         }
                     }
                 })->where('org_id', \Auth::user()->org_id)
-                ->when($startdate, function ($q) use($startdate) {
+                ->when($startdate, function ($q) use ($startdate) {
                     $q->where('invoice.bill_date', '>=', $startdate);
-                })->when($enddate, function ($q) use($enddate) {
+                })->when($enddate, function ($q) use ($enddate) {
                     $q->where('invoice.bill_date', '<=', $enddate);
                 })->get();
             $data = $data->groupby(['product_id', 'client_type']);
@@ -1688,30 +1810,56 @@ class InvoiceController extends Controller
                 ->where(function ($query) use ($request) {
                     if ($request->has('outletid') && ($request->outletid != '')) {
                         $query->where('store_id', $request->outletid);
-                    }
-                    elseif ($request->has('project_id') && ($request->project_id != '') && ($request->project_id != 'over-all')) {
+                    } elseif ($request->has('project_id') && ($request->project_id != '') && ($request->project_id != 'over-all')) {
                         $outletId = PosOutlets::where('project_id', $request->project_id)->pluck('id')->toArray();
                         $query->whereIn('store_id', $outletId);
                     }
                 })->groupby('stock_id')->get();
             $stock = $stock_entries->groupby('stock_id');
-            $outletname = \App\Models\PosOutlets::where('id', $request->outletid??'')->select('name')->first();
+            $outletname = \App\Models\PosOutlets::where('id', $request->outletid ?? '')->select('name')->first();
             $file = $startdate . '_' . $enddate . '_' . str_replace(' ', '_', $organization->organization_name);
 
             if ($op == "excel") {
-                return \Excel::download(new \App\Exports\Reports\StockWiseSalesReport($stock, $data, $products,
-                    $nepalistartdate, $outletname, $nepalienddate, $organization), $file.'.xls');
+                return \Excel::download(new \App\Exports\Reports\StockWiseSalesReport(
+                    $stock,
+                    $data,
+                    $products,
+                    $nepalistartdate,
+                    $outletname,
+                    $nepalienddate,
+                    $organization
+                ), $file . '.xls');
             } elseif ($op == "pdf") {
-                $pdf = \PDF::loadView('admin.reports.pdf.stockwiseSalesReportPDF', compact('stock', 'data', 'products',
-                    'nepalistartdate', 'outletname', 'nepalienddate', 'organization'))->setPaper('a3', 'landscape');
+                $pdf = \PDF::loadView('admin.reports.pdf.stockwiseSalesReportPDF', compact(
+                    'stock',
+                    'data',
+                    'products',
+                    'nepalistartdate',
+                    'outletname',
+                    'nepalienddate',
+                    'organization'
+                ))->setPaper('a3', 'landscape');
                 $f = $file . '.pdf';
                 if (\File::exists('reports/' . $f)) {
                     \File::Delete('reports/' . $f);
                 }
                 return $pdf->download($f);
             }
-            return view('admin.reports.stockreport', compact('page_title', 'page_description', 'outlets', 'projects', 'stock',
-                'data', 'products', 'nepalistartdate', 'outletname', 'nepalienddate', 'organization', 'startdate', 'enddate'));
+            return view('admin.reports.stockreport', compact(
+                'page_title',
+                'page_description',
+                'outlets',
+                'projects',
+                'stock',
+                'data',
+                'products',
+                'nepalistartdate',
+                'outletname',
+                'nepalienddate',
+                'organization',
+                'startdate',
+                'enddate'
+            ));
         }
         return view('admin.reports.stockreport', compact('page_title', 'page_description', 'outlets', 'projects'));
     }
@@ -1740,11 +1888,12 @@ class InvoiceController extends Controller
 
             $nepalistartdate = \App\Helpers\TaskHelper::getNepaliDate($startdate);
             $nepalienddate = \App\Helpers\TaskHelper::getNepaliDate($enddate);
-            $groupId =FinanceHelper::get_group_id('Customer Group');
+            $groupId = FinanceHelper::get_group_id('Customer Group');
             $clients = COALedgers::where('group_id', $groupId)->where('org_id', \Auth::user()->org_id)->get();
             $clients = \App\Models\Client::where('org_id', \Auth::user()->org_id)->select('name', 'id', 'relation_type')->get();
 
-            $detail_transaction = \App\Models\Invoice::select('client_id', DB::raw('SUM(subtotal) as dr_total'), DB::raw('SUM(tax_amount) as dr_vat'))
+            $detail_transaction = \App\Models\Invoice::select('client_id', DB::raw('SUM(subtotal) as dr_total'), DB::raw('SUM(tax_amount) as dr_vat'),
+            DB::raw('group_concat(id SEPARATOR "$@") as invoice_ids'))
                 ->where(function ($query) use ($request) {
                     if ($request->has('outletid') && ($request->outletid != '')) $query->where('outlet_id', $request->outletid);
                     else {
@@ -1758,10 +1907,10 @@ class InvoiceController extends Controller
                             $query->whereIn('outlet_id', $outletId);
                         }
                     }
-                })->where('org_id', \Auth::user()->org_id)
-                ->when($startdate, function ($q) use($startdate) {
+                })->where('org_id', auth()->user()->org_id)
+                ->when($startdate, function ($q) use ($startdate) {
                     $q->where('bill_date', '>=', $startdate);
-                })->when($enddate, function ($q) use($enddate) {
+                })->when($enddate, function ($q) use ($enddate) {
                     $q->where('bill_date', '<=', $enddate);
                 })
                 ->groupby('client_id')->get();
@@ -1773,19 +1922,45 @@ class InvoiceController extends Controller
             $file = $startdate . '_' . $enddate . '_' . str_replace(' ', '_', $organization->organization_name);
 
             if ($op == "excel") {
-                return \Excel::download(new \App\Exports\Reports\TransactionReport($detail_transaction, $clients, $outletname,
-                    $startdate, $enddate, $nepalistartdate, $nepalienddate, $organization), $file.'.xls');
+                return \Excel::download(new \App\Exports\Reports\TransactionReport(
+                    $detail_transaction,
+                    $clients,
+                    $outletname,
+                    $startdate,
+                    $enddate,
+                    $nepalistartdate,
+                    $nepalienddate,
+                    $organization
+                ), $file . '.xls');
             } elseif ($op == "pdf") {
-                $pdf = \PDF::loadView('admin.reports.pdf.customerwisereportPDF', compact('detail_transaction', 'clients', 'outletname',
-                    'startdate', 'enddate', 'nepalistartdate', 'nepalienddate', 'organization'))->setPaper('a4', 'landscape');
+                $pdf = \PDF::loadView('admin.reports.pdf.customerwisereportPDF', compact(
+                    'detail_transaction',
+                    'clients',
+                    'outletname',
+                    'startdate',
+                    'enddate',
+                    'nepalistartdate',
+                    'nepalienddate',
+                    'organization'
+                ))->setPaper('a4', 'landscape');
                 $full_name = $file . '.pdf';
                 if (\File::exists('reports/' . $full_name)) {
                     \File::Delete('reports/' . $full_name);
                 }
                 return $pdf->download($full_name);
             }
-            return view('admin.reports.transactionreports', compact('outlets', 'detail_transaction', 'clients',
-                'outletname', 'startdate', 'enddate', 'nepalistartdate', 'nepalienddate', 'organization', 'projects'));
+            return view('admin.reports.transactionreports', compact(
+                'outlets',
+                'detail_transaction',
+                'clients',
+                'outletname',
+                'startdate',
+                'enddate',
+                'nepalistartdate',
+                'nepalienddate',
+                'organization',
+                'projects'
+            ));
         }
         return view('admin.reports.transactionreports', compact('outlets', 'projects'));
     }
@@ -1807,38 +1982,39 @@ class InvoiceController extends Controller
             if ($request->type == 'export') $op = "excel";
             elseif ($request->type == 'print') $op = "pdf";
         }
+        $clients = \App\Models\Client::has('invoices')->where('org_id', \Auth::user()->org_id)->select('name', 'id', 'relation_type')->get();
 
         if ($request->startdate && $request->startdate != "") {
             $startdate = $request->startdate;
             $endddate = $request->startdate;
-            if ($request->enddate && $request->enddate != "") {
-                $enddate = $request->enddate;
-            }
-            if ($request->outletid && $request->outletid != '') {
-                $outlet = $request->outletid;
-            }
+            if ($request->enddate && $request->enddate != "") $enddate = $request->enddate;
+            if ($request->outletid && $request->outletid != '') $outlet = $request->outletid;
+            if ($request->has('client') && $request->client != '') $client = $request->client;
+
             $nepalistartdate = \App\Helpers\TaskHelper::getNepaliDate($startdate);
             $nepalienddate = \App\Helpers\TaskHelper::getNepaliDate($enddate);
-            $clients = \App\Models\Client::where('org_id', \Auth::user()->org_id)->select('name', 'id', 'relation_type')->get();
             $detail_transaction = \App\Models\Invoice::where(function ($query) use ($request) {
-                    if ($request->has('outletid') && ($request->outletid != '')) $query->where('outlet_id', $request->outletid);
-                    else {
-                        if (\Auth::user()->hasRole('admins')) {
-                            if ($request->has('project_id') && ($request->project_id != '') && ($request->project_id != 'over-all')) {
-                                $outletId = PosOutlets::where('project_id', $request->project_id)->pluck('id')->toArray();
-                                $query->whereIn('outlet_id', $outletId);
-                            }
-                        } else {
-                            $outletId = PosOutlets::where('project_id', \auth()->user()->project_id)->pluck('id')->toArray();
+                if ($request->has('outletid') && ($request->outletid != '')) $query->where('outlet_id', $request->outletid);
+                else {
+                    if (\Auth::user()->hasRole('admins')) {
+                        if ($request->has('project_id') && ($request->project_id != '') && ($request->project_id != 'over-all')) {
+                            $outletId = PosOutlets::where('project_id', $request->project_id)->pluck('id')->toArray();
                             $query->whereIn('outlet_id', $outletId);
                         }
+                    } else {
+                        $outletId = PosOutlets::where('project_id', \auth()->user()->project_id)->pluck('id')->toArray();
+                        $query->whereIn('outlet_id', $outletId);
                     }
-                })->where('org_id', \Auth::user()->org_id)
-                ->when($startdate, function ($q) use($startdate) {
+                }
+            })->where('org_id', \Auth::user()->org_id)
+                ->when($startdate, function ($q) use ($startdate) {
                     $q->where('bill_date', '>=', $startdate);
-                })->when($enddate, function ($q) use($enddate) {
+                })->when($enddate, function ($q) use ($enddate) {
                     $q->where('bill_date', '<=', $enddate);
+                })->when($client, function ($q) use ($client) {
+                    $q->where('client_id', $client);
                 })->get();
+
             $detail_transaction = $detail_transaction->groupby(['bill_type', 'client_id']);
             $created_by = \Auth::user()->first_name . ' ' . \Auth::user()->last_name;
             $organization = \Auth::user()->organization;
@@ -1848,23 +2024,55 @@ class InvoiceController extends Controller
                 // return view('admin.reports.excel.customerwisedetailreportExcel', compact('detail_transaction', 'clients', 'outletname', 'startdate', 'enddate', 'nepalistartdate',
                 //     'nepalienddate', 'organization', 'created_by'));
 
-                return \Excel::download(new \App\Exports\Reports\CustomerWiseDetailReport($detail_transaction, $clients, $outletname, $startdate, $enddate, $nepalistartdate,
-                    $nepalienddate, $organization, $created_by), $file.'.xls');
+                return \Excel::download(new \App\Exports\Reports\CustomerWiseDetailReport(
+                    $detail_transaction,
+                    $clients,
+                    $outletname,
+                    $startdate,
+                    $enddate,
+                    $nepalistartdate,
+                    $nepalienddate,
+                    $organization,
+                    $created_by
+                ), $file . '.xls');
             } elseif ($op == "pdf") {
                 // return view('admin.reports.pdf.customerwisedetailreportPDF', compact('detail_transaction', 'clients', 'outletname', 'startdate', 'enddate', 'nepalistartdate',
                 //     'nepalienddate', 'organization', 'created_by'));
-                $pdf = \PDF::loadView('admin.reports.pdf.customerwisedetailreportPDF', compact('detail_transaction', 'clients', 'outletname', 'startdate', 'enddate', 'nepalistartdate',
-                    'nepalienddate', 'organization', 'created_by'))->setPaper('a4', 'portrait');
+                $pdf = \PDF::loadView('admin.reports.pdf.customerwisedetailreportPDF', compact(
+                    'detail_transaction',
+                    'clients',
+                    'outletname',
+                    'startdate',
+                    'enddate',
+                    'nepalistartdate',
+                    'nepalienddate',
+                    'organization',
+                    'created_by'
+                ))->setPaper('a4', 'portrait');
                 $f = $file . '.pdf';
                 if (\File::exists('reports/' . $f)) {
                     \File::Delete('reports/' . $f);
                 }
                 return $pdf->download($f);
             }
-            return view('admin.reports.customerwisedetailreport', compact('page_title', 'page_description', 'data', 'created_by',
-                'detail_transaction', 'clients', 'outletname', 'startdate', 'enddate', 'nepalistartdate', 'nepalienddate', 'organization', 'outlets', 'projects'));
+            return view('admin.reports.customerwisedetailreport', compact(
+                'page_title',
+                'page_description',
+                'data',
+                'created_by',
+                'detail_transaction',
+                'clients',
+                'outletname',
+                'startdate',
+                'enddate',
+                'nepalistartdate',
+                'nepalienddate',
+                'organization',
+                'outlets',
+                'projects'
+            ));
         }
-        return view('admin.reports.customerwisedetailreport', compact('page_title', 'page_description', 'outlets', 'projects'));
+        return view('admin.reports.customerwisedetailreport', compact('page_title', 'page_description', 'outlets', 'projects', 'clients'));
     }
 
     public function salesInvoiceDetail(Request $request)
@@ -1894,15 +2102,15 @@ class InvoiceController extends Controller
             $nepalienddate = \App\Helpers\TaskHelper::getNepaliDate($enddate);
             $clients = \App\Models\Client::where('org_id', \Auth::user()->org_id)->select('name', 'id', 'relation_type')->get();
             $detail_transactions = \App\Models\Invoice::where(function ($query) use ($request) {
-                    if ($request->has('outletid') && ($request->outletid != '')) $query->where('outlet_id', $request->outletid);
-                    elseif ($request->has('project_id') && ($request->project_id != '') && ($request->project_id != 'over-all')) {
-                        $outletId = PosOutlets::where('project_id', $request->project_id)->pluck('id')->toArray();
-                        $query->whereIn('outlet_id', $outletId);
-                    }
-                })->where('org_id', \Auth::user()->org_id)
-                ->when($startdate, function ($q) use($startdate) {
+                if ($request->has('outletid') && ($request->outletid != '')) $query->where('outlet_id', $request->outletid);
+                elseif ($request->has('project_id') && ($request->project_id != '') && ($request->project_id != 'over-all')) {
+                    $outletId = PosOutlets::where('project_id', $request->project_id)->pluck('id')->toArray();
+                    $query->whereIn('outlet_id', $outletId);
+                }
+            })->where('org_id', \Auth::user()->org_id)
+                ->when($startdate, function ($q) use ($startdate) {
                     $q->where('bill_date', '>=', $startdate);
-                })->when($enddate, function ($q) use($enddate) {
+                })->when($enddate, function ($q) use ($enddate) {
                     $q->where('bill_date', '<=', $enddate);
                 })->groupby(['bill_no'])->get();
             $created_by = \Auth::user()->first_name . ' ' . \Auth::user()->last_name;
@@ -1913,21 +2121,52 @@ class InvoiceController extends Controller
                 // return view('admin.reports.excel.sales_invoice_detail_Excel', compact('detail_transactions', 'clients', 'outletname', 'startdate', 'enddate', 'nepalistartdate',
                 //     'nepalienddate', 'organization', 'created_by'));
 
-                return \Excel::download(new \App\Exports\Reports\SalesInvoiceDetailReport($detail_transaction, $clients, $outletname, $startdate, $enddate, $nepalistartdate,
-                    $nepalienddate, $organization, $created_by), $file.'.xls');
+                return \Excel::download(new \App\Exports\Reports\SalesInvoiceDetailReport(
+                    $detail_transaction,
+                    $clients,
+                    $outletname,
+                    $startdate,
+                    $enddate,
+                    $nepalistartdate,
+                    $nepalienddate,
+                    $organization,
+                    $created_by
+                ), $file . '.xls');
             } elseif ($op == "pdf") {
                 // return view('admin.reports.pdf.sales_invoice_detailPDF', compact('detail_transaction', 'clients', 'outletname', 'startdate', 'enddate', 'nepalistartdate',
                 //     'nepalienddate', 'organization', 'created_by'));
-                $pdf = \PDF::loadView('admin.reports.pdf.sales_invoice_detail_PDF', compact('detail_transaction', 'clients', 'outletname', 'startdate', 'enddate', 'nepalistartdate',
-                    'nepalienddate', 'organization', 'created_by'))->setPaper('a4', 'portrait');
+                $pdf = \PDF::loadView('admin.reports.pdf.sales_invoice_detail_PDF', compact(
+                    'detail_transaction',
+                    'clients',
+                    'outletname',
+                    'startdate',
+                    'enddate',
+                    'nepalistartdate',
+                    'nepalienddate',
+                    'organization',
+                    'created_by'
+                ))->setPaper('a4', 'portrait');
                 $f = $file . '.pdf';
                 if (\File::exists('reports/' . $f)) {
                     \File::Delete('reports/' . $f);
                 }
                 return $pdf->download($f);
             }
-            return view('admin.reports.sales_invoice_detail', compact('page_title', 'page_description', 'data', 'created_by',
-                'detail_transaction', 'clients', 'outletname', 'startdate', 'enddate', 'nepalistartdate', 'nepalienddate', 'organization', 'projects'));
+            return view('admin.reports.sales_invoice_detail', compact(
+                'page_title',
+                'page_description',
+                'data',
+                'created_by',
+                'detail_transaction',
+                'clients',
+                'outletname',
+                'startdate',
+                'enddate',
+                'nepalistartdate',
+                'nepalienddate',
+                'organization',
+                'projects'
+            ));
         }
         return view('admin.reports.sales_invoice_detail', compact('page_title', 'page_description', 'outlets', 'projects'));
     }
@@ -1956,8 +2195,7 @@ class InvoiceController extends Controller
             $nepalistartdate = \App\Helpers\TaskHelper::getNepaliDate($startdate);
             $nepalienddate = \App\Helpers\TaskHelper::getNepaliDate($enddate);
             $daterange = $period = \carbon\CarbonPeriod::create($request->startdate, $request->enddate);
-            $data = \App\Models\Invoice::
-            where('org_id', \Auth::user()->org_id)
+            $data = \App\Models\Invoice::where('org_id', \Auth::user()->org_id)
                 ->leftJoin('invoice_detail', 'invoice.id', '=', 'invoice_detail.invoice_id')
                 ->where('invoice.bill_date', '>=', $startdate)
                 ->where('invoice.bill_date', '<=', $enddate)
@@ -1968,7 +2206,6 @@ class InvoiceController extends Controller
             $products = \App\Models\Product::where('org_id', \Auth::user()->org_id)->pluck('name', 'id');
             $organization = \Auth::user()->organization;
             if ($op == "excel") {
-
             } elseif ($op == "pdf") {
                 // ->where('order_reference',null)
                 $stock_entries = \App\Models\StockMove::select('stock_id', 'qty', 'tran_date')
@@ -2004,15 +2241,15 @@ class InvoiceController extends Controller
             ->where('bill_date', '>=', $end_date)
             ->orderBy('created_at')
             ->get();
-        foreach ($invoices as $key=>$invoice) {
+        foreach ($invoices as $key => $invoice) {
             if (count($invoice->invoicePayments) == 0) return response()->json(['status' => 'unpaid']);
 
             $amount = 0;
             foreach ($invoice->invoicePayments as $invoicePayment) {
                 $amount += (int)$invoicePayment->amount;
             }
-            if ($amount<$invoice->total_amount) return response()->json(['status' => 'partial']);
-            elseif ($amount==0) return response()->json(['status' => 'unpaid']);
+            if ($amount < $invoice->total_amount) return response()->json(['status' => 'partial']);
+            elseif ($amount == 0) return response()->json(['status' => 'unpaid']);
         }
         return response()->json(['status' => 'paid']);
     }
@@ -2041,6 +2278,13 @@ class InvoiceController extends Controller
             ->orWhereNull('invoice_payment_status.payment_status')
             ->get();
 
+        $invoices = Invoice::withSum('invoicePayments', 'amount')
+            ->whereHas("invoicePayments", function ($query) {
+                $query->havingRaw('invoice.total_amount>sum(amount)');
+                $query->groupBy('invoice_id');
+            })->orDoesntHave("invoicePayments")
+            ->get()->groupBy('client_id');
+
         return view('admin.orders.billwisedebtorlist', compact('page_title', 'page_description', 'invoices'));
     }
 
@@ -2054,25 +2298,24 @@ class InvoiceController extends Controller
                     ->where('bill_date', '<=', $end_date);
             }
         })->where(function ($query) {
-                $bill_no = \Request::get('bill_no');
-                if ($bill_no) return $query->where('bill_no', $bill_no);
-            })->where(function ($query) {
-                $client_id = \Request::get('client_id');
-                if ($client_id) {
-                    return $query->where('client_id', $client_id);
-                }
-            })->where(function ($query) {
-                $fiscal_year = \Request::get('fiscal_year');
-                if ($fiscal_year) {
-                    return $query->where('fiscal_year', $fiscal_year);
-                }
-
-            })->where(function ($query) {
-                $outlet_id = \Request::get('outlet_id');
-                if ($outlet_id) {
-                    return $query->where('outlet_id', $outlet_id);
-                }
-            })->orderBy('id', 'desc')->paginate(30);
+            $bill_no = \Request::get('bill_no');
+            if ($bill_no) return $query->where('bill_no', $bill_no);
+        })->where(function ($query) {
+            $client_id = \Request::get('client_id');
+            if ($client_id) {
+                return $query->where('client_id', $client_id);
+            }
+        })->where(function ($query) {
+            $fiscal_year = \Request::get('fiscal_year');
+            if ($fiscal_year) {
+                return $query->where('fiscal_year', $fiscal_year);
+            }
+        })->where(function ($query) {
+            $outlet_id = \Request::get('outlet_id');
+            if ($outlet_id) {
+                return $query->where('outlet_id', $outlet_id);
+            }
+        })->orderBy('id', 'desc')->paginate(30);
         $page_title = 'Followup Invoice Payments';
         $page_description = 'Manage Followup invoices';
         $clients = \App\Models\Client::select('id', 'name')->where('org_id', \Auth::user()->org_id)->orderBy('id', 'DESC')->pluck('name', 'id')->all();

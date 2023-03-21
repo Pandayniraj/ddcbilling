@@ -243,7 +243,8 @@
                                     {{-- <span style="font-size: 15px; font-weight: bold" > {{$outlet_code->short_name}} </span><br> --}}
                                     <strong> Customer:</strong><span
                                         style="white-space: nowrap;">{{ $ord->client->name }}</span>
-                                    <strong style="white-space: nowrap;"> Customer Address:</strong><span
+                                    <strong style="white-space: nowrap;"> <br/>Customer Address:</strong>
+                                    <span
                                         style="white-space: nowrap;">{{ $ord->client->physical_address??'' }}</span><br>
                                     <strong> Customer contact:</strong>{{ $ord->client->phone??'' }}<br>
                                     <strong> Customer pan/vat:</strong>{{ $ord->client->vat??'' }}<br>
@@ -263,6 +264,8 @@
                                         <strong>Invoice Date:</strong><span>{{ $ord->bill_date??'' }}</span><br>
                                         <strong>Due Date:</strong><span>{{ $ord->due_date??'' }}</span><br>
                                         <strong> Mode of Payment:</strong><span>{{ $ord->bill_type }}</span><br>
+
+                                            <?php /**
                                             @if ($oed->client_type == 'distributor')
                                                 @php $type = 'Distributor'; @endphp
                                             @elseif($oed->client_type == 'staffghee')
@@ -276,7 +279,10 @@
                                             @else
                                                 @php $type = 'Random Customer'; @endphp
                                             @endif
-                                        <strong> Type:</strong><span>{{ $type }}</span><br>
+                                            **/?>
+
+
+                                        <strong> Type:</strong><span>{{ $ord->client_type }}</span><br>
                                     </p>
                                 </div>
                             </div>
@@ -311,7 +317,7 @@
                                                 <td style="text-align: center">{{ number_format($odv->quantity,2) }}</td>
                                                 <td style="text-align: right">{{ number_format($odv->price,2) }}</td>
                                                 <td style="text-align: right;">
-                                                    {{ number_format($odv->total-$odv->tax_amount,2) }}
+                                                    {{ number_format($odv->total,2) }}
                                                 </td>
                                             </tr>
                                         @endforeach

@@ -126,11 +126,19 @@
 
                         <div class="col-md-2">
                             <div class="form-group">
-                                <br/>
-                                {!! Form::submit('Filter', ['class' => 'btn btn-primary']) !!}
+                                <label>Parties</label>
+                                <div class="input-group">
+                                    <select name="client" class="form-control searchable" id="outlet-id">
+                                        <option value=""> Select Parties</option>
+                                        @foreach($clients as $key=> $value)
+                                            <option value="{{ $value->id}}" @if((request()->client??'') == $value->id) selected @endif>{{$value->name}}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </div>
+                    {!! Form::submit('Filter', ['class' => 'btn btn-primary']) !!}
                     @if(isset($detail_transaction))
                         <div class="download-print float-right">
                             <button class="btn btn-sm btn-primary" type="submit" value="export" name="type"><i
@@ -157,33 +165,21 @@
                             <span
                                 style="float:right">Print Date:{{(\App\Helpers\TaskHelper::getNepaliDate(\Carbon\Carbon::today()->toDateString()))}}</span>
                             <br>
-                        @php
-                            $grand_amount=0;
-                            $grand_vat_amount=0;
-                            $grand_total_amount=0;
-                        @endphp
+                        @php $grand_amount=$grand_vat_amount=$grand_total_amount=0; @endphp
                         <div class="row">
                             <div class="table-responsive">
                             <table class="table table-striped center" style="width:100%;">
                                 <thead class="bg-info">
                                 @foreach ($detail_transaction as $bill_type=>$values )
                                     <thead>
-                                    <tr>
-                                        <th colspan="6">Payment Method: {{$bill_type}}</th>
-                                    </tr>
+                                    <tr><th colspan="6">Payment Method: {{$bill_type}}</th></tr>
                                     </thead>
-                                    @php
-                                        $billtype_amount=0;
-                                        $billtype_vat_amount=0;
-                                        $billtype_total_amount=0;
-                                    @endphp
-                                    @foreach ($values as $client_id=>$invoice )
+                                    @php $billtype_amount=$billtype_vat_amount=$billtype_total_amount=0; @endphp
+                                    @foreach ($values as $client_id=>$invoice)
                                         <thead>
                                         <tr>
-                                            <th style="text-align:center;" colspan="3">Customer
-                                                name: {{\App\Models\Client::find($client_id)->name??""}}</th>
-                                            <th style="text-align:center;" colspan="3">Prepared
-                                                By: {{$created_by??""}}</th>
+                                            <th style="text-align:center;" colspan="3">Customer name: {{@$invoice[0]->client->name??''}}</th>
+                                            <th style="text-align:center;" colspan="3">Prepared By: {{$created_by??""}}</th>
                                         </tr>
                                         <tr>
                                             <th style="text-align:center;">Bill No</th>
@@ -195,11 +191,7 @@
                                         </tr>
                                         </thead>
                                         <tbody>
-                                        @php
-                                            $customer_amount=0;
-                                            $customer_vat_amount=0;
-                                            $customer_total_amount=0;
-                                        @endphp
+                                        @php $customer_amount=$customer_vat_amount=$customer_total_amount=0; @endphp
                                         @foreach($invoice as $temp_invoicedetail)
                                             @foreach($temp_invoicedetail->invoicedetails as $details)
                                                 <tr>

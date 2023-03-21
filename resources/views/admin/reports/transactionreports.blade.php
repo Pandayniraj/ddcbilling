@@ -186,13 +186,25 @@
                                             ->where('bill_date','>=',$startdate)
                                             ->where('bill_date','<=',$enddate)
                                             ->pluck('id');
-                                            $temp=\App\Models\InvoicePayment::whereIn('invoice_id',$client_invoice)->select(DB::raw('SUM(amount) as cr_amount'))->where('type', "!=", 'Credit')->first();
+
+                                            $client_invoice = explode('$@', $detail_transaction[$client_id][0]->invoice_ids);
+                                            if ($client_invoice[0] == '') $client_invoice = [];
+
+                                            $temp=\App\Models\InvoicePayment::whereIn('invoice_id', $client_invoice)->select(DB::raw('SUM(amount) as cr_amount'))->where('type', "!=", 'Credit')->first();
                                             $period_cr_amount=$temp->cr_amount??0;
+
+                                            // if (count($client_invoice) > 0) {
+                                            //     $client_invoices=\App\Models\Invoice::where('client_id',$client_id)
+                                            //         ->where('bill_date','>=',$startdate)
+                                            //         ->where('bill_date','<=',$enddate)
+                                            //         ->get();
+
+                                                // dd($client_invoice, isset($client_invoice), $client_invoices, $temp);
+                                            // }
 
                                             $overall_dr=\App\Models\Invoice::
                                             select('client_id',DB::raw('SUM(total_amount) as dr_total'))
-                                            ->where('client_id',$client_id)
-                                            ->first();
+                                            ->where('client_id',$client_id)->first();
                                             // $temp=\App\Models\InvoicePayment::whereIn('invoice_id',$client_invoice)->select(DB::raw('SUM(amount) as cr_amount'))->first();
 
                                             $overall_paid=\App\Models\Invoicepayment::whereIn('invoice_id',\App\Models\Invoice::where('client_id',$client_id)->pluck('id'))->select(DB::raw('SUM(amount) as cr_amount'))->where('type', "!=", 'Credit')->first();

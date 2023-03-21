@@ -240,7 +240,7 @@ function numberFomatter($number)
                     <td style="text-align:center ;">{{ number_format($odv->quantity,2) }}</td>
                     <td style="text-align: left;">{{ number_format($odv->price,2) }}</td>
                     <td style="text-align: right;">
-                        {{number_format($odv->total-$odv->tax_amount,2) }}
+                        {{number_format($odv->total,2) }}
                     </td>
                 </tr>
             @endforeach

@@ -18,10 +18,10 @@ class LocationStockTransferController extends Controller
 {
     public function index()
     {
-        $outletuser= \App\Models\OutletUser::where('user_id', \Auth::user()->id)->select('outlet_id')->get()->toArray();
-        if(\Auth::user()->hasRole('admins')){
+        $outletuser = \App\Models\OutletUser::where('user_id', \Auth::user()->id)->select('outlet_id')->get()->toArray();
+        if (\Auth::user()->hasRole('admins')) {
             $locationstocktransfer = \App\Models\LocationStockTransfer::orderBy('id', 'desc')->get();
-        }else{
+        } else {
             $locationstocktransfer = \App\Models\LocationStockTransfer::where('source_id', $outletuser)->orderBy('id', 'desc')->get();
         }
         $page_title = 'Admin | Location Stock Transfer | Index';
@@ -38,15 +38,17 @@ class LocationStockTransferController extends Controller
         $users = \App\User::where('enabled', '1')->pluck('username', 'id')->all();
         $products = \App\Models\Product::select('id', 'name')->get();
         // $locations = \App\Models\ProductLocation::pluck('location_name', 'id')->all();
-        $outletuser= \App\Models\OutletUser::where('user_id', \Auth::user()->id)->select('outlet_id')->get()->toArray();
-        if(\Auth::user()->hasRole('admins')){
-            $locations  = \App\Models\PosOutlets::pluck('name', 'id')->all();
-        }
-        else{
-        $locations  = \App\Models\PosOutlets::whereIn('id', $outletuser)->pluck('name', 'id')->all();
-        }
-        $destination_location= \App\Models\PosOutlets::pluck('name', 'id')->all();
-        return view('admin.locationstocktransfer.create', compact('page_title', 'page_description','destination_location', 'users', 'locations', 'products'));
+        $outletuser = \App\Models\OutletUser::where('user_id', \Auth::user()->id)->select('outlet_id')->get()->toArray();
+        if (\Auth::user()->hasRole('admins')) {
+            $locations = \App\Models\PosOutlets::with('project')->whereHas('project', function ($q) {
+                $q->where('name', 'MPSS');
+            })->pluck('name', 'id')->all();
+        } else $locations = \App\Models\PosOutlets::with('project')->whereHas('project', function ($q) {
+            $q->where('name', 'MPSS');
+        })->whereIn('id', $outletuser)->pluck('name', 'id')->all();
+
+        $destination_location = \App\Models\PosOutlets::pluck('name', 'id')->all();
+        return view('admin.locationstocktransfer.create', compact('page_title', 'page_description', 'destination_location', 'users', 'locations', 'products'));
     }
 
     public function store(Request $request)
@@ -79,7 +81,7 @@ class LocationStockTransferController extends Controller
                 $stockMove->trans_type = STOCKMOVEIN;
                 $stockMove->tran_date = \Carbon\Carbon::now();
                 $stockMove->user_id = Auth::user()->id;
-                $stockMove->reference = 'store_in_'.$locationstocktransfer->id;
+                $stockMove->reference = 'store_in_' . $locationstocktransfer->id;
                 $stockMove->transaction_reference_id = $locationstocktransfer->id;
                 $stockMove->store_id = $request->destination_id;
                 $stockMove->qty = $quantity[$key];
@@ -89,9 +91,9 @@ class LocationStockTransferController extends Controller
                 $stockMove->stock_id = $product_id[$key];
                 $stockMove->tran_date = \Carbon\Carbon::now();
                 $stockMove->user_id = Auth::user()->id;
-                $stockMove->reference = 'store_out_'.$locationstocktransfer->id;
+                $stockMove->reference = 'store_out_' . $locationstocktransfer->id;
                 $stockMove->transaction_reference_id = $locationstocktransfer->id;
-                $stockMove->qty = '-'.$quantity[$key];
+                $stockMove->qty = '-' . $quantity[$key];
                 $stockMove->trans_type = STOCKMOVEOUT;
                 $stockMove->order_no = $locationstocktransfer->id;
                 $stockMove->store_id = $request->source_id;
@@ -130,16 +132,15 @@ class LocationStockTransferController extends Controller
 
         $users = \App\User::where('enabled', '1')->pluck('username', 'id')->all();
         $products = \App\Models\Product::select('id', 'name')->get();
-        if(\Auth::user()->hasRole('admins')){
-            $locations  = \App\Models\PosOutlets::pluck('name', 'id')->all();
+        if (\Auth::user()->hasRole('admins')) {
+            $locations = \App\Models\PosOutlets::pluck('name', 'id')->all();
+        } else {
+            $locations = \App\Models\PosOutlets::whereIn('id', $outletuser)->pluck('name', 'id')->all();
         }
-        else{
-        $locations  = \App\Models\PosOutlets::whereIn('id', $outletuser)->pluck('name', 'id')->all();
-        }
-        $destination_locations  = \App\Models\PosOutlets::pluck('name', 'id')->all();
+        $destination_locations = \App\Models\PosOutlets::pluck('name', 'id')->all();
         // $locations = \App\Models\ProductLocation::pluck('location_name', 'id')->all();
 
-        return view('admin.locationstocktransfer.edit', compact('page_title', 'page_description','destination_locations' ,'locationstocktransfer', 'locationstocktransferdetail', 'users', 'products', 'locations'));
+        return view('admin.locationstocktransfer.edit', compact('page_title', 'page_description', 'destination_locations', 'locationstocktransfer', 'locationstocktransferdetail', 'users', 'products', 'locations'));
     }
 
     public function print($id)
@@ -159,10 +160,10 @@ class LocationStockTransferController extends Controller
         $imagepath = Auth::user()->organization->logo;
 
         $pdf = \PDF::loadView('admin.locationstocktransfer.pdf', compact('ord', 'imagepath', 'orderDetails'));
-        $file = 'stocktransfer-'.$id.'.pdf';
+        $file = 'stocktransfer-' . $id . '.pdf';
 
-        if (File::exists('reports/'.$file)) {
-            File::Delete('reports/'.$file);
+        if (File::exists('reports/' . $file)) {
+            File::Delete('reports/' . $file);
         }
 
         return $pdf->download($file);
@@ -177,8 +178,8 @@ class LocationStockTransferController extends Controller
         $transfers_details = LocationStockTransferDetail::where('location_stock_transfer_id', $id)->get();
 
         foreach ($transfers_details as $td) {
-            StockMove::where('trans_type', STOCKMOVEIN)->where('stock_id', $td->product_id)->where('reference', 'store_in_'.$id)->delete();
-            StockMove::where('trans_type', STOCKMOVEOUT)->where('reference', 'store_out_'.$id)->where('stock_id', $td->product_id)->delete();
+            StockMove::where('trans_type', STOCKMOVEIN)->where('stock_id', $td->product_id)->where('reference', 'store_in_' . $id)->delete();
+            StockMove::where('trans_type', STOCKMOVEOUT)->where('reference', 'store_out_' . $id)->where('stock_id', $td->product_id)->delete();
         }
 
         LocationStockTransferDetail::where('location_stock_transfer_id', $id)->delete();
@@ -201,7 +202,7 @@ class LocationStockTransferController extends Controller
                 $stockMove->trans_type = STOCKMOVEIN;
                 $stockMove->tran_date = \Carbon\Carbon::now();
                 $stockMove->user_id = Auth::user()->id;
-                $stockMove->reference = 'store_in_'.$id;
+                $stockMove->reference = 'store_in_' . $id;
                 $stockMove->transaction_reference_id = $id;
                 $stockMove->location = $request->destination_id;
                 $stockMove->qty = $quantity[$key];
@@ -211,9 +212,9 @@ class LocationStockTransferController extends Controller
                 $stockMove->stock_id = $product_id[$key];
                 $stockMove->tran_date = \Carbon\Carbon::now();
                 $stockMove->user_id = Auth::user()->id;
-                $stockMove->reference = 'store_out_'.$id;
+                $stockMove->reference = 'store_out_' . $id;
                 $stockMove->transaction_reference_id = $id;
-                $stockMove->qty = '-'.$quantity[$key];
+                $stockMove->qty = '-' . $quantity[$key];
                 $stockMove->trans_type = STOCKMOVEOUT;
                 $stockMove->order_no = $id;
                 $stockMove->location = $request->source_id;
@@ -238,8 +239,8 @@ class LocationStockTransferController extends Controller
         $transfers_detail = LocationStockTransferDetail::where('location_stock_transfer_id', $id)->get();
 
         foreach ($transfers_detail as $td) {
-            StockMove::where('trans_type', STOCKMOVEIN)->where('stock_id', $td->product_id)->where('reference', 'store_in_'.$id)->delete();
-            StockMove::where('trans_type', STOCKMOVEOUT)->where('reference', 'store_out_'.$id)->where('stock_id', $td->product_id)->delete();
+            StockMove::where('trans_type', STOCKMOVEIN)->where('stock_id', $td->product_id)->where('reference', 'store_in_' . $id)->delete();
+            StockMove::where('trans_type', STOCKMOVEOUT)->where('reference', 'store_out_' . $id)->where('stock_id', $td->product_id)->delete();
         }
 
         $locationstocktransfer->delete();
@@ -254,7 +255,7 @@ class LocationStockTransferController extends Controller
     /**
      * Delete Confirm.
      *
-     * @param   int   $id
+     * @param int $id
      * @return  View
      */
     public function getModalDelete($id)
@@ -267,7 +268,7 @@ class LocationStockTransferController extends Controller
 
         $modal_route = route('admin.location.stocktransfer.delete', ['id' => $locationstocktransfer->id]);
 
-        $modal_body = 'Are you sure that you want to delete Location Stock Transfer id '.$locationstocktransfer->id.' with the number? This operation is irreversible';
+        $modal_body = 'Are you sure that you want to delete Location Stock Transfer id ' . $locationstocktransfer->id . ' with the number? This operation is irreversible';
 
         return view('modal_confirmation', compact('error', 'modal_route', 'modal_title', 'modal_body'));
     }
@@ -277,15 +278,15 @@ class LocationStockTransferController extends Controller
         $product_id = $request->product_id;
         $source_id = $request->source_id;
         $transations = DB::table('product_stock_moves')
-                              ->where('product_stock_moves.stock_id', $product_id)
-                              ->leftjoin('products', 'products.id', '=', 'product_stock_moves.stock_id')
-                              ->leftjoin('pos_outlets', 'pos_outlets.id', '=', 'product_stock_moves.store_id')
-                              ->select('product_stock_moves.*', 'products.name')
-                              ->orderBy('product_stock_moves.tran_date', 'DESC')
-                              ->where('product_stock_moves.store_id', $source_id)
-                              ->get();
-            $StockIn = 0;
-            $StockOut = 0;
+            ->where('product_stock_moves.stock_id', $product_id)
+            ->leftjoin('products', 'products.id', '=', 'product_stock_moves.stock_id')
+            ->leftjoin('pos_outlets', 'pos_outlets.id', '=', 'product_stock_moves.store_id')
+            ->select('product_stock_moves.*', 'products.name')
+            ->orderBy('product_stock_moves.tran_date', 'DESC')
+            ->where('product_stock_moves.store_id', $source_id)
+            ->get();
+        $StockIn = 0;
+        $StockOut = 0;
 
 
         if (count($transations) > 0) {

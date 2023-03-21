@@ -78,7 +78,9 @@
 
                         {!! Form::close() !!}
 
-                        <h2>Contacts</h2>
+
+
+                        <h3>Contacts</h3>
                         <div class="box box-header">
                         <table class="table table-hover table-bordered" id="contacts-table">
                             <thead>

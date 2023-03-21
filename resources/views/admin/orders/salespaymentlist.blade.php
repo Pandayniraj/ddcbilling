@@ -3,6 +3,14 @@
 @section('head_extra')
     @include('partials._head_extra_select2_css')
 @endsection
+<style>
+    table td{
+        padding: 1px important;
+    }
+    table{
+        font-size: 12px;
+    }
+</style>
 
 @section('content')
     <section class="content-header" style="margin-top: -35px; margin-bottom: 20px">
@@ -17,7 +25,7 @@
     <div class='row'>
         <div class='col-md-12'>
             {!! Form::open( array('route' => 'admin.orders.enable-selected', 'id' => 'frmClientList') ) !!}
-            <div class="box box-primary">
+            <div class="box box-default">
                 <div class="box-header with-border">
                     <div class="float-right">
                         <a class="btn btn-primary btn-sm" href="#" title="Create Order" data-toggle="modal"
@@ -37,7 +45,7 @@
                         <table class="table table-hover table-bordered" id="orders-table">
 
                             <thead>
-                            <tr class="text-start text-gray-400 fw-bold fs-7 text-uppercase gs-0">
+                            <tr style="font-size: 11px; font-weight:normal">
 
                                 <th>id</th>
                                 <th>Invoice #</th>
@@ -45,8 +53,10 @@
                                 <th>Client</th>
                                 <th>Date</th>
                                 <th>Reference No</th>
+                                <th>Invoice Amt</th>
                                 <th>Amount</th>
                                 <th>Received In</th>
+                                <th>Received By</th>
                                 <th>Action</th>
                             </tr>
                             </thead>
@@ -68,10 +78,12 @@
                                         <td>
                                             <a href="/admin/invoice/payment/{{$o->id}}">{!! $o->reference_no??'' !!}</a>
                                         </td>
-                                        <td class="fw-bolder text-dark">{{env('APP_CURRENCY')}} {{ number_format($o->amount,2) }}</td>
+                                        <td>{{ number_format($o->invoice->total_amount,2) }}</td>
+                                        <td class="fw-bolder text-dark"> {{ number_format($o->amount,2) }}</td>
                                         <td>{!! $o->paidby->name??'' !!}</td>
+                                        <td>{!! $o->user->username??'' !!}</td>
                                         <td>
-                                            @if ( $o->isEditable() || $o->canChangePermissions() )
+                                            {{-- @if ( $o->isEditable() || $o->canChangePermissions() )
                                                 @if($o->status == 'paid' && \Request::get('type') == 'invoice')
                                                     <i class="fa fa-edit text-muted" title=""></i>
                                                 @else
@@ -81,7 +93,7 @@
                                                 @endif
                                             @else
                                                 <i class="fa fa-edit text-muted" title="{{ trans('admin/orders/general.error.cant-edit-this-document') }}"></i>
-                                            @endif
+                                            @endif --}}
 
                                             @if ( $o->isDeletable() )
                                                 @if($o->status == 'paid' && \Request::get('type') == 'invoice')
@@ -105,41 +117,6 @@
                             </tbody>
                         </table>
                     </div>
-{{--                            <thead>--}}
-{{--                            <tr class="bg-blue">--}}
-{{--                                <th>id</th>--}}
-{{--                                <th>Invoice ID</th>--}}
-{{--                                <th>Client</th>--}}
-{{--                                <th>Date</th>--}}
-{{--                                <th>Reference No</th>--}}
-{{--                                <th>Amount</th>--}}
-{{--                                <th>Paid By</th>--}}
-{{--                                <th>Type</th>--}}
-{{--                            </tr>--}}
-{{--                            </thead>--}}
-{{--                            <tbody>--}}
-{{--                            @if(isset($payment_list) && !empty($payment_list))--}}
-{{--                                @foreach($payment_list as $o)--}}
-{{--                                    <tr>--}}
-{{--                                        @php $credit_ledger_id = \FinanceHelper::get_ledger_id('SALES_LEDGER_ID'); @endphp--}}
-{{--                                        <td>--}}
-{{--                                            <a target="_blank"--}}
-{{--                                               href="/admin/entries/show/{{\FinanceHelper::get_entry_type_label($o->invoice->entry->entrytype_id)}}/{{$o->invoice->entry->id}}">--}}
-{{--                                            {{@$o->invoice->entry->number??$o->id}}--}}
-{{--                                            </a>--}}
-{{--                                        </td>--}}
-{{--                                        <td>{{@$o->invoice->outlet->short_name}}/{{@$o->invoice->fiscal_year}}/00{{@$o->invoice->bill_no??$o->invoice_id }}</td>--}}
-{{--                                        <td>{!! $o->invoice->client->name !!}</td>--}}
-{{--                                        <td>{{\App\Helpers\TaskHelper::getNepaliDate($o->date)}}--}}{{-- {!! date('dS M y', strtotime($o->date)) !!}--}}{{--</td>--}}
-{{--                                        <td>{!! $o->reference_no !!}</td>--}}
-{{--                                        <td>{{env('APP_CURRENCY')}} {{ number_format($o->amount,2) }}</td>--}}
-{{--                                        <td>{!! $o->paidby->name !!}</td>--}}
-{{--                                        <td>{!! $o->type !!}</td>--}}
-{{--                                    </tr>--}}
-{{--                                @endforeach--}}
-{{--                            @endif--}}
-{{--                            </tbody>--}}
-
                 </div>
             </div>
             {!! Form::close() !!}

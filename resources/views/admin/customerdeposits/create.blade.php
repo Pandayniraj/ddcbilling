@@ -17,30 +17,37 @@
 		     	{{ csrf_field() }}
 
 		     	    <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="control-label">Date</label>
-                         <input type="date"  name="date" placeholder="Date" id="date" value="" class="form-control " required>
+                         <input type="date"  name="date" placeholder="Date" id="date" value="{{ date('Y-m-d') }}" class="form-control " required>
                         </div>
-	                   	<div class="col-md-4">
+	                   	<div class="col-md-3">
 	                   	    <label class="control-label">Deposit amount</label>
                             <input type="number" step="0.1" name="amount" placeholder="Deposit Amount" id="name" value="" class="form-control " required>
 	                   	</div>
                       
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="control-label">Remarks</label>
                          <input type="text"  name="remarks" placeholder="Remarks" id="remarks" value="" class="form-control ">
                         </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <br>
+                                {!! Form::submit( trans('general.button.create'), ['class' => 'btn btn-primary', 'id' => 'btn-submit-edit'] ) !!}
+                                <a href="/admin/customerdeposits/index?id={{ $id }}" class='btn btn-default'>{{ trans('general.button.cancel') }}</a>
+                            </div>
+                         </div>
                     </div>
 		        </div>
 
-                <div class="row">
+                {{-- <div class="row">
 	                <div class="col-md-12">
 	                    <div class="form-group">
 	                        {!! Form::submit( trans('general.button.create'), ['class' => 'btn btn-primary', 'id' => 'btn-submit-edit'] ) !!}
 	                        <a href="/admin/customerdeposits/index?id={{ $id }}" class='btn btn-default'>{{ trans('general.button.cancel') }}</a>
 	                    </div>
 	                 </div>
-	            </div>
+	            </div> --}}
 
 
 		     </form>

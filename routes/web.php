@@ -160,6 +160,11 @@ Route::group(['middleware' =>  ['iptracker' , 'authorize']], function () {
         Route::post('customerdeposits/store', ['as' => 'admin.customerdeposits.store', 'uses' => 'CustomerDepositController@store']);
         Route::post('customerdeposits/update/{id}', ['as' => 'admin.customerdeposits.update', 'uses' => 'CustomerDepositController@update']);
         Route::get('customerdeposits/delete/{id}', ['as' => 'admin.customerdeposits.delete', 'uses' => 'CustomerDepositController@delete']);
+        Route::post('customerdeposits/settlement', ['as' => 'admin.customerdeposits.settlement', 'uses' => 'CustomerDepositController@settlement']);
+        Route::get('customerdeposits/{id}/unsettle', ['as' => 'admin.customerdeposits.unsettle', 'uses' => 'CustomerDepositController@unsettle']);
+        Route::get('customerdeposits/{id}/resettle', ['as' => 'admin.customerdeposits.resettle',   'uses' => 'CustomerDepositController@resettle']);
+        Route::post('customerdeposits/{id}/resettlestore', ['as' => 'admin.customerdeposits.resettlestore',   'uses' => 'CustomerDepositController@resettlestore']);
+
 
         //dartachalani
 
@@ -985,6 +990,7 @@ Route::group(['middleware' =>  ['iptracker' , 'authorize']], function () {
         Route::get('getContacts', ['as' => 'admin.getcontacts', 'uses' => 'ContactsController@get_contact']);
         // For autocomplete of Clients
         Route::get('getClients', ['as' => 'admin.getclients', 'uses' => 'ClientsController@get_client']);
+        Route::get('getClientsByType', ['as' => 'admin.getClientsByType', 'uses' => 'ClientsController@getClientsByType']);
         Route::get('get-products', ['uses' => 'ClientsController@getProducts']);
         //niraj-irddetail route
         Route::get('irddetail', ['as' => 'admin.irddetail', 'uses' => 'IrdDetailController@index']);
@@ -1346,7 +1352,6 @@ Route::group(['middleware' =>  ['iptracker' , 'authorize']], function () {
         Route::get('payment/orders/{id}/delete', ['as' => 'admin.payment.orders.delete',           'uses' => 'PurchaseSalePaymentController@destroySalePayment']);
 
         // For Invoice
-
         Route::get('invoice1', ['as' => 'admin.invoice.index', 'uses' => 'InvoiceController@index']);
         Route::view('sampleinvoice','admin.invoice.newsampleprint');
         Route::get('invoice/create', ['as' => 'admin.invoice.create', 'uses' => 'InvoiceController@create']);
@@ -1374,13 +1379,17 @@ Route::group(['middleware' =>  ['iptracker' , 'authorize']], function () {
         Route::get('payment/invoice/{id}/create', ['as' => 'admin.payment.invoice.create',    'uses' => 'InvoiceController@invoicePaymentcreate']);
         Route::post('payment/invoice/{id}/create', ['as' => 'admin.payment.invoice.pstcreate',    'uses' => 'InvoiceController@InvoicePaymentPost']);
         Route::get('payment/invoice/{id}/show', ['as' => 'admin.payment.invoice.show',    'uses' => 'InvoiceController@invoicePaymentshow']);
-
+        Route::get('payment/multiple-invoice/create', ['as' => 'admin.payment.multiple-invoice.create',    'uses' => 'InvoiceController@multipleInvoicePaymentcreate']);
+        Route::post('payment/multiple-invoice/create', ['as' => 'admin.payment.multiple-invoice.store',    'uses' => 'InvoiceController@multipleInvoicePaymentStore']);
         Route::get('taxinvoice/renewals', ['as' => 'admin.tax-invoice.renewals',           'uses' => 'InvoiceController@renewals']);
         Route::get('sales/billwisedebtorlist', ['as' => 'admin.invoice.billwisedebtorlist',  'uses' => 'InvoiceController@billwisedebtorlist']);
         Route::get('invoice/followuplist', ['as' => 'admin.invoice.followuplist',  'uses' => 'InvoiceController@followuplist']);
 
-        // For Purchase
+        //Receipt Statement routes
+        Route::get('sales/receipt-statement', ['as' => 'admin.receipt-statement.index', 'uses' => 'ReceiptStatementController@index']);
+        Route::get('sales/receipt-statement/{id}/show', ['as' => 'admin.receipt-statement.show', 'uses' => 'ReceiptStatementController@show']);
 
+        // For Purchase
         Route::get('purchase', ['as' => 'admin.purchase.index',            'uses' => 'PurchaseController@index']);
         Route::get('purchase/create', ['as' => 'admin.purchase.create',           'uses' => 'PurchaseController@create']);
         Route::post('purchase', ['as' => 'admin.purchase.store',            'uses' => 'PurchaseController@store']);

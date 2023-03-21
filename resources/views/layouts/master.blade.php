@@ -168,7 +168,6 @@ scratch. This page gets rid of all links and provides the needed markup only.
 
     <!-- Optional header section  -->
     @yield('head_extra')
-
 </head>
 
 <!-- Body -->
@@ -189,6 +188,7 @@ scratch. This page gets rid of all links and provides the needed markup only.
 @else
     @include('partials._body')
 @endif
+@stack('jss')
 
 
 </html>

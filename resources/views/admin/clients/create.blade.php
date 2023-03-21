@@ -31,7 +31,7 @@
                            title="{{ trans('general.button.cancel') }}"
                            class='btn btn-default'>{{ trans('general.button.cancel') }}</a>
                     </div>
-                    <input type="hidden" name="relation_type" , value="{{ $_GET['relation_type']}}">
+                    {{-- <input type="hidden" name="relation_type" , value="{{ $_GET['relation_type']}}"> --}}
 
                     {!! Form::close() !!}
                 </div>

@@ -1,6 +1,6 @@
 @extends('layouts.master')
 
-<!-- jVectorMap 1.2.2 -->
+@section('head_extra')
 <link href="{{ asset("/bower_components/admin-lte/plugins/datatables/jquery.dataTables.min.css") }}" rel="stylesheet"
       type="text/css"/>
 <link href="{{ asset("/bower_components/admin-lte/plugins/datatables/dataTables.bootstrap.css") }}" rel="stylesheet"
@@ -10,22 +10,18 @@
         font-size: 14px;
     }
 </style>
+@endsection
+
 @section('content')
     <script src="/bower_components/admin-lte/select2/js/select2.min.js"></script>
     <link href="/bower_components/admin-lte/select2/css/select2.min.css" rel="stylesheet"/>
     <?php
     $fiscal = \App\Models\Fiscalyear::where('fiscal_year', $fiscal_year)->first();
-    ?>
-
-    <?php
     $startOfYear = $startdate ? $startdate : $fiscal->start_date;
-
     $endOfYear = $enddate ? $enddate : $fiscal->end_date;
     ?>
     <section class="content-header" style="margin-top: -35px; margin-bottom: 20px">
-        <h1>
-            Debtors List
-        </h1>
+        <h1>Debtors List</h1>
     </section>
     <div class="box box-primary">
         <div class="box-header with-border">
@@ -62,9 +58,7 @@
                                                     </i>
                                                 </div>
                                             </div>
-                                            <!-- /.input group -->
                                         </div>
-                                        <!-- /.form group -->
                                     </div>
                                     <div class="col-md-2">
                                         <div class="form-group">
@@ -82,9 +76,7 @@
                                                     </i>
                                                 </div>
                                             </div>
-                                            <!-- /.input group -->
                                         </div>
-                                        <!-- /.form group -->
                                     </div>
                                     <div class="col-md-2">
                                         <div class="form-group">
@@ -98,40 +90,35 @@
                                                     @endforeach
                                                 </select>
                                             </div>
-                                            <!-- /.input group -->
                                         </div>
-                                        <!-- /.form group -->
                                     </div>
                                     <div class="col-md-3">
-                                        <label></label>
                                         <div class="form-group"
                                              style="margin-top: 24px;">
-                                            <button
-                                                class="btn btn-primary btn-sm"
+                                            <button class="btn btn-primary btn-sm"
                                                 id="btn-submit-filter" type="submit"><i
                                                     class="fa fa-list"></i> Filter
                                             </button>
-                                            <a href="/admin/debtors_lists" class="btn
-                                btn-danger btn-sm" id="btn-filter-clear">
+                                            <a href="/admin/debtors_lists" class="btn btn-danger btn-sm" id="btn-filter-clear">
                                                 <i class="fa fa-close"></i> Clear </a>
-                                            <button class="btn btn-success btn-sm"
-                                                    id="btn-submit-export" type="submit"
-                                                    name="export" value="true"><i class="fa
-                                fa-file-excel-o"></i> Export To Excel
-                                            </button>
                                         </div>
                                     </div>
                                 </div>
+                                <div class="float-right">
+                                    <button class="btn btn-success btn-sm" id="btn-submit-export" type="submit"
+                                            name="export" value="true"><i class="fa fa-file-excel-o"></i> Export To Excel
+                                    </button>
+                                    <a class="btn btn-primary btn-sm" href="/admin/sales/billwisedebtorlist" title="Create Order">
+                                        Billwise Debtors
+                                    </a>
+                                </div>
                             </div>
-
                         </form>
                     </div>
                 </div>
             </div>
             <div class="tab-pane" id="debtors_list-tabs" style="position: relative;">
                 <div class="nav-tabs-custom">
-                    <!-- Tabs within a box -->
-
                     <ul class="nav nav-tabs">
                         <li class="active">
                             <a href="{{route('admin.debtors_lists')}}" aria-expanded="true">List View</a>
@@ -142,12 +129,9 @@
                         </li>
                     </ul>
                     <div class="tab-content bg-white">
-
                         <div class="tab-pane active" id="my_debtors_list">
                             <div>
-
                                 <span id="index_lead_ajax_status"></span>
-
                                 <div>
                                     <table class="table table-hover table-striped table-responsive" id="clients-table">
                                         <thead>
@@ -160,9 +144,9 @@
                                             <th style="width: 10%; text-align: center">Debit Amt</th>
                                             <th style="width: 10%; text-align: center">Credit Amt</th>
                                             <th style="width: 10%; text-align: center">Closing B/c</th>
-                                            @if($current_fiscal->fiscal_year==$fiscal_year)
-                                                <th style="width: 10%;text-align: center">Action</th>
-                                            @endif
+                                            {{-- @if($current_fiscal->fiscal_year==$fiscal_year)--}}
+                                            {{--     <th style="width: 10%;text-align: center">Action</th>--}}
+                                            {{-- @endif--}}
                                         </tr>
                                         </thead>
                                         <tbody>
@@ -185,13 +169,13 @@
                                                     {{ number_format($entries['cr_amount'],2) }}</td>
                                                 <td style="text-align: center;font-size: 16.5px">
                                                     {{ number_format($entries['amount'],2) }}</td>
-                                                @if($current_fiscal->fiscal_year==$fiscal_year)
-                                                    <td style="text-align: center">
-                                                        <a href="/admin/debtors_pay/{{ $entries['id'] }}?client_id={{ $client->id }}"
-                                                           class="btn btn-sm btn-primary" data-toggle="modal"
-                                                           data-target="#modal_dialog">Receive </a>
-                                                    </td>
-                                                @endif
+                                                {{-- @if($current_fiscal->fiscal_year==$fiscal_year)--}}
+                                                {{--     <td style="text-align: center">--}}
+                                                {{--         <a href="/admin/debtors_pay/{{ $entries['id'] }}?client_id={{ $client->id }}"--}}
+                                                {{--            class="btn btn-sm btn-primary" data-toggle="modal"--}}
+                                                {{--            data-target="#modal_dialog">Receive </a>--}}
+                                                {{--     </td>--}}
+                                                {{-- @endif--}}
                                             </tr>
                                             @php $totalSum +=  $entries['amount']; @endphp
                                         @endforeach

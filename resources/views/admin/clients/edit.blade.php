@@ -21,10 +21,10 @@
 
                 @include('partials._client_form')
 
-                <input type="hidden" name="relation_type" value="{{ $_GET['relation_type'] }}">
+                {{-- <input type="hidden" name="relation_type" value="{{ $_GET['relation_type'] }}"> --}}
                 <div class="form-group">
                     {!! Form::submit( trans('general.button.update'), ['class' => 'btn btn-primary', 'id' => 'btn-submit-edit'] ) !!}
-                    <a href="/admin/customer?relation_type={{ \Request::get('relation_type') }}"
+                    <a href="/admin/clients"
                        title="{{ trans('general.button.cancel') }}"
                        class='btn btn-default'>{{ trans('general.button.cancel') }}</a>
                 </div>

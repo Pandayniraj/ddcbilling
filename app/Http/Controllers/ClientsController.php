@@ -2,19 +2,23 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\FinanceHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests;
 use App\Models\Audit as Audit;
 use App\Models\Client;
 use App\Models\Contact;
+use App\Models\CustomerDeposit;
 use App\Models\PosOutlets;
 use App\Models\Product;
 use App\Models\Proposal;
 use App\Models\Role as Permission;
 use App\User;
 use Auth;
+use Carbon\Carbon;
 use Flash;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 /**
  * THIS CONTROLLER IS USED AS PRODUCT CONTROLLER.
@@ -53,13 +57,19 @@ class ClientsController extends Controller
         $clients = Client::where('org_id', \Auth::user()->org_id)
             ->where(function ($query) {
                 if (\Request::get('clients_types') && \Request::get('clients_types') != '') {
-                    return $query->where('type', \Request::get('clients_types'));
+                    return $query->where('relation_type', \Request::get('clients_types'));
                 }
-            })->where(function ($query) {
+            })
+            ->where(function ($query) {
+                if (\Request::get('customer_group') && \Request::get('customer_group') != '') {
+                    return $query->where('customer_group', \Request::get('customer_group'));
+                }
+            })
+            ->where(function ($query) {
                 if (\Request::get('term') && \Request::get('term') != '') {
                     return $query->where('name', 'LIKE', '%' . \Request::get('term') . '%')
                         ->orWhere('location', 'LIKE', '%' . \Request::get('term') . '%')
-                        ->orWhere('type', 'LIKE', '%' . \Request::get('term') . '%');
+                        ->orWhere('relation_type', 'LIKE', '%' . \Request::get('term') . '%');
                 }
             })->orderBy('id', 'DESC')->paginate(25);
 
@@ -152,7 +162,8 @@ class ClientsController extends Controller
                 if (\Request::get('clients_types') && \Request::get('clients_types') != '') {
                     return $query->where('customer_group', \Request::get('clients_types'));
                 }
-            })->where(function ($query) {
+            })
+            ->where(function ($query) {
                 if (\Request::get('term') && \Request::get('term') != '') {
                     return $query->where('name', 'LIKE', '%' . \Request::get('term') . '%')
                         ->orWhere('location', 'LIKE', '%' . \Request::get('term') . '%')
@@ -215,7 +226,7 @@ class ClientsController extends Controller
             $outlets = \App\Models\PosOutlets::whereIn('id', $outletuser)->pluck('name', 'id')->all();
         }
         $perms = $this->permission->all() ?? '';
-        $groups = \App\Models\CustomerGroup::select('name', 'id')->where('type', \Request::get('relation_type'))->pluck('name', 'id');
+        $groups = \App\Models\CustomerGroup::select('name', 'id')->pluck('name', 'id');
         return view('admin.clients.create', compact('deliveryroutes', 'client', 'perms', 'outlets', 'page_title', 'page_description', 'groups', 'distributors'));
     }
 
@@ -281,9 +292,10 @@ class ClientsController extends Controller
             'name' => 'required',
             'phone' => 'min:4|max:255',
             'email' => 'email',
+            'relation_type' => 'required',
             'outlet_id' => 'required|exists:pos_outlets,id'
         ]);
-
+        DB::beginTransaction();
         $attributes = $request->all();
         if ($request->relation_type == 'distributor') {
             $accounting_type = $request->types ?? env('CLIENT_DISTRIBUTOR_SERVICES_LEDGER_GROUP');
@@ -324,6 +336,7 @@ class ClientsController extends Controller
             $attributes['image'] = $doc_name;
         }
         $client = $this->client->create($attributes);
+        $client_id = $client->id;
         if ($accounting_type) { // dont`t create ledger if accounting type is null
             $full_name = $client->name;
             $_ledgers = \TaskHelper::PostLedgers($full_name, $accounting_type);
@@ -337,11 +350,15 @@ class ClientsController extends Controller
             $deposit['type'] = "Deposit";
             $deposit['client_id'] = $client->id;
             $deposit['amount'] = $request->deposit_amount;
+            $deposit['balance'] = $request->deposit_amount;
             $deposit['closing'] = (float)(\App\Models\CustomerDeposit::where('client_id', $client->id)->latest()->first()->closing ?? 0) + (float)$request->deposit_amount;
-
-            \App\Models\CustomerDeposit::create($deposit);
+            $cdeposit = CustomerDeposit::create($deposit);
+            $deposit['client_id'] = $client_id;
+            $deposit['ref_id'] = $cdeposit->id;
+            $entry_id = FinanceHelper::depositEntry($deposit);
+            $cdeposit->update(['entry_id'=>$entry_id]);
         }
-
+        DB::commit();
         Audit::log(Auth::user()->id, trans('admin/clients/general.audit-log.category'), trans('admin/clients/general.audit-log.msg-store', ['name' => $attributes['name']]));
         // if($request->ajax()){
         //  $clients = \App\Models\Client::select('id', 'name')->orderBy('id', DESC)->get();
@@ -349,7 +366,7 @@ class ClientsController extends Controller
         // }
         Flash::success(trans('admin/clients/general.status.created')); // 'Client successfully created');
 
-        return redirect('/admin/customer/?relation_type=' . $request->relation_type);
+        return redirect('/admin/clients');
     }
 
     public function postModal(Request $request)
@@ -424,7 +441,6 @@ class ClientsController extends Controller
             'phone' => 'min:4|max:255',
             'outlet_id' => 'required|exists:pos_outlets,id'
         ]);
-
         $attributes = $request->all();
         if ($request->relation_type == 'distributor') {
             $accounting_type = $request->types ?? env('CLIENT_DISTRIBUTOR_SERVICES_LEDGER_GROUP');
@@ -466,12 +482,34 @@ class ClientsController extends Controller
         return redirect()->back();
     }
 
+    // public function get_bank_deposit($id)
+    // {
+    //     $customer = \App\Models\CustomerDeposit::where('client_id', $id)->latest()->first();
+    //     $data['deposit_amount'] = $customer->closing ?? "0";
+    //     $data['credit_limit'] = $customer->closing ?? "0";
+    //     $data['remaining_amount'] = $customer->closing ?? "0";
+    //     return $data;
+    // }
     public function get_bank_deposit($id)
     {
-        $customer = \App\Models\CustomerDeposit::where('client_id', $id)->latest()->first();
-        $data['deposit_amount'] = $customer->closing ?? "0";
-        $data['credit_limit'] = $customer->closing ?? "0";
-        $data['remaining_amount'] = $customer->closing ?? "0";
+        $customerDeposit = \App\Models\CustomerDeposit::where('client_id', $id)->latest()->first();
+        $client = Client::find($id);
+        $data['deposit_amount'] = $customerDeposit->closing ?? "0";
+        $data['remaining_amount'] = $client->threshold_amount > 0 ? ($data['deposit_amount'] + $client->threshold_amount) : 0;
+        $data['credit_limit'] = $data['remaining_amount'];
+
+        $data['remaining_time'] = 0;
+        if ($client->threshold_time != 0) {
+            $lastCustomerDeposit = CustomerDeposit::where('client_id', $id)->where('type', 'Deduct')->latest()->first()->date ?? Carbon::today()->subDays(($client->threshold_time + 1))->toDateString();
+            $thresholdDate = Carbon::create($lastCustomerDeposit)->addDays($client->threshold_time);
+            $todayDate = Carbon::today();
+            $diff = $todayDate->diffInDays($thresholdDate);
+            if ($thresholdDate > $todayDate) {
+                $data['remaining_time'] = $diff;
+            } else {
+                $data['remaining_time'] = '-' . $diff;
+            }
+        }
         return $data;
     }
 
@@ -713,6 +751,24 @@ class ClientsController extends Controller
         return $clients;
     }
 
+    public function getClientsByType()
+    {
+        $relation_type = \Request::get('relation_type');
+        if (request()->outlet_id && (request()->outlet_id != '')) {
+            $posOutlet = PosOutlets::find(request()->outlet_id);
+            if (isset($posOutlet)) {
+                $project_id = $posOutlet->project_id;
+                $outletId = PosOutlets::where('project_id', $project_id)->pluck('id')->toArray();
+            }
+        }
+        if (isset($outletId)) {
+            $clients = Client::where('relation_type', $relation_type)->whereIn('outlet_id', $outletId)->where('enabled', '1')->select('name', 'id', 'vat', 'physical_address')->get();
+        } else {
+            $clients = Client::where('relation_type', $relation_type)->where('enabled', '1')->select('name', 'id', 'vat', 'physical_address')->get();
+        }
+
+        return $clients->toarray();
+    }
     public function get_client()
     {
         $relation_type = \Request::get('relation_type');

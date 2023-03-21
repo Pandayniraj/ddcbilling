@@ -16,7 +16,7 @@ class Client extends Model
 
     protected $fillable = ['route_id','name', 'location', 'vat', 'phone', 'email', 'website', 'industry', 'stock_symbol',
         'type', 'enabled', 'org_id', 'ledger_id', 'notes', 'reminder', 'bank_name', 'bank_branch', 'bank_account',
-        'relation_type', 'physical_address', 'customer_group','image','parent_distributor','deposit_amount', 'outlet_id'];
+        'relation_type', 'physical_address', 'customer_group','image','parent_distributor','deposit_amount', 'outlet_id', 'threshold_amount', 'threshold_time'];
 
     public function paidby() : HasMany
     {
@@ -42,7 +42,14 @@ class Client extends Model
     {
         return $this->belongsTo(\App\Models\CustomerGroup::class, 'customer_group');
     }
-
+    public function invoices() : HasMany
+    {
+        return $this->hasMany(\App\Models\Invoice::class, 'client_id');
+    }
+    public function payments() : HasMany
+    {
+        return $this->hasMany(\App\Models\InvoicePayment::class, 'client_id');
+    }
 
     /**
      * @return bool
@@ -68,6 +75,14 @@ class Client extends Model
         }
 
         return true;
+    }
+    public function deposit()
+    {
+        return $this->hasMany(CustomerDeposit::class, 'client_id');
+    }
+    public function depositClosing()
+    {
+        return $this->deposit()->latest()->first()->closing??0;
     }
 
 }
